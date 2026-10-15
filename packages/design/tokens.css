@@ -1,0 +1,7 @@
+:root {
+  /* P1.1 (agente Design System) substitui este arquivo pelos 43 tokens da imagem de referência.
+     Fonte: wiki/design-system/tokens.md */
+  --bg-app: #03111e;
+  --text-primary: #ffffff;
+  --font-sans: Inter, 'Segoe UI', sans-serif;
+}

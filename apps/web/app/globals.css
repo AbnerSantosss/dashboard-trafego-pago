@@ -1,0 +1,8 @@
+@import 'tailwindcss';
+@import '@trafego/design/tokens.css';
+
+body {
+  background: var(--bg-app, #03111e);
+  color: var(--text-primary, #fff);
+  font-family: var(--font-sans, Inter, 'Segoe UI', sans-serif);
+}

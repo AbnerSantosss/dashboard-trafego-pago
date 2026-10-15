@@ -1,0 +1,16 @@
+{
+  "name": "@trafego/design",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./tokens.css": "./tokens.css",
+    "./tokens.json": "./tokens.json",
+    "./brand/*": "./brand/*"
+  },
+  "scripts": {
+    "typecheck": "echo 'sem TS nesta fase'",
+    "test": "echo 'sem testes nesta fase'",
+    "build": "echo 'sem build'"
+  }
+}
