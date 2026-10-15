@@ -1,7 +1,127 @@
+/* Tokens de design do Dashboard de Tráfego Pago (P1.1).
+   Fonte: tests/visual/ref-1.png (1315x710). Gerado junto com tokens.json; os dois têm
+   os mesmos nomes e valores. A origem de cada token está em tokens.json. */
 :root {
-  /* P1.1 (agente Design System) substitui este arquivo pelos 43 tokens da imagem de referência.
-     Fonte: wiki/design-system/tokens.md */
+  /* Cores: fundos */
   --bg-app: #03111e;
+  --bg-sidebar: #051424;
+  --bg-card: #061b28;
+  --bg-filter: #051e31;
+  --bg-select: #0a2034;
+  --bg-nav-active: #0a307c;
+  --bg-table-header: #051826;
+  --bg-total-row: #0d2644;
+  --bg-button: #101a32;
+
+  /* Cores: bordas e divisores */
+  --border-card: #0c2030;
+  --border-sidebar: #112334;
+  --border-table-row: #0c1f2d;
+
+  /* Cores: texto e ícones neutros */
   --text-primary: #ffffff;
+  --text-secondary: #d1e3f4;
+  --text-muted: #d6e6f5;
+  --text-dim: #c5d3ea;
+  --icon-muted: #748ba5;
+
+  /* Cores: acentos */
+  --accent-blue: #0070f8;
+  --accent-blue-deep: #0162ff;
+  --accent-cyan-light: #6ed5ff;
+  --accent-cyan: #04addf;
+  --accent-green: #00c98b;
+  --accent-teal: #24ccb6;
+  --accent-teal-light: #34dfce;
+  --accent-red: #e13c5d;
+
+  /* Cores: fundo dos tiles de ícone */
+  --tile-blue-bg: #012b5d;
+  --tile-red-bg: #2c1e37;
+  --tile-teal-bg: #003a44;
+
+  /* Cores: funil (5 etapas, de cima para baixo) */
+  --funnel-1: #0070fd;
+  --funnel-2: #017bff;
+  --funnel-3: #00b1de;
+  --funnel-4: #00c997;
+  --funnel-5: #00c97f;
+  --funnel-connector: #a6c6f2;
+
+  /* Cores: estados */
+  --positive: #06f6c7;
+  --negative: #ff5c7a;
+  --roas-text: #39d2be;
+
+  /* Cores: botões e marca */
+  --button-clear-text: #26c89f;
+  --button-clear-bg: #004231;
+  --button-clear-border: #32b29e;
+  --logo: #524ea1;
+
+  /* Tipografia: família */
   --font-sans: Inter, 'Segoe UI', sans-serif;
+
+  /* Tipografia: tamanhos por papel (derivados da altura de maiúscula medida, razão 0,727 da Inter) */
+  --fs-title: 28px;
+  --fs-subtitle: 15px;
+  --fs-kpi-value: 21px;
+  --fs-kpi-label: 13px;
+  --fs-delta: 13px;
+  --fs-delta-caption: 11px;
+  --fs-card-title: 18px;
+  --fs-table: 12px;
+  --fs-funnel-value: 19px;
+  --fs-funnel-label: 14px;
+  --fs-funnel-rate: 15px;
+  --fs-funnel-caption: 11px;
+  --fs-nav: 13px;
+  --fs-filter-label: 11px;
+  --fs-filter-value: 12px;
+  --fs-button: 13px;
+  --fs-meta: 12px;
+
+  /* Tipografia: pesos por papel */
+  --fw-title: 600;
+  --fw-subtitle: 400;
+  --fw-kpi-value: 600;
+  --fw-kpi-label: 400;
+  --fw-delta: 600;
+  --fw-card-title: 600;
+  --fw-table: 400;
+  --fw-funnel-value: 600;
+  --fw-nav: 400;
+
+  /* Layout e espaçamento */
+  --sidebar-width: 180px;
+  --content-padding-x: 14px;
+  --gap: 12px;
+  --card-padding-x: 12px;
+  --card-padding-y: 13px;
+  --col-funnel: 40.5%;
+  --col-table: 59.5%;
+
+  /* Dimensões de componentes */
+  --card-kpi-height: 115px;
+  --filter-height: 56px;
+  --select-height: 31px;
+  --tile-size: 44px;
+  --nav-item-height: 39px;
+  --nav-item-inset: 9px;
+  --nav-icon-size: 18px;
+  --logo-size: 56px;
+  --status-dot-size: 10px;
+  --button-export-height: 40px;
+  --table-header-height: 66px;
+  --table-row-height: 48px;
+  --table-total-height: 62px;
+  --funnel-stage-height: 56px;
+  --funnel-stage-gap: 6px;
+  --funnel-stage-1-width: 319px;
+  --funnel-step-indent: 26px;
+  --funnel-taper: 16px;
+
+  /* Raios e sombras */
+  --radius: 8px;
+  --shadow-card: none;
 }

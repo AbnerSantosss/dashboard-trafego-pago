@@ -1,0 +1,6 @@
+{
+  "name": "@trafego/prototype",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Protótipo estático pixel-fiel (P1.5): gerador, calibrador e fontes de teste."
+}

@@ -1,0 +1,421 @@
+/* Protótipo estático pixel-fiel (P1.5). Valores medidos em design/componentes.md.
+   Onde o token diverge do medido, a variável local --p-* guarda o valor medido. */
+:root {
+  --p-bg-main: #041625;
+  --p-faixa-topo: #060606;
+  --p-faixa-direita: #030f1b;
+  --p-divisor: #112234; /* diverge do token --border-sidebar: medido #112234 (token #112334) */
+  --p-nav-ativo: #002e72; /* diverge do token --bg-nav-active: medido #002E72 (token #0A307C) */
+  --p-nav-ic-ativo: #70eefe; /* sem token: medido #70EEFE */
+  --p-text-sec: #c2cfe2; /* diverge do token --text-secondary: medido #C2CFE2 (token #D1E3F4) */
+  --p-subtitulo: #c0d5f0;
+  --p-status: #b1c2da;
+  --p-status-dot: #19f4d3; /* diverge do token --positive: medido #19F4D3 (token #06F6C7) */
+  --p-bg-button: #061a2e; /* diverge do token --bg-button: medido #061A2E (token #101A32) */
+  --p-borda-button: #0c1e30;
+  --p-filtro-bg: #091c2f; /* diverge do token --bg-filter: medido #091C2F (token #051E31) */
+  --p-filtro-borda: #0e2236;
+  --p-campo-bg: #0a2134; /* diverge do token --bg-select: medido #0A2134 (token #0A2034) */
+  --p-campo-borda: #102739;
+  --p-filtro-rot: #a8b8ce;
+  --p-filtro-val: #e0f0fe;
+  --p-cal: #c0dcfe;
+  --p-limpar-bg: #00312a; /* diverge do token --button-clear-bg: medido #00312A (token #004231) */
+  --p-limpar-borda: #0a4f40; /* diverge do token --button-clear-border: medido #0A4F40 (token #32B29E) */
+  --p-limpar-txt: #42c6ab; /* diverge do token --button-clear-text: medido #42C6AB (token #26C89F) */
+  --p-card-bg: #071b29; /* diverge do token --bg-card: medido #071B29 (token #061B28) */
+  --p-card-borda: #132739; /* diverge do token --border-card: medido #132739 (token #0C2030) */
+  --p-kpi-rot: #c0d0e0;
+  --p-positivo: #36dbc5; /* diverge do token --positive: medido #36DBC5 (token #06F6C7) */
+  --p-spark: #3fcdbc;
+  --p-funil-leg: #a0b1c4; /* diverge do token --text-muted: medido #A0B1C4 (token #D6E6F5) */
+  --p-conector: #4a5d6e; /* diverge do token --funnel-connector: medido #4A5D6E (token #A6C6F2) */
+  --p-ponto: #b4d0f7;
+  --p-grade: #0b1e2b; /* diverge do token --border-table-row: medido #0B1E2B (token #0C1F2D) */
+  --p-th: #bfcbd7;
+  --p-td: #dbe4ee;
+  --p-roas: #3fc6b4; /* diverge do token --roas-text: medido #3FC6B4 (token #39D2BE) */
+  --p-total-bg: #0d2644; /* = token --bg-total-row */
+  --p-grade-total: #011c38;
+  --p-blur: 0px;
+  --p-fonte: 'Segoe UI', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  width: 1315px;
+  height: 710px;
+  overflow: hidden;
+  background: var(--p-bg-main);
+}
+body {
+  font-family: var(--p-fonte);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+.tela {
+  position: relative;
+  width: 1315px;
+  height: 710px;
+  overflow: hidden;
+}
+.tela > *,
+.principal > *,
+.sidebar > * {
+  position: absolute;
+}
+
+/* Faixas de artefato da captura (fazem parte da referência) */
+.faixa-topo {
+  left: 0;
+  top: 0;
+  width: 1315px;
+  height: 4px;
+  background: var(--p-faixa-topo);
+}
+.faixa-direita {
+  left: 1312px;
+  top: 4px;
+  width: 3px;
+  height: 706px;
+  background: var(--p-faixa-direita);
+}
+
+/* Fundo principal: levemente mais claro no topo central */
+.principal {
+  left: 0;
+  top: 0;
+  width: 1315px;
+  height: 710px;
+  background: radial-gradient(
+    ellipse 760px 520px at 700px 0px,
+    #071829 0%,
+    #051727 45%,
+    #041625 70%,
+    #03121f 100%
+  );
+}
+.sidebar {
+  left: 0;
+  top: 0;
+  width: 180px;
+  height: 710px;
+  background: var(--bg-sidebar);
+  z-index: 1;
+}
+.divisor {
+  left: 180px;
+  top: 0;
+  width: 1px;
+  height: 710px;
+  background: var(--p-divisor);
+  z-index: 1;
+}
+.principal {
+  z-index: 0;
+}
+.faixa-topo,
+.faixa-direita {
+  z-index: 5;
+}
+
+/* Texto posicionado pela linha de base: top = base - 0,91 em (Segoe UI, line-height 1) */
+.t {
+  will-change: transform;
+  filter: blur(var(--p-blur));
+  position: absolute;
+  left: var(--x);
+  top: calc(var(--b) * 1px - 0.91em);
+  line-height: 1;
+  white-space: nowrap;
+}
+.t.c {
+  transform: translateX(-50%);
+}
+
+/* Ícones */
+.ic {
+  position: absolute;
+  overflow: visible;
+  stroke-width: var(--sw, 1.75);
+  will-change: transform;
+  animation: desloca 0.02s linear forwards;
+}
+.ic-branco {
+  color: var(--text-primary);
+}
+.ic-sec {
+  color: var(--p-text-sec);
+}
+.ic-pos {
+  color: var(--p-positivo);
+}
+
+/* Sidebar */
+.logo {
+  left: 45px;
+  top: 16px;
+  width: 56px;
+  height: 54px;
+}
+.logo-pasio {
+  display: none;
+  object-fit: contain;
+  height: 56px;
+}
+.tela[data-logo='pasio'] .logo-ref {
+  display: none;
+}
+.tela[data-logo='pasio'] .logo-pasio {
+  display: block;
+}
+.nav-ativo {
+  position: absolute;
+  background: var(--p-nav-ativo);
+  border-radius: 6px;
+}
+.nav-ic {
+  color: var(--p-text-sec);
+}
+.nav-ic-ativo {
+  color: var(--p-nav-ic-ativo);
+}
+.nav {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--p-text-sec);
+}
+.nav-on {
+  color: var(--text-primary);
+}
+
+/* Cabeçalho */
+.titulo {
+  font-size: 27px;
+  font-weight: 600;
+}
+.subtitulo {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--p-subtitulo);
+}
+.status-dot {
+  left: 970px;
+  top: 31px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--p-status-dot);
+}
+.status {
+  font-size: 11px;
+  color: var(--p-status);
+}
+.btn-exportar {
+  left: 1151px;
+  top: 21px;
+  width: 142px;
+  height: 39px;
+  background: var(--p-bg-button);
+  border: 1px solid var(--p-borda-button);
+  border-radius: 8px;
+}
+.btn-txt {
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* Filtros */
+.filtro,
+.filtro-campo,
+.btn-limpar,
+.kpi,
+.tile,
+.card,
+.grade,
+.grade-total,
+.total {
+  position: absolute;
+}
+.filtro {
+  background: var(--p-filtro-bg);
+  border: 1px solid var(--p-filtro-borda);
+  border-radius: 6px;
+}
+.filtro-campo {
+  background: var(--p-campo-bg);
+  border: 1px solid var(--p-campo-borda);
+  border-radius: 5px;
+}
+.filtro-rot {
+  font-size: 10.5px;
+  color: var(--p-filtro-rot);
+}
+.filtro-val {
+  font-size: 12px;
+  color: var(--p-filtro-val);
+}
+.ic-cal {
+  color: var(--p-cal);
+}
+.btn-limpar {
+  background: var(--p-limpar-bg);
+  border: 1px solid var(--p-limpar-borda);
+  border-radius: 6px;
+}
+.ic-limpar {
+  color: var(--p-limpar-txt);
+}
+.limpar-txt {
+  font-size: 13px;
+  color: var(--p-limpar-txt);
+}
+
+/* KPIs */
+.kpi {
+  background: linear-gradient(20deg, #071b29 0%, #0a1f30 100%);
+  border: 1px solid var(--p-card-borda);
+  border-radius: 6px;
+}
+.tile {
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+}
+.kpi-rot {
+  font-size: 11.5px;
+  color: var(--p-kpi-rot);
+}
+.kpi-val {
+  font-size: 20px;
+  font-weight: 700;
+}
+.kpi-delta {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--p-positivo);
+}
+.kpi-vs {
+  font-size: 9.8px;
+  color: var(--p-kpi-rot);
+}
+.spark {
+  position: absolute;
+  overflow: visible;
+}
+
+/* Cards inferiores */
+.card {
+  background: var(--p-card-bg);
+  border: 1px solid var(--p-card-borda);
+  border-radius: 6px;
+}
+.funil-card {
+  left: 194px;
+  top: 281px;
+  width: 444px;
+  height: 440px;
+  background: #071b2b;
+}
+.tabela-card {
+  left: 650px;
+  top: 281px;
+  width: 650px;
+  height: 440px;
+  background: #061b28;
+}
+.card-titulo {
+  font-size: 17px;
+  font-weight: 600;
+}
+.funil {
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+.funil path {
+  filter: blur(0.8px);
+} /* bordas macias como na referência */
+.funil-rot {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+}
+.funil-val {
+  font-size: 19px;
+  font-weight: 700;
+}
+.funil-pct {
+  font-size: 15.5px;
+  font-weight: 600;
+}
+.funil-leg {
+  font-size: 11px;
+  color: var(--p-funil-leg);
+}
+.funil-leg-base {
+  font-size: 9.5px;
+}
+
+/* Tabela */
+.grade {
+  background: var(--p-grade);
+}
+.th {
+  font-size: 11px;
+  color: var(--p-th);
+}
+.td {
+  font-size: 12px;
+  color: var(--p-td);
+}
+.td-pq {
+  font-size: 9px;
+}
+.td-roas {
+  color: var(--p-roas);
+}
+.ic-roas {
+  color: #409ea1;
+}
+.total {
+  background: var(--p-total-bg);
+}
+.grade-total {
+  background: var(--p-grade-total);
+}
+.td-total {
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* Deslocamento subpixel por elemento (valores em calibracao.json): o texto é rasterizado na
+   posição de origem da animação (destino menos --rx/--ry) e o compositor o move até (--dx, --dy)
+   sem re-rasterizar. A reamostragem dessa fração suaviza o traço como na referência (que não é texto nítido). */
+@keyframes desloca {
+  from {
+    translate: calc(var(--dx, 0px) - var(--rx, 0px)) calc(var(--dy, 0px) - var(--ry, 0px));
+  }
+  to {
+    translate: var(--dx, 0px) var(--dy, 0px);
+  }
+}
+.t {
+  animation: desloca 0.02s linear forwards;
+}
+
+/* Bordas macias: a referência não tem arestas nítidas (blur abaixo de 0,8 px não tem efeito). */
+.kpi,
+.card,
+.tile,
+.filtro,
+.filtro-campo,
+.btn-limpar,
+.btn-exportar,
+.nav-ativo {
+  filter: blur(0.8px);
+}

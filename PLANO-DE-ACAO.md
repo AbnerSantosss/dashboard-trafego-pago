@@ -55,7 +55,7 @@ Um **orquestrador** (Maestro) coordena **nove subagentes**, todos **Opus 5.5 em 
 | `data-model-rules` | Modelo e regras | PostgreSQL + RLS, DSL de mapeamento, classificador, agregações | Migrações, motor de regras, API de métricas |
 | `tenant-admin` | Administração | Telas por empresa | Admin de webhooks, regras, apresentação, usuários |
 | `qa-visual` | QA | Regressão visual, e2e, contrato, carga | Suítes e relatórios |
-| `assets-icons` | Ícones | SVG; raster só com SD local ou Nano Banana 2 Lite | Pacote de ícones SVG |
+| `assets-icons` | Ícones | SVG do @tabler/icons (MIT); raster só pela muapi, com confirmação | Pacote de ícones SVG |
 | `docs-wiki` | Documentação | Wiki, CLAUDE.md, runbooks | `wiki/`, `CLAUDE.md`, `log.md` |
 
 Fluxo: plano aprovado → `/gera-wiki` → tarefa despachada com área exclusiva → entrega → revisão → gate → PR integrado → log.
@@ -138,6 +138,9 @@ Formato: **ID** — tarefa · agente · entrega · critério de aceite · depend
 ### Fase 7 — Entrega
 - **P7.1** — Wiki: arquitetura, regras, runbook de onboarding de empresa e operação de webhooks · docs-wiki · `wiki/` completa · pessoa nova onboarda uma empresa só com a wiki · P6.2 · D18–D20
 - **P7.2** — Deploy (preview e produção), variáveis, backups, monitoramento de fila · backend-ingestion · ambientes · webhook de produção processa evento de teste · P6.3 · D19–D20
+  - P7.2a — Repositório **público** já criado em 2026-10-15 (`github.com/AbnerSantosss/dashboard-trafego-pago`); manter sem segredos (varredura antes de cada push; `.env` e `registro/` fora do git); pode virar privado depois · com confirmação · D9
+  - P7.2b — Stack no Portainer (`portainer.proxserverabner.site`): `docker-compose.prod.yml` com web, api, postgres e cloudflared; segredos só em variáveis do Portainer · com confirmação · D9
+  - P7.2c — Túnel Cloudflare (conta `fb20af5d…`) apontando o hostname público para o serviço web; token do túnel fora do repositório · com confirmação · D9
 - **P7.3** — Entrega final: demo com a empresa seed, `log.md`, pendências · orquestrador · entrega · **Gate G4**: usuário aprova a fidelidade na tela real · P7.1 · D20
 
 ---
@@ -230,14 +233,14 @@ Tipos canônicos de evento: `gasto`, `clique`, `visita`, `cadastro`, `ftd`, `dep
 | R5 | Hyperframes é framework de vídeo | Médio | Usar só doutrina de animação e catálogo; app em React + d3 | charts-motion |
 | R7 | Subagentes editando os mesmos arquivos | Médio | Áreas exclusivas, um escritor por conjunto, PRs | orquestrador |
 | R8 | Escopo da administração crescer | Médio | Fase 5 limitada; o resto vira pendência | orquestrador |
-| R6 | Custo de ícones por IA | Baixo | SVG primeiro; raster só SD local ou Nano Banana 2 Lite, com confirmação | assets-icons |
+| R6 | Custo de ícones por IA | Baixo | SVG do @tabler/icons; raster só pela muapi, com confirmação (D5) | assets-icons |
 
 ---
 
 ## 9. Ícones e ativos (custos)
 | Opção | Custo/imagem | Quando |
 |---|---|---|
-| SVG à mão (base Lucide/Tabler) | grátis | Padrão para toda a interface |
+| SVG da biblioteca @tabler/icons (MIT) | grátis | Padrão para toda a interface (D5) |
 | RealVisXL V5.0 local (stable-diffusion.cpp, RTX 4060) | grátis | Ilustrações e logos placeholder |
 | FLUX.2 klein 4B (OpenRouter) | US$ 0,015 | Raster rápido |
 | Nano Banana 2 Lite (OpenRouter) | US$ 0,034 | Ícone estilizado com instrução textual |

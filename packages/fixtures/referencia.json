@@ -1,0 +1,361 @@
+{
+  "empresa": "PASIO",
+  "titulo": "Visão Geral de Aquisição",
+  "subtitulo": "Acompanhe os resultados do marketing de forma simples e objetiva.",
+  "atualizadoEm": {
+    "rotulo": "Dados atualizados em:",
+    "valor": "24/05/2024 08:30"
+  },
+  "botoes": {
+    "exportar": "Exportar",
+    "limparFiltros": "Limpar filtros"
+  },
+  "filtros": [
+    {
+      "id": "periodo",
+      "rotulo": "Período.",
+      "valor": "01/05/2024 - 24/05/2024"
+    },
+    {
+      "id": "comparar",
+      "rotulo": "Comparar com",
+      "valor": "Período anterior"
+    },
+    {
+      "id": "canal",
+      "rotulo": "Canal",
+      "valor": "Todos"
+    },
+    {
+      "id": "campanha",
+      "rotulo": "Campanha",
+      "valor": "Todas"
+    }
+  ],
+  "menu": [
+    {
+      "id": "visao-geral",
+      "rotulo": "Visão Geral",
+      "ativo": true,
+      "posicao": "topo"
+    },
+    {
+      "id": "gestao-custos",
+      "rotulo": "Gestão de Custos",
+      "ativo": false,
+      "posicao": "topo"
+    },
+    {
+      "id": "relatorios",
+      "rotulo": "Relatórios",
+      "ativo": false,
+      "posicao": "topo"
+    },
+    {
+      "id": "ajuda",
+      "rotulo": "Ajuda",
+      "ativo": false,
+      "posicao": "rodape"
+    }
+  ],
+  "kpis": [
+    {
+      "id": "investimento",
+      "rotulo": "Investimento total",
+      "valor": 33840,
+      "valorFormatado": "R$ 33.840",
+      "variacaoPct": 12.5,
+      "variacaoFormatada": "12,5%",
+      "direcao": "alta",
+      "cor": "#0070F8"
+    },
+    {
+      "id": "ftds",
+      "rotulo": "FTDs",
+      "valor": 995,
+      "valorFormatado": "995",
+      "variacaoPct": 18.6,
+      "variacaoFormatada": "18,6%",
+      "direcao": "alta",
+      "cor": "#0070F8"
+    },
+    {
+      "id": "cpa",
+      "rotulo": "Custo por FTD (CPA)",
+      "valor": 33.97,
+      "valorFormatado": "R$ 33,97",
+      "variacaoPct": -5.4,
+      "variacaoFormatada": "-5,4%",
+      "direcao": "baixa",
+      "cor": "#E13C5D"
+    },
+    {
+      "id": "depositos",
+      "rotulo": "Depósitos no período",
+      "valor": 226190,
+      "valorFormatado": "R$ 226.190",
+      "variacaoPct": 22.1,
+      "variacaoFormatada": "22,1%",
+      "direcao": "alta",
+      "cor": "#24CCB6"
+    },
+    {
+      "id": "roas",
+      "rotulo": "ROAS (Depósitos)",
+      "valor": 6.68,
+      "valorFormatado": "6,68x",
+      "variacaoPct": 16.8,
+      "variacaoFormatada": "16,8%",
+      "direcao": "alta",
+      "cor": "#34DFCE"
+    }
+  ],
+  "legendaVariacao": "vs. período anterior",
+  "funil": {
+    "titulo": "Funil de Aquisição",
+    "legendaBase": "(base de referência)",
+    "legendaConversao": "de conversão",
+    "etapas": [
+      {
+        "id": "base",
+        "rotulo": "Base contatada",
+        "valor": 320840,
+        "valorFormatado": "320.840",
+        "taxaPct": 100,
+        "taxaFormatada": "100%"
+      },
+      {
+        "id": "cliques",
+        "rotulo": "Cliques",
+        "valor": 40000,
+        "valorFormatado": "40.000",
+        "taxaPct": 12.5,
+        "taxaFormatada": "12,5%"
+      },
+      {
+        "id": "visitas",
+        "rotulo": "Visitas ao site",
+        "valor": 30000,
+        "valorFormatado": "30.000",
+        "taxaPct": 75,
+        "taxaFormatada": "75,0%"
+      },
+      {
+        "id": "cadastro",
+        "rotulo": "Cadastro",
+        "valor": 6000,
+        "valorFormatado": "6.000",
+        "taxaPct": 20,
+        "taxaFormatada": "20,0%"
+      },
+      {
+        "id": "ftd",
+        "rotulo": "FTD",
+        "valor": 600,
+        "valorFormatado": "600",
+        "taxaPct": 10,
+        "taxaFormatada": "10,0%"
+      }
+    ]
+  },
+  "tabela": {
+    "titulo": "Desempenho por canal",
+    "cabecalhos": [
+      {
+        "id": "canal",
+        "rotulo": ["Canal"]
+      },
+      {
+        "id": "investimento",
+        "rotulo": ["Investimento"],
+        "ordenavel": true
+      },
+      {
+        "id": "cliques",
+        "rotulo": ["Cliques"]
+      },
+      {
+        "id": "visitas",
+        "rotulo": ["Visitas"]
+      },
+      {
+        "id": "cadastros",
+        "rotulo": ["Cadastros"]
+      },
+      {
+        "id": "ftds",
+        "rotulo": ["FTDs"],
+        "subcolunas": [
+          {
+            "id": "ftdsQtd",
+            "rotulo": ["Qtd."]
+          },
+          {
+            "id": "ftdsValor",
+            "rotulo": ["Valor (R$)"]
+          }
+        ]
+      },
+      {
+        "id": "depositos",
+        "rotulo": ["Depósitos no", "período", "(R$)"]
+      },
+      {
+        "id": "cpa",
+        "rotulo": ["CPA", "(R$)"],
+        "info": true
+      },
+      {
+        "id": "roas",
+        "rotulo": ["ROAS", "(Depósitos)"],
+        "info": true
+      }
+    ],
+    "linhas": [
+      {
+        "id": "meta",
+        "canal": "Meta",
+        "investimento": 13260,
+        "cliques": 19823,
+        "visitas": 9138,
+        "cadastros": 1900,
+        "ftdsQtd": 250,
+        "ftdsValor": 37690,
+        "depositos": 58750,
+        "cpa": 53.04,
+        "roas": 4.43,
+        "formatado": {
+          "investimento": "R$ 13.260",
+          "cliques": "19.823",
+          "visitas": "9.138",
+          "cadastros": "1.900",
+          "ftdsQtd": "250",
+          "ftdsValor": "R$ 37.690",
+          "depositos": "R$ 58.750",
+          "cpa": "R$ 53,04",
+          "roas": "4,43x"
+        }
+      },
+      {
+        "id": "email",
+        "canal": "Email",
+        "investimento": 10890,
+        "cliques": 15630,
+        "visitas": 7082,
+        "cadastros": 1100,
+        "ftdsQtd": 210,
+        "ftdsValor": 29420,
+        "depositos": 45800,
+        "cpa": 51.86,
+        "roas": 4.2,
+        "formatado": {
+          "investimento": "R$ 10.890",
+          "cliques": "15.630",
+          "visitas": "7.082",
+          "cadastros": "1.100",
+          "ftdsQtd": "210",
+          "ftdsValor": "R$ 29.420",
+          "depositos": "R$ 45.800",
+          "cpa": "R$ 51,86",
+          "roas": "4,20x"
+        }
+      },
+      {
+        "id": "sms",
+        "canal": "SMS",
+        "investimento": 8740,
+        "cliques": 10512,
+        "visitas": 4921,
+        "cadastros": 520,
+        "ftdsQtd": 85,
+        "ftdsValor": 12580,
+        "depositos": 18250,
+        "cpa": 102.82,
+        "roas": 2.09,
+        "formatado": {
+          "investimento": "R$ 8.740",
+          "cliques": "10.512",
+          "visitas": "4.921",
+          "cadastros": "520",
+          "ftdsQtd": "85",
+          "ftdsValor": "R$ 12.580",
+          "depositos": "R$ 18.250",
+          "cpa": "R$ 102,82",
+          "roas": "2,09x"
+        }
+      },
+      {
+        "id": "afiliados",
+        "canal": "Afiliados",
+        "investimento": null,
+        "cliques": 12631,
+        "visitas": 10251,
+        "cadastros": 2800,
+        "ftdsQtd": 420,
+        "ftdsValor": 51870,
+        "depositos": 96280,
+        "cpa": null,
+        "roas": null,
+        "formatado": {
+          "investimento": "–",
+          "cliques": "12.631",
+          "visitas": "10.251",
+          "cadastros": "2.800",
+          "ftdsQtd": "420",
+          "ftdsValor": "R$ 51.870",
+          "depositos": "R$ 96.280",
+          "cpa": "–",
+          "roas": "–"
+        }
+      },
+      {
+        "id": "outros",
+        "canal": "Outros",
+        "investimento": 950,
+        "cliques": 1420,
+        "visitas": 862,
+        "cadastros": 48,
+        "ftdsQtd": 30,
+        "ftdsValor": 5640,
+        "depositos": 7110,
+        "cpa": 31.67,
+        "roas": 7.48,
+        "formatado": {
+          "investimento": "R$ 950",
+          "cliques": "1.420",
+          "visitas": "862",
+          "cadastros": "48",
+          "ftdsQtd": "30",
+          "ftdsValor": "R$ 5.640",
+          "depositos": "R$ 7.110",
+          "cpa": "R$ 31,67",
+          "roas": "7,48x"
+        }
+      }
+    ],
+    "total": {
+      "id": "total",
+      "canal": "Total",
+      "investimento": 33840,
+      "cliques": 70386,
+      "visitas": 32254,
+      "cadastros": 6368,
+      "ftdsQtd": 995,
+      "ftdsValor": 137780,
+      "depositos": 226190,
+      "cpa": 33.97,
+      "roas": 6.68,
+      "formatado": {
+        "investimento": "R$ 33.840",
+        "cliques": "70.386",
+        "visitas": "32.254",
+        "cadastros": "6.368",
+        "ftdsQtd": "995",
+        "ftdsValor": "R$ 137.780",
+        "depositos": "R$ 226.190",
+        "cpa": "R$ 33,97",
+        "roas": "6,68x"
+      }
+    }
+  }
+}

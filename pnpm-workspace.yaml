@@ -1,6 +1,8 @@
 packages:
   - apps/*
   - packages/*
+  - tests/*
+  - prototype
 allowBuilds:
   esbuild: true
   sharp: true

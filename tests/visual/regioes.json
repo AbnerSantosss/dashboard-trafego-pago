@@ -1,0 +1,11 @@
+{
+  "_nota": "Caixas aproximadas (px, imagem 1315x710) estimadas a olho a partir de ref-1.png. O agente de componentes deve refinar.",
+  "regioes": [
+    { "nome": "sidebar", "x": 0, "y": 0, "w": 182, "h": 710 },
+    { "nome": "cabecalho", "x": 182, "y": 0, "w": 1133, "h": 78 },
+    { "nome": "filtros", "x": 182, "y": 78, "w": 1133, "h": 72 },
+    { "nome": "kpis", "x": 182, "y": 150, "w": 1133, "h": 126 },
+    { "nome": "funil", "x": 182, "y": 276, "w": 462, "h": 434 },
+    { "nome": "tabela", "x": 644, "y": 276, "w": 671, "h": 434 }
+  ]
+}

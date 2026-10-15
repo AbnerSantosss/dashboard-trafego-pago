@@ -24,10 +24,23 @@ Critério número um do projeto: a tela Visão Geral deve ser indistinguível da
 | G3 | E2E com duas empresas (webhook → painel) passa | 6 |
 | G4 | Aprovação visual do usuário | 7 |
 
+## Resultado medido (2026-10-15, Fase 1)
+Protótipo `prototype/index.html` contra `tests/visual/ref-1.png`, Chromium 1315×710, Windows com Segoe UI: **4,178%** (39.012 px de 933.650). Por região: kpis 6,87%, cabeçalho 6,74%, tabela 3,93%, funil 3,81%, filtros 2,55%, sidebar 1,61%. O `diff.png` mostra só contorno de glifos, bordas de 1 px e ícones; layout, cores e posições batem (lado a lado, sem diferença perceptível).
+
+Onde está o resto do diff:
+- Texto: ~3,1% da tela. A fonte da imagem é ~15% mais estreita que Inter/Segoe UI e o render original não é nítido. Testadas Segoe UI (melhor), Open Sans, Noto Sans e Roboto Flex com eixo `wdth` 87,5–100: todas de 10% a 20% piores. Mitigação aplicada: `will-change: transform` + animação de 20 ms para reamostrar o bitmap do texto.
+- Bordas e ícones: ~1%. Bordas de 1 px com `filter: blur(0.8px)`; ícones Tabler não são cópia dos originais.
+
+Gate G1 **não atingido numericamente**. Opções para o usuário: aceitar 4,18% com o diff restante só em texto; continuar iterando (ganho esperado pequeno); ou mudar o critério, por exemplo comparar com blur de 1 px (penaliza menos o antialiasing) ou excluir as caixas de texto da máscara. A escolha vai para [[decisoes-tecnicas/decisoes]].
+
+## Como rodar
+`pnpm qa:visual` na raiz (pacote `tests/visual`, `@trafego/qa-visual`). Saída em `tests/visual/saida/` (`atual.png`, `diff.png`, `relatorio.json`), pasta fora do git. Regiões em `tests/visual/regioes.json`. Para regerar o protótipo depois de mudar spec, fixture ou estilo: `node prototype/gerar.mjs`; para recalibrar os textos: `SEM_CALIBRACAO=1 node prototype/gerar.mjs && node prototype/calibrar.mjs && node prototype/gerar.mjs`.
+
 ## O que pode variar sem quebrar a fidelidade
 Textos dinâmicos (valores, datas), logo e nome da empresa, cores de acento configuradas. Fundo, tipografia, medidas e composição não variam.
 
 ## Armadilhas
-- Fontes: a imagem usa uma sans inferida como Inter; se o diff estourar só em texto, testar Segoe UI e ajustar `letter-spacing` antes de mexer em layout.
-- Antialiasing varia por SO; o diff roda sempre no mesmo container (Chromium headless, Linux) para ter base estável.
+- Fontes: a imagem usa uma sans ~15% mais estreita que Inter; Segoe UI foi a melhor opção local. O diff só em texto não cai com `letter-spacing`; foi o limite da Fase 1.
+- Antialiasing varia por SO. O número de 4,18% vale no Windows (Segoe UI local); em CI Linux sem essa fonte o diff sobe. Antes de ligar o diff no CI, fixar uma fonte empacotada no repositório ou rodar o diff no Windows.
+- `prototype/index.html` e `prototype/calibracao.json` são gerados: não formatar com Prettier (mudar espaços do HTML muda o render) nem editar à mão.
 - Sparklines e funil são SVG: comparar a forma, não o traço exato; usar `threshold` do pixelmatch em 0,1.

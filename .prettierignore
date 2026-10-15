@@ -5,3 +5,7 @@ pnpm-lock.yaml
 wiki
 registro
 *.md
+next-env.d.ts
+tests/visual/saida
+prototype/index.html
+prototype/calibracao.json

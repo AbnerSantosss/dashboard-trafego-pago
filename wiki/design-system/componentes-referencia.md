@@ -6,7 +6,7 @@ tags: [componentes, layout, referencia]
 
 # Componentes da tela de referência
 
-Spec detalhada com px sai na tarefa P1.2 (`design/componentes.md`). Esta página fixa o que a imagem mostra.
+Spec detalhada com px, entregue em P1.2 (2026-10-15): `design/componentes.md` (grade, caixas, cores, fonte, vértices do funil, colunas da tabela, orçamento do diff). Esta página fixa o resumo do que a imagem mostra; a spec manda em caso de diferença.
 
 1. **Sidebar** (180 px, `--bg-sidebar`): logo no topo (PASIO: ícone oficial + nome; trocáveis por empresa), menu Visão Geral (ativo, `--bg-nav-active`, raio 8), Gestão de Custos, Relatórios, Ajuda, com ícone de linha à esquerda.
 2. **Cabeçalho**: "Visão Geral de Aquisição" (28/600) e "Acompanhe os resultados do marketing de forma simples e objetiva." (15, `--text-secondary`); à direita "Dados atualizados em: 24/05/2024 08:30" com ponto `--positive` e botão "Exportar ▾" (`--bg-button`).

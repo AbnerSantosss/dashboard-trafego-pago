@@ -1,0 +1,89 @@
+{
+  "pixelsDiferentes": 0,
+  "total": 933650,
+  "percentual": 0,
+  "limite": 2,
+  "aprovado": true,
+  "alvo": "file:///C:/Users/binho/Documents/Projetos%20de%20IA/Obsidian/Projetos/10.1%20-%20Eventos%20PASIO/tests/visual/exemplos/referencia.html",
+  "data": "2026-10-15T18:46:49.612Z",
+  "regioes": [
+    {
+      "nome": "sidebar",
+      "caixa": {
+        "x": 0,
+        "y": 0,
+        "w": 182,
+        "h": 710
+      },
+      "pixelsDiferentes": 0,
+      "total": 129220,
+      "percentual": 0,
+      "participacaoNoTotal": 0
+    },
+    {
+      "nome": "cabecalho",
+      "caixa": {
+        "x": 182,
+        "y": 0,
+        "w": 1133,
+        "h": 78
+      },
+      "pixelsDiferentes": 0,
+      "total": 88374,
+      "percentual": 0,
+      "participacaoNoTotal": 0
+    },
+    {
+      "nome": "filtros",
+      "caixa": {
+        "x": 182,
+        "y": 78,
+        "w": 1133,
+        "h": 72
+      },
+      "pixelsDiferentes": 0,
+      "total": 81576,
+      "percentual": 0,
+      "participacaoNoTotal": 0
+    },
+    {
+      "nome": "kpis",
+      "caixa": {
+        "x": 182,
+        "y": 150,
+        "w": 1133,
+        "h": 126
+      },
+      "pixelsDiferentes": 0,
+      "total": 142758,
+      "percentual": 0,
+      "participacaoNoTotal": 0
+    },
+    {
+      "nome": "funil",
+      "caixa": {
+        "x": 182,
+        "y": 276,
+        "w": 462,
+        "h": 434
+      },
+      "pixelsDiferentes": 0,
+      "total": 200508,
+      "percentual": 0,
+      "participacaoNoTotal": 0
+    },
+    {
+      "nome": "tabela",
+      "caixa": {
+        "x": 644,
+        "y": 276,
+        "w": 671,
+        "h": 434
+      },
+      "pixelsDiferentes": 0,
+      "total": 291214,
+      "percentual": 0,
+      "participacaoNoTotal": 0
+    }
+  ]
+}

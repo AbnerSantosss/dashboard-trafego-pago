@@ -6,11 +6,16 @@
   "exports": {
     "./tokens.css": "./tokens.css",
     "./tokens.json": "./tokens.json",
-    "./brand/*": "./brand/*"
+    "./brand/*": "./brand/*",
+    "./icons/*": "./icons/*"
   },
   "scripts": {
     "typecheck": "echo 'sem TS nesta fase'",
     "test": "echo 'sem testes nesta fase'",
-    "build": "echo 'sem build'"
+    "build": "echo 'sem build'",
+    "icones": "node scripts/gerar-icones.mjs"
+  },
+  "devDependencies": {
+    "@tabler/icons": "3.49.0"
   }
 }
