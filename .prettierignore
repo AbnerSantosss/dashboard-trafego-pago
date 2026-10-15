@@ -9,3 +9,5 @@ next-env.d.ts
 tests/visual/saida
 prototype/index.html
 prototype/calibracao.json
+apps/api/docs/openapi.json
+

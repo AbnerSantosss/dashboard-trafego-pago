@@ -1,0 +1,1 @@
+ALTER TABLE "metrics_daily" ADD COLUMN "base_contatada" integer DEFAULT 0 NOT NULL;

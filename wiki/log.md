@@ -36,3 +36,16 @@ tags: [log, historico]
 - Armadilhas: o protótipo usa Segoe UI local, então o número vale só no Windows; em CI Linux o diff sobe. `prototype/index.html` e `calibracao.json` são gerados e ficam fora do Prettier (reformatar o HTML muda o render). 18 tokens divergem do que o protótipo mediu (lista em `prototype/estilo.css`); reconciliar em P1.1 antes do React.
 - Também nesta sessão: repositório público criado (D9, `https://github.com/AbnerSantosss/dashboard-trafego-pago`) após varredura de segredos; `pnpm check` passa (44 testes).
 - Entregue: commit da Fase 1 enviado ao repositório. Próximo: decisão do gate G1; depois Fase 2 (banco e API).
+
+## [2026-10-15] update | Gate G1 aceito em 4,18% (D10); Fase 2 iniciada
+- Usuário aceitou o diff de 4,18% (resto é texto). Registrado em [[decisoes-tecnicas/decisoes]] D10 e em [[qa-visual/fidelidade-visual]]. Próximo: Fase 2 (P2.1 esquema e RLS, P2.2 auth e papéis, P2.3 API base, P2.4 seed demo).
+
+## [2026-10-15] update | Fase 2 concluída: esquema multiempresa com RLS, auth por JWT e papéis, API base Fastify e seed da PASIO
+- Pedido: "siga para a Fase 2" (após D10).
+- Feito por três subagentes em paralelo com áreas exclusivas (D7), validados pelo orquestrador (`pnpm check` verde: 104 testes, 61 na API com Postgres local de pé):
+  - **P2.1 banco** (`apps/api/src/db/`, `drizzle/`): 9 tabelas Drizzle, RLS com `FORCE` e política por `app.tenant_id`, papel `app_user` sem BYPASSRLS, helpers `comTenant`/`comUsuario`, testes de isolamento. Postgres local via `docker compose up -d db` na porta 5460 (5432 estava ocupada por outro projeto). Ver [[arquitetura/modelo-de-dados]].
+  - **P2.3 API base** (`apps/api/src/`): Fastify 5 + zod, contrato de erros em pt-BR (`apps/api/docs/erros.md`), logs pino com requestId e redação de segredos, OpenAPI em `/docs`. `openapi.json` é gerado por teste e entrou no `.prettierignore`.
+  - **P2.2 auth e papéis** (`src/auth/`, `src/rotas/auth.ts`): JWT HS256, `x-tenant`, `exigirPapel`, `/me`, `/me/empresa`, `/empresas/atual`, `/ready`, CORS e rate limit. D12.
+  - **P2.4 seed** (`src/db/seed.ts`, `db:seed`): empresa `pasio`, apresentação, fonte `demo` (segredo impresso uma vez, só hash no banco), `admin@pasio.local`, 264 linhas de `metrics_daily` iguais à imagem por canal; funil em canal reservado `__funil__` e coluna `base_contatada` (migração 0002). D11.
+- Armadilhas: a imagem de referência é aritmeticamente inconsistente (Total de cliques, FTDs valor, CPA, variações de CPA e ROAS); o banco devolve a soma real e a Fase 4 decide o que a tela mostra ([[design-system/dados-de-referencia]]). `db:migrate` não lê `.env` sozinho: passar `DATABASE_ADMIN_URL` no ambiente. O seed usa `referencia.json` direto porque o `index.ts` das fixtures não compila na API (imports sem extensão).
+- Entregue: commit da Fase 2 enviado ao repositório público. Próximo: Fase 3 (recepção de webhooks, motor de regras, agregação; gate G2).

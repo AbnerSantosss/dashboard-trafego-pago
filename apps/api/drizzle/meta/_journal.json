@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792097174691,
+      "tag": "0000_esquema_multiempresa",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792097193968,
+      "tag": "0001_papel_app_user_force_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792097520915,
+      "tag": "0002_base_contatada",
+      "breakpoints": true
+    }
+  ]
+}

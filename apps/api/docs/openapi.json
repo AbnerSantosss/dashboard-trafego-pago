@@ -1,0 +1,705 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "API do Dashboard de Tráfego Pago (PASIO)",
+    "description": "API multiempresa. Erros seguem o contrato { erro: { codigo, mensagem, detalhes?, requestId } }.",
+    "version": "0.1.0"
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {}
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Healthcheck",
+        "tags": [
+          "infra"
+        ],
+        "description": "Liveness da API. Não consulta o banco (a prontidão é GET /ready).",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    },
+                    "service": {
+                      "type": "string",
+                      "enum": [
+                        "api"
+                      ]
+                    },
+                    "versao": {
+                      "type": "string"
+                    },
+                    "uptime": {
+                      "type": "number",
+                      "description": "Segundos desde a subida do processo"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "service",
+                    "versao",
+                    "uptime"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "summary": "Prontidão",
+        "tags": [
+          "infra"
+        ],
+        "description": "Executa select 1 no Postgres. 503 servico_indisponivel se o banco não responder.",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    },
+                    "banco": {
+                      "type": "string",
+                      "enum": [
+                        "ok"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "banco"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "summary": "Usuário autenticado e suas empresas",
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "usuario": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "nome": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "email",
+                        "nome"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "empresas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "papel": {
+                            "type": "string",
+                            "enum": [
+                              "admin",
+                              "analista",
+                              "leitor"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "slug",
+                          "nome",
+                          "papel"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "empresaAtiva": {
+                      "nullable": true,
+                      "description": "Claim tenant do token, se houver",
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    }
+                  },
+                  "required": [
+                    "usuario",
+                    "empresas",
+                    "empresaAtiva"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/empresa": {
+      "post": {
+        "summary": "Troca a empresa ativa",
+        "tags": [
+          "auth"
+        ],
+        "description": "Devolve um novo token com a claim tenant apontando para a empresa informada (slug ou id).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "empresa": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Slug ou id da empresa"
+                  }
+                },
+                "required": [
+                  "empresa"
+                ]
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "Novo JWT com a claim tenant trocada"
+                    },
+                    "empresa": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "papel": {
+                          "type": "string",
+                          "enum": [
+                            "admin",
+                            "analista",
+                            "leitor"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "slug",
+                        "nome",
+                        "papel"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "token",
+                    "empresa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/empresas/atual": {
+      "get": {
+        "summary": "Empresa ativa e papel do usuário",
+        "tags": [
+          "auth"
+        ],
+        "description": "Lido sob RLS (request.comTenant). Aceita o cabeçalho x-tenant (slug ou id).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "header",
+            "name": "x-tenant",
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "empresa": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "papel": {
+                          "type": "string",
+                          "enum": [
+                            "admin",
+                            "analista",
+                            "leitor"
+                          ]
+                        },
+                        "moeda": {
+                          "type": "string"
+                        },
+                        "fuso": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "slug",
+                        "nome",
+                        "papel",
+                        "moeda",
+                        "fuso"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "apresentacao": {
+                      "nullable": true,
+                      "type": "object",
+                      "properties": {
+                        "nomeExibicao": {
+                          "type": "string"
+                        },
+                        "logoUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "nomeExibicao",
+                        "logoUrl"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "empresa",
+                    "apresentacao"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

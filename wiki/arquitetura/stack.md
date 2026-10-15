@@ -34,3 +34,6 @@ wiki/               esta wiki
 
 ## Ferramentas no ambiente (2026-10-15)
 Node v24.19.0, git 2.55 e pnpm 12.11.2 (instalado por `npm i -g --allow-scripts=pnpm pnpm`; o corepack falhou por permissão em Program Files). Versões resolvidas: Next 15.5.28, React 19, Tailwind 4, Fastify 5, TypeScript 5.9, ESLint 9.39, Vitest 3.2. Rodar pnpm pelo PowerShell (o shim do Git Bash quebra o caminho). Scripts de build de dependências precisam de `allowBuilds` em `pnpm-workspace.yaml`.
+
+## Postgres local (2026-10-15)
+`docker compose up -d db` sobe Postgres 16 em **127.0.0.1:5460** (a 5432 e vizinhas já estão ocupadas por outros projetos nesta máquina). `DATABASE_URL` padrão em `.env.example`. A aplicação conecta como papel sem `BYPASSRLS`; migrações usam a URL de admin. Ver [[arquitetura/modelo-de-dados]].

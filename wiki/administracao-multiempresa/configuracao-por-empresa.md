@@ -37,3 +37,9 @@ Ver [[operacao/runbooks]]. Resumo: criar tenant → apresentação (nome, logo) 
 ## Armadilhas
 - Logo trocado deve manter o layout da sidebar: altura fixa de 36 px, largura proporcional até 148 px; logos quadrados ficam 36×36 com o nome ao lado, logos horizontais (como o da PASIO) dispensam o nome em texto.
 - Alterar o nome exibido não altera o `slug` da URL do webhook.
+
+## Valores da PASIO gravados pelo seed (P2.4, 2026-10-15)
+Nome exibido, subtítulo, 5 KPIs na ordem da imagem, 10 colunas e canais com cor em `presentation.channels`: Meta #0070F8, Email #04ADDF, SMS #24CCB6, Afiliados #00C98B, Outros #748BA5 (escolha a partir dos acentos da paleta; o design não define cor por canal, D11). Logo em `/brand/pasio-logo.png`. Usuário inicial `admin@pasio.local` (admin); a senha/login vem do Auth.js na Fase 4/5.
+
+## Papéis na API (P2.2, 2026-10-15)
+Implementado em `apps/api/src/auth/plugin.ts` e `src/rotas/auth.ts` (ver `apps/api/README.md`, seção "Autenticação e empresa ativa"). Hierarquia admin > analista > leitor, aplicada por `app.exigirPapel`. Toda consulta por empresa roda em `request.comTenant(fn)`, sob RLS. Rotas: `GET /me` (usuário, empresas com papel, empresa ativa), `POST /me/empresa` (troca de empresa ativa, devolve token novo), `GET /empresas/atual`. Erros: 401 `nao_autenticado`/`token_invalido`, 403 `acesso_negado`, 400 `empresa_nao_informada`. Decisão D12. Testes de isolamento em `src/auth/plugin.test.ts` (embrião do gate G2).

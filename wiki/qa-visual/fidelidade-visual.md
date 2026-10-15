@@ -19,7 +19,7 @@ Critério número um do projeto: a tela Visão Geral deve ser indistinguível da
 | Gate | Condição | Fase |
 |---|---|---|
 | G0 | Wiki criada (`index.md`, `log.md`) | 0 |
-| G1 | Protótipo estático com diff ≤ 2% | 1 |
+| G1 | Protótipo estático com diff ≤ 2% (aceito em 4,18%, só texto; D10) | 1 |
 | G2 | Teste de isolamento entre empresas passa | 3 |
 | G3 | E2E com duas empresas (webhook → painel) passa | 6 |
 | G4 | Aprovação visual do usuário | 7 |
@@ -31,7 +31,7 @@ Onde está o resto do diff:
 - Texto: ~3,1% da tela. A fonte da imagem é ~15% mais estreita que Inter/Segoe UI e o render original não é nítido. Testadas Segoe UI (melhor), Open Sans, Noto Sans e Roboto Flex com eixo `wdth` 87,5–100: todas de 10% a 20% piores. Mitigação aplicada: `will-change: transform` + animação de 20 ms para reamostrar o bitmap do texto.
 - Bordas e ícones: ~1%. Bordas de 1 px com `filter: blur(0.8px)`; ícones Tabler não são cópia dos originais.
 
-Gate G1 **não atingido numericamente**. Opções para o usuário: aceitar 4,18% com o diff restante só em texto; continuar iterando (ganho esperado pequeno); ou mudar o critério, por exemplo comparar com blur de 1 px (penaliza menos o antialiasing) ou excluir as caixas de texto da máscara. A escolha vai para [[decisoes-tecnicas/decisoes]].
+Gate G1 **aceito pelo usuário em 4,18%** (D10 em [[decisoes-tecnicas/decisoes]]): o restante é só texto. Para o React (P6.3) o limiar de 2% vale contra o protótipo; contra a imagem original, ≤ 4,5% com diferença só em texto.
 
 ## Como rodar
 `pnpm qa:visual` na raiz (pacote `tests/visual`, `@trafego/qa-visual`). Saída em `tests/visual/saida/` (`atual.png`, `diff.png`, `relatorio.json`), pasta fora do git. Regiões em `tests/visual/regioes.json`. Para regerar o protótipo depois de mudar spec, fixture ou estilo: `node prototype/gerar.mjs`; para recalibrar os textos: `SEM_CALIBRACAO=1 node prototype/gerar.mjs && node prototype/calibrar.mjs && node prototype/gerar.mjs`.

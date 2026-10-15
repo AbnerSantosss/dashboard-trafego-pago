@@ -37,3 +37,14 @@ Armadilha: o funil (600 FTDs) e a tabela (995 FTDs) não batem entre si na image
 - Inconsistências internas da imagem, reproduzidas como estão (documentadas em `packages/fixtures/src/referencia.test.ts`): Total de Cliques 70.386 (soma das linhas = 60.016); Total de FTDs Valor R$ 137.780 (soma = 137.200); CPA total R$ 33,97 (33.840 / 995 = 34,01); ROAS Email 4,20x (45.800 / 10.890 = 4,2057).
 - Erro tipográfico da imagem: "1,900" (Meta, Cadastros) e "1,420" (Outros, Cliques) aparecem com vírgula. O dado é 1.900 e 1.420; as fixtures formatam no padrão pt-BR com ponto.
 - Textos da tela transcritos nas fixtures: filtro "Período." (com ponto), intervalo "01/05/2024 - 24/05/2024" (hífen), menu Visão Geral / Gestão de Custos / Relatórios / Ajuda, base do funil "100%" sem casa decimal com legenda "(base de referência)", demais etapas com "de conversão".
+
+## O que o seed reproduz e o que a imagem não permite (P2.4, 2026-10-15)
+O seed `pnpm --filter @trafego/api db:seed` grava, por canal, exatamente os números da imagem. Três pontos não fecham porque a própria imagem é inconsistente (já registrado em `packages/fixtures/src/referencia.test.ts`):
+
+| Total | Imagem | Banco (soma das linhas) |
+|---|---|---|
+| Cliques | 70.386 | 60.016 |
+| FTDs valor | R$ 137.780 | R$ 137.200 |
+| CPA | 33,97 | 34,01 |
+
+ROAS do total dá 6,68, igual à imagem. Nas variações dos KPIs, as cinco da imagem não podem ser verdade ao mesmo tempo (CPA e ROAS derivam das outras três); o período anterior foi fixado para acertar investimento (+12,5%), FTDs (+18,6%) e depósitos (+22,1%); com isso CPA dá -5,1% (imagem -5,4%) e ROAS +8,5% (imagem +16,8%). O funil fica no canal reservado `__funil__` (D11). Como a tela trata isso é decisão da Fase 4.
