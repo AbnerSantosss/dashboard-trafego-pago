@@ -23,6 +23,10 @@ Validadas em `src/env.ts` na subida; se algo faltar, o processo sai listando as 
 | `AUTH_SECRET` | sim | — | mínimo 32 caracteres em produção |
 | `WEB_URL` | não | `http://localhost:3000` | URL do front |
 | `LOG_LEVEL` | não | `info` | `fatal`…`trace` ou `silent` |
+| `DATABASE_ADMIN_URL` | não | — | Liga a fila pg-boss e o worker de webhooks (app_user não cria o schema `pgboss`) |
+| `WEBHOOK_SEGREDOS` | não | — | JSON `{ "<empresa>/<fonte>": "<segredo>" }`; só vale se bater com `secret_hash`. Nunca commitar |
+| `WEBHOOK_JANELA_SEGUNDOS` | não | `300` | Janela do `X-Timestamp` |
+| `WEBHOOK_LIMITE_POR_MINUTO` | não | `600` | Limite de taxa por fonte |
 
 Em `NODE_ENV=test` todas recebem defaults seguros.
 
@@ -56,6 +60,16 @@ Rotas:
 - `GET /empresas/atual` — empresa ativa, papel, moeda, fuso e apresentação (lidos sob RLS).
 
 CORS: só `WEB_URL`, com credenciais. Rate limit global: 300 req/min por IP (429 `limite_excedido`).
+
+## Webhooks
+
+- `POST /webhooks/:empresa/:fonte` — recebimento assinado (HMAC), idempotente, enfileira em `webhook.processar` (202; duplicado 200).
+- `POST /webhooks/:empresa/:fonte/reprocessar` — admin; enfileira `webhook.reprocessar` (`{ de?, ate? }`).
+- `GET /webhooks/:empresa/:fonte/entregas?limite=100` — analista; últimas entregas sob RLS.
+- Worker (`src/webhooks/worker.ts`) sobe junto com o servidor quando `DATABASE_ADMIN_URL` existe.
+- Simulador: `pnpm --filter @trafego/webhook-sim enviar --empresa pasio --fonte demo --segredo <s>`.
+
+Contrato completo em [docs/webhooks.md](docs/webhooks.md).
 
 ## Convenções
 

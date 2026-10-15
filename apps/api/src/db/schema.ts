@@ -193,6 +193,8 @@ export const events = pgTable(
     utmMedium: text('utm_medium'),
     utmCampaign: text('utm_campaign'),
     referrer: text('referrer'),
+    /** Clique marcado como base contatada (conta em base_contatada, não em cliques). */
+    base: boolean('base').notNull().default(false),
     createdAt: criadoEm(),
   },
   (t) => [

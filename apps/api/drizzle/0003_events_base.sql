@@ -1,0 +1,1 @@
+ALTER TABLE "events" ADD COLUMN "base" boolean DEFAULT false NOT NULL;

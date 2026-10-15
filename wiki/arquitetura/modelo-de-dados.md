@@ -30,6 +30,10 @@ Esquema em `apps/api/src/db/schema.ts` (Drizzle), migrações em `apps/api/drizz
 - Helpers em `src/db/client.ts`: `comTenant(db, tenantId, userId?, fn)` abre transação e faz `set_config(..., true)` (vale só na transação); `comUsuario(db, userId, fn)`. Testes: `rls.test.ts` (isolamento entre empresas) e `schema.test.ts`; pulam com aviso se o Postgres local (porta 5460) não responder.
 - Pendente: `app_user` ainda lê e escreve `tenants`/`users` sem restrição; avaliar restringir em P5.3.
 
+### Ingestão (P3, migração 0003)
+- `events.base boolean not null default false`: clique marcado como base contatada (D14). `webhook_events.status` fica em `recebido | processado | erro`; erro de regra grava o motivo em `erro` e soma `tentativas`. Fila pg-boss no schema `pgboss`, criado com `DATABASE_ADMIN_URL` (D13).
+- Pendente para P5.2: `sources.secret_enc` (segredo cifrado, AES-256-GCM) para substituir `WEBHOOK_SEGREDOS`. Pendente: opção por empresa "depósitos incluem FTD".
+
 ### Funil e seed demo (P2.4, migração 0002)
 - `metrics_daily.base_contatada` (inteiro, não nulo, padrão 0): primeira etapa do funil. Em produção vem de envios de email/SMS ou cliques marcados como base; na demo os canais reais ficam com 0.
 - **Canal reservado `__funil__`**: os números do funil da imagem (320.840 / 40.000 / 30.000 / 6.000 / 600) não fecham com a tabela por canal (600 FTDs contra 995), então ficam em um canal próprio. Regra para toda consulta: **canais que começam com `__` ficam fora da tabela, dos KPIs e da lista de canais** e só alimentam o funil (D11).

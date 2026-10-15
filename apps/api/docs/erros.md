@@ -24,7 +24,7 @@ Toda resposta de erro, de qualquer rota, tem o mesmo formato:
 |---|---|---|
 | 400 | `requisicao_invalida` | Erro 400 genérico |
 | 400 | `validacao_invalida` | Falha no schema zod da rota (body, query, params, headers) |
-| 400 | `json_invalido` | Corpo não é JSON válido |
+| 400 | `json_invalido` | Corpo não é JSON válido (no webhook, checado depois da assinatura) |
 | 400 | `cabecalho_ausente` | Cabeçalho obrigatório faltando (ex.: `X-Signature` no webhook) |
 | 400 | `empresa_nao_informada` | Rota exige empresa ativa e não veio claim `tenant` nem cabeçalho `x-tenant` |
 | 401 | `nao_autenticado` | Sem cabeçalho `Authorization: Bearer` |
@@ -37,7 +37,7 @@ Toda resposta de erro, de qualquer rota, tem o mesmo formato:
 | 409 | `conflito` | Violação de unicidade ou estado incompatível |
 | 413 | `corpo_grande` | Corpo acima de 1 MB (`bodyLimit`) |
 | 415 | `tipo_conteudo_invalido` | `Content-Type` não suportado |
-| 429 | `limite_excedido` | Limite de taxa (`@fastify/rate-limit`, 300 req/min por IP) |
+| 429 | `limite_excedido` | Limite de taxa (`@fastify/rate-limit`): 300 req/min por IP; no webhook, 600 req/min por fonte (`WEBHOOK_LIMITE_POR_MINUTO`) |
 | 500 | `erro_interno` | Qualquer erro não previsto. Mensagem genérica; stack só no log |
 | 503 | `servico_indisponivel` | Dependência fora (banco no `GET /ready`, fila) |
 

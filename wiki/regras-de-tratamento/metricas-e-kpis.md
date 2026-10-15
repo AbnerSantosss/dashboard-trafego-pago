@@ -20,7 +20,7 @@ Agregadas em `metrics_daily` por empresa, dia, canal, campanha e página. O pain
 Variação = (atual − comparação) / comparação, com seta ↑ verde ou ↓ vermelha e texto "vs. período anterior". Comparação padrão: período imediatamente anterior de mesma duração.
 
 ## Funil
-Base contatada → Cliques → Visitas ao site → Cadastro → FTD. Taxa de cada etapa = etapa / etapa anterior (a primeira mostra 100%). Base contatada vem de eventos `clique` com `base=true` ou de uma fonte de envio (email/SMS), configurável por empresa.
+Base contatada → Cliques → Visitas ao site → Cadastro → FTD. Taxa de cada etapa = etapa / etapa anterior (a primeira mostra 100%). Base contatada vem de eventos `clique` com `base=true` (coluna `events.base`; esses cliques contam em `base_contatada` e **não** em `cliques`, D14) ou de uma fonte de envio (email/SMS), configurável por empresa. Na demo os valores do funil vivem no canal reservado `__funil__` (D11).
 
 ## Tabela por canal
 Investimento, Cliques, Visitas, Cadastros, FTDs (Qtd. e Valor), Depósitos, CPA, ROAS, mais linha Total. Canal sem gasto exibe `–` em CPA e ROAS.

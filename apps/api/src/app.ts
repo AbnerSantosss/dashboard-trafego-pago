@@ -19,6 +19,10 @@ import { rotasHealth } from './rotas/health.js';
 import { rotasAuth } from './rotas/auth.js';
 import { authPlugin } from './auth/plugin.js';
 import type { Db } from './db/client.js';
+import { rotasWebhookAdmin, rotasWebhookRecebimento } from './rotas/webhooks.js';
+import { lerConfigWebhooks } from './webhooks/config.js';
+import { criarFilaMemoria, type Fila } from './webhooks/fila.js';
+import { lerMapaSegredos, obterSegredoDeMapa, type ObterSegredo } from './webhooks/segredos.js';
 
 const require = createRequire(import.meta.url);
 const { version: VERSAO } = require('../package.json') as { version: string };
@@ -46,6 +50,14 @@ export interface OpcoesApp {
   db?: Db;
   /** Requisições por minuto por IP (default 300). */
   limiteTaxa?: number;
+  /** Ingestão de webhooks. Sem `fila`, usa uma fila em memória (testes; avisa fora de test). */
+  webhooks?: {
+    fila?: Fila;
+    obterSegredo?: ObterSegredo;
+    janelaSegundos?: number;
+    limitePorMinuto?: number;
+    agora?: () => number;
+  };
 }
 
 function opcoesLogger(
@@ -137,6 +149,22 @@ export async function buildApp(opcoes: OpcoesApp = {}) {
 
   await app.register(rotasHealth, { versao: VERSAO });
   await app.register(rotasAuth);
+
+  const configWebhooks = lerConfigWebhooks(process.env);
+  const opcoesWh = opcoes.webhooks ?? {};
+  if (!opcoesWh.fila && env.NODE_ENV !== 'test') {
+    app.log.warn('webhooks sem fila pg-boss: jobs ficam só em memória (não processados)');
+  }
+  const fila = opcoesWh.fila ?? criarFilaMemoria();
+  await app.register(rotasWebhookRecebimento, {
+    fila,
+    obterSegredo:
+      opcoesWh.obterSegredo ?? obterSegredoDeMapa(lerMapaSegredos(configWebhooks.segredosJson)),
+    janelaSegundos: opcoesWh.janelaSegundos ?? configWebhooks.janelaSegundos,
+    limitePorMinuto: opcoesWh.limitePorMinuto ?? configWebhooks.limitePorMinuto,
+    ...(opcoesWh.agora ? { agora: opcoesWh.agora } : {}),
+  });
+  await app.register(rotasWebhookAdmin, { fila });
 
   return app;
 }

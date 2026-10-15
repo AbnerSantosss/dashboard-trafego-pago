@@ -27,6 +27,9 @@ JSON com um bloco por tipo de evento canônico (`gasto`, `clique`, `visita`, `ca
 ```
 Operadores suportados: `path` (JSONPath), `const`, `format` (iso, epoch_s, epoch_ms, dd/mm/yyyy), `divide`, `multiply`, `lower`, `trim`, `default`, `regex`.
 
+### Formato completo (implementado em P3.3, `packages/rules`)
+`rules.mapping` guarda o conjunto `{ "version", "moeda_padrao", "fuso", "regras": [bloco...], "canais": [...] }` (também aceita só a lista de blocos; aí versão, fuso e moeda vêm da linha e da empresa, e `channel_rules` não vazio vira `canais`). `match` pode ser um objeto (`path` + `equals` | `in` | `exists` | `regex`) ou um array (todas as condições, E). Ordem dos operadores de campo: path/const → default → regex (grupo 1) → trim → lower → multiply → divide → format. Números aceitam `1.234,56` e `12,5`. `fields.channel` fixa o canal e ignora o classificador; campos fora do conjunto canônico (ex.: `affiliate_id`) vão para `evento.extras` e servem ao `campo_presente`. `fields.base` marca clique como base contatada. API: `aplicarRegras`, `validarConjunto` (mensagens em pt-BR; recusa canal começando com `__`), `classificarCanal`, `agregarEventos`, `derivar`, `taxasDoFunil`; erro é `ErroDeRegra`. Exemplo completo em `packages/rules/src/motor.test.ts`.
+
 ## Classificador de canal
 Lista ordenada de regras da empresa; a primeira que casa vence; sem casamento → `Outros`.
 | Ordem | Condição | Canal |
@@ -37,7 +40,7 @@ Lista ordenada de regras da empresa; a primeira que casa vence; sem casamento �
 | 4 | `utm_medium = sms` | SMS |
 | 5 | fallback | Outros |
 
-Canais são configuráveis por empresa (nome, cor, ordem na tabela). Ver [[administracao-multiempresa/configuracao-por-empresa]].
+Implementação: `canais: [{ canal, se: { utm_medium_in?, utm_source_in?, referrer_contem?, campo_presente? } }]`; dentro de uma regra as condições valem como OU; entre regras, a primeira que casa vence (`CANAIS_PADRAO` reproduz a tabela acima). Canais são configuráveis por empresa (nome, cor, ordem na tabela). Ver [[administracao-multiempresa/configuracao-por-empresa]].
 
 ## Versionamento e simulação
 - Toda alteração cria uma nova versão; só uma ativa por fonte. Histórico com autor e data.

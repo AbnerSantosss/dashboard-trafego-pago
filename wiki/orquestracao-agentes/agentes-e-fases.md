@@ -16,8 +16,8 @@ Orquestrador (esta sessão) despacha subagentes Opus 5.5 em modo Auto, um por es
 | Protótipo Visual | `prototype/` | P1.5 protótipo estático, P1.6 diff ≤ 2% |
 | Fixtures | `packages/fixtures/` | P1.3 dados exatos da imagem |
 | Banco de Dados | `apps/api/src/db/`, `apps/api/drizzle/` (migrações), `drizzle.config.ts`, `docker-compose.yml`, scripts de `apps/api/package.json` | P2.1 schema + RLS + migrações, P2.4 seed demo |
-| Ingestão (backend) | `apps/api/src/` exceto `src/db/`, `webhook-sim/` | P2.2 auth e papéis, P2.3 API base, P3.1 endpoint, P3.2 simulador, P3.3 fila, P3.4 isolamento (G2) |
-| Regras | `packages/rules/`, `apps/api/src/rules/` | P3.5 motor, P3.6 classificador, P3.7 reprocessamento |
+| Ingestão (backend) | `apps/api/src/` exceto `src/db/` e `src/rules/`, `packages/webhook-sim/` | P2.2 auth e papéis, P2.3 API base, P3.1 endpoint, P3.2 fila, P3.6 simulador e reprocessamento, teste G2 |
+| Regras | `packages/rules/`, `apps/api/src/rules/` | P3.3 motor, P3.4 classificador, P3.5 agregação e processador (`processarWebhookEvent`, `reprocessarFonte`) |
 | Frontend | `apps/web/` (dashboard) | P4.1 a P4.6 componentes React, GSAP, API de métricas |
 | Administração | `apps/web/app/(admin)/`, `apps/api/src/admin/` | P5.1 webhooks, P5.2 regras, P5.3 usuários, P5.4 apresentação (logo/nome) |
 | QA | `tests/`, `.github/workflows/` | P6.1 unit, P6.2 e2e duas empresas (G3), P6.3 regressão visual, P7.x docs e aprovação (G4) |
