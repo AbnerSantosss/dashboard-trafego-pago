@@ -240,3 +240,7 @@ tags: [log, historico]
   - preparo de produção `apps/api/src/db/producao.ts`: migrações, `app_user` com senha, empresa PASIO sem dados de exemplo e admin com link de senha no log;
   - rate-limit pelo `cf-connecting-ip` (a Tag do GTM e o login não ficam com um limite único para o site inteiro), `/health` sem log por requisição e aviso de tabela vazia abaixo do Total.
 - Entregue: stack de produção validada localmente, primeiro com segredos de teste e depois só com `WEB_URL` e `ADMIN_EMAIL` (login, senha pelo link, painel, cookie seguro, `sessao-dev` 404, segredos mantidos ao recriar). API com 193 testes e web com 72.
+  - commits `ce3703a` (código) e `e71438c` (wiki) na `main`, CI verde (run 38913876520);
+  - stack `trafego-pasio` criada no Portainer pelo Git, com 3 variáveis (`WEB_URL`, `WEBHOOK_URL_PUBLICA`, `ADMIN_EMAIL`). Primeiro build em cerca de 4,5 minutos: `segredos` saiu com 0, db e api saudáveis, web no ar;
+  - rotas no túnel `servidor-abner`, com DNS criado pela Cloudflare: `pasio.proxserverabner.site` → `http://localhost:3480` e `pasio-api.proxserverabner.site` → `http://localhost:3481`;
+  - conferido pelos endereços públicos: `/health` ok, `/login` 200, raiz redireciona para `/login` e `/auth/sessao-dev` 404. O preparo criou a PASIO e o admin, e a página de nova senha abriu pelo link do log para o usuário digitar a própria senha.

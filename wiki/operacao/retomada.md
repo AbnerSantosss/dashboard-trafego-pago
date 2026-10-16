@@ -9,14 +9,14 @@ tags: [retomada, estado-atual, proximos-passos, ci, operacao]
 Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou, o que está pendente e em que ordem. Atualize ao fim de cada sessão de trabalho relevante.
 
 ## Onde paramos (2026-10-16, fim do dia)
-- **Deploy (P7.2) aprovado pelo usuário ("faça vc") e em andamento** (D39 em [[decisoes-tecnicas/decisoes]], passo a passo em [[operacao/runbooks]], seção Produção):
+- **Deploy (P7.2) no ar** em `https://pasio.proxserverabner.site` (API em `https://pasio-api.proxserverabner.site`). Stack `trafego-pasio` no Portainer, rotas no túnel `servidor-abner`. Falta: o usuário definir a senha do admin pelo link do log (se passar de 1 hora, reiniciar o contêiner `trafego-pasio-api-1` gera outro), entrar e configurar a Tag do GTM, os webhooks e o Meta Ads com os endereços públicos. Atualizar: Portainer → stack → Pull and redeploy. Backup: volumes `trafego-pasio_pgdata` e `trafego-pasio_segredos`, juntos.
+- **Histórico do deploy** (D39 em [[decisoes-tecnicas/decisoes]], passo a passo em [[operacao/runbooks]], seção Produção):
   - arquivos novos: `Dockerfile`, `.dockerignore`, `docker-compose.prod.yml`, `deploy/producao.env.example`, `apps/api/src/db/producao.ts`, `segredos-do-servidor.ts` e os testes de ambos;
   - os segredos são gerados no próprio servidor (serviço `segredos`): ninguém cola senha no Portainer. O backup leva os volumes `pgdata` **e** `segredos`;
   - mudanças: `/health` sem log por requisição, rate-limit pelo `cf-connecting-ip` (API) com repasse no web (`lib/api.ts`), aviso de tabela vazia abaixo do Total;
   - stack completa validada localmente (projeto `trafego-prod-teste`, já derrubado com o volume);
-  - ordem: commit e push; criar a stack no Portainer pelo Git; duas rotas no túnel `servidor-abner` (`localhost:3480` e `localhost:3481`); abrir o link de senha do log da API para o usuário digitar a senha;
-  - hostnames sugeridos: `pasio.proxserverabner.site` e `pasio-api.proxserverabner.site` (`painel` já está em uso). O e-mail do admin vai só na variável `ADMIN_EMAIL` da stack;
-  - conferir no servidor se o Portainer CE faz o build no "Pull and redeploy".
+  - feito: `ce3703a` e `e71438c` com CI verde (run 38913876520); stack criada pelo Git (primeiro build em cerca de 4,5 minutos); rotas `pasio` e `pasio-api` (`painel` já estava em uso). O e-mail do admin está só na variável `ADMIN_EMAIL` da stack;
+  - o próprio Portainer pede `pull_policy: build` para reconstruir no "Pull and redeploy", e o compose já o tem.
 - **D38 no GitHub**: `cf22150` (código) e `dc325ae` (wiki), CI verde nos dois jobs (run 38905350545). painel e Configurações sem o pequeno scroll (moldura de 735 px fora da janela do diff; conteúdo de Configurações e Leads sem a ampliação do zoom), sidebar com Configurações abaixo de Relatórios, conta no fim e sem Ajuda (página `/ajuda` apagada), formulários menores numa folha translúcida e Perfil em duas colunas. Web: 71 testes; diff 5,193%.
 - **D34 a D37 commitados e no GitHub**: `64c95a4` (código) e `752c4dc` (wiki), CI verde nos dois jobs (run 38895390480). Fora do commit, de propósito: `apps/web/tsconfig.tsbuildinfo` e `.impeccable/` (locais). As notas "sem commit" abaixo ficam como histórico.
 - **D37, sem commit**: fundo de ondas em SVG em Relatórios e Ajuda (GSAP sob demanda, para em cerca de 86 s), medido a 61 quadros por segundo. Arquivos novos: `apps/web/componentes/FundoOndas.tsx`, `apps/web/componentes/fundo-ondas.ts` e `apps/web/testes/fundo-ondas.test.ts`. Web: 71 testes; diff 5,198%. Configurações → Gastos (destino de Gestão de Custos) mantém as engrenagens, por decisão do usuário.
