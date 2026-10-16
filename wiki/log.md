@@ -105,3 +105,9 @@ tags: [log, historico]
 - Feito: em sessão separada, o job visual passou a subir o web e rodar `pnpm qa:visual` no mesmo passo (commit `817bc01`). Enviado para `origin/main`; o run do CI estava em andamento e o resultado fica para o usuário conferir por fora.
 - Conversa sobre escopo: o usuário questionou por que um painel de webhooks virou um projeto grande. Explicado: plano inicial pesado (multiempresa, RLS, fila, regras, diff de pixels, CI) e pedidos novos (usuários, convites, login, tag GTM). Sugestão registrada em [[operacao/retomada]]: priorizar o deploy e parar de acrescentar funcionalidades.
 - Entregue: retomada e log atualizados, commit da wiki local sem push.
+
+## [2026-10-16] fix | Job visual do CI verde
+- Pedido: consertar o job "visual (diff contra ref-1.png)", que falhava com `ERR_CONNECTION_REFUSED` em `localhost:3000`.
+- Feito: em `.github/workflows/ci.yml`, servidor web e comparador passaram a rodar no mesmo passo (commit `817bc01`), mantendo `WEB_MOCK_API=1` e o limite de 5,5% (D19). Push confirmado pelo usuário.
+- Verificação: run 38856270127 com os dois jobs verdes; diff visual de 5,19% no runner Windows (local 5,16%).
+- Entregue: CI verde e [[operacao/retomada]] atualizada.

@@ -16,22 +16,21 @@ Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou,
 - Local: lint, formato, tipos e 248 testes passando (1 pulado).
 - Fora do git, de propósito: `apps/api/.env.local` (credenciais SMTP de teste) e `registro/`. O `apps/web/tsconfig.tsbuildinfo` aparece como modificado e não deve ser commitado (é gerado).
 
-## CI: estado e conserto em verificação
-O workflow `.github/workflows/ci.yml` tem dois jobs. No run do commit `5216d62`:
-- **check** (ubuntu: lint, formato, tipos, testes com banco, build): **passou**.
-- **visual** (windows: diff contra `ref-1.png`, limite 5,5%): **falhou** com `net::ERR_CONNECTION_REFUSED at http://localhost:3000/`. O diff nem chegou a ser medido. Não é defeito do painel: o servidor web iniciado num passo não chegava vivo ao passo seguinte no runner Windows.
-- **Conserto enviado**: commit `817bc01` ("CI: sobe o web e roda o diff visual no mesmo passo"), já em `origin/main`. Sobe o web, espera o 200 e roda `pnpm qa:visual` (limite 5,5%, `WEB_MOCK_API=1`) no mesmo passo. O run 38856270127 estava em andamento em 2026-10-16 05:32 UTC; o resultado não foi conferido aqui.
-- O usuário acompanha por fora, no Claude Code: `gh run list` e, se falhar, `gh run view <id> --log-failed`.
+## CI: estado
+O workflow `.github/workflows/ci.yml` tem dois jobs, e os dois estão **verdes** desde o commit `817bc01` (run 38856270127, 2026-10-16):
+- **check** (ubuntu: lint, formato, tipos, testes com banco, build): passou.
+- **visual** (windows: diff contra `ref-1.png`, limite 5,5%, `WEB_MOCK_API=1`): passou com **5,19%** (local mede 5,16%). Regiões que mais divergem: kpis 7,4%, cabeçalho 7,0%, funil 5,8%.
+- O que foi consertado: nos runs de `5216d62` e `a59517f` o visual falhava com `ERR_CONNECTION_REFUSED` em `localhost:3000`, porque o `next start` iniciado com `Start-Process` morria ao fim do passo. Agora um único passo ("Sobe o web com a fixture e compara com a referência") sobe o servidor, espera o 200, roda `pnpm qa:visual`, imprime `web.log` se o diff falhar e encerra o servidor.
+- Para conferir: `gh run list` e, se falhar, `gh run view <id> --log-failed`. O artefato `diff-visual` do run traz `atual.png` e `diff.png`.
 
 ## Próximos passos, em ordem
-1. **Confirmar** os dois jobs verdes no GitHub (acima). Se o visual reprovar por diff acima de 5,5%, aí sim é diferença de tela: baixar o artefato `diff-visual` do run.
-2. **Segurança de conta**: trocar a senha de app do Gmail usada no teste de e-mail; em produção, as credenciais SMTP vão só nas variáveis do Portainer.
-3. **Testar o login real**: em Configurações → Usuários, convidar um e-mail de verdade, aceitar o convite pelo link e entrar. O admin do seed (`admin@pasio.local`) não recebe e-mail; em dev, sem cookie, o painel continua como admin demo (`sessao-dev`).
-4. **Fase 7 — Entrega** (ver `PLANO-DE-ACAO.md`):
+1. **Segurança de conta**: trocar a senha de app do Gmail usada no teste de e-mail; em produção, as credenciais SMTP vão só nas variáveis do Portainer.
+2. **Testar o login real**: em Configurações → Usuários, convidar um e-mail de verdade, aceitar o convite pelo link e entrar. O admin do seed (`admin@pasio.local`) não recebe e-mail; em dev, sem cookie, o painel continua como admin demo (`sessao-dev`).
+3. **Fase 7 — Entrega** (ver `PLANO-DE-ACAO.md`):
    - P7.1 wiki essencial (como rodar, cadastrar empresa e webhook, runbook de deploy).
    - P7.2 deploy: `docker-compose.prod.yml` no Portainer com web, api, postgres e cloudflared; túnel Cloudflare; segredos só nas variáveis do Portainer. Definir `WEBHOOK_URL_PUBLICA` (sem ela a tag GTM só funciona na máquina local) e `WEBHOOK_CHAVE_CIFRA`. **Deploy só com confirmação explícita do usuário.**
    - P7.3 entrega final e **Gate G4**: o usuário aprova a fidelidade na tela real.
-5. Pendência visual menor herdada da Fase 5: a tabela de fontes de webhook corta a coluna de ações em larguras estreitas.
+4. Pendência visual menor herdada da Fase 5: a tabela de fontes de webhook corta a coluna de ações em larguras estreitas.
 
 ## Como subir local
 Detalhes em [[operacao/runbooks]] (seção Ambiente local). Resumo do que foi usado nesta fase:
