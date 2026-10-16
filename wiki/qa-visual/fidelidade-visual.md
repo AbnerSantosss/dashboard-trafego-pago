@@ -1,6 +1,6 @@
 ---
 tipo: processo
-atualizado: 2026-10-15
+atualizado: 2026-10-16
 tags: [qa, visual, pixelmatch, playwright, gates]
 ---
 
@@ -49,3 +49,20 @@ Textos dinâmicos (valores, datas), logo e nome da empresa, cores de acento conf
 - Contra a imagem: 5,39% (API real, seed PASIO). Contra o protótipo: 1,45%. Aceito em D17 ([[decisoes-tecnicas/decisoes]]).
 - Como medir a tela real: subir a API (`API_PORT=3011` se a 3001 estiver ocupada) e o web com `API_URL` apontando para ela, depois `pnpm qa:visual -- --alvo http://localhost:3000`. Com `WEB_MOCK_API=1` o web usa a fixture sem API.
 - O harness compara só contra `ref-1.png`; para medir contra o protótipo, capture-o com `--somente-captura` e compare as duas capturas com pixelmatch.
+
+## Medições da rodada de UX (2026-10-16)
+| Onde | Como | Resultado |
+|---|---|---|
+| CI (runner Windows, run 38856270127) | build de produção + `WEB_MOCK_API=1` | 5,19% |
+| Local, antes da rodada de UX | build de produção + `WEB_MOCK_API=1` | 5,19% |
+| Local, depois da rodada de UX | build de produção + `WEB_MOCK_API=1` | **5,19%**, inalterado |
+| Local, `next dev` com a API real | dev | 5,419% |
+
+- Por região, depois da rodada: KPIs 7,39%, cabeçalho 6,99%, funil 5,83%, tabela 4,35%, sidebar 3,75%, filtros 3,11%.
+- Com movimento reduzido, as capturas antes e depois de todas as adições (link de pular, alvos ⓘ, tabela semântica, `aria-hidden`) deram 0 px de diferença. A captura sem JS também bateu com a captura com JS.
+
+## Armadilhas novas (2026-10-16)
+- **Medir só como o CI mede.** O `next dev` com a API real dá números diferentes do build de produção com a fixture (5,419% contra 5,19%). Para decidir se algo quebrou a fidelidade, use o build de produção com `WEB_MOCK_API=1`.
+- **`next build` e `next dev` dividem `apps/web/.next`.** Pare o dev antes do build e suba de novo depois. Subagentes não rodam build nem `qa:visual`; quem roda é o orquestrador.
+- **Re-rasterização do Chromium.** Qualquer regra nova que toque `.kpi-val`, até um `outline-color` sem efeito visual, muda os mesmos 684 px no funil. Não é efeito do código novo; para provar, compare com e sem a regra em capturas seguidas.
+- **Movimento e o diff.** O harness captura com `prefers-reduced-motion: reduce`. Todo movimento fica dentro de `@media (prefers-reduced-motion: no-preference)`, com `fill-mode: backwards`, e termina no estado do SSR (D29). Nada pode começar em `opacity: 0` fora dessa media query.

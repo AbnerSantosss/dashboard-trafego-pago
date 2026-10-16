@@ -111,3 +111,103 @@ tags: [log, historico]
 - Feito: em `.github/workflows/ci.yml`, servidor web e comparador passaram a rodar no mesmo passo (commit `817bc01`), mantendo `WEB_MOCK_API=1` e o limite de 5,5% (D19). Push confirmado pelo usuário.
 - Verificação: run 38856270127 com os dois jobs verdes; diff visual de 5,19% no runner Windows (local 5,16%).
 - Entregue: CI verde e [[operacao/retomada]] atualizada.
+
+## [2026-10-16] ux | revisão impeccable, responsividade, aba Instalação e movimento
+- Pedidos: revisão de UX com o impeccable; um especialista de UX para responsividade e tamanhos de texto; aba Instalação com o passo a passo para colocar o painel no ar; um especialista Hyperframes para deixar o visual mais profissional; e, antes de continuar, ver tudo o que falta e montar um agente orquestrador com subagentes para adiantar o trabalho.
+- Feito, por área (um escritor por conjunto de arquivos, D7):
+  - **Configurações**: nova aba **Instalação** com 7 passos e estado calculado em `apps/web/lib/instalacao.ts`. Layout fluido (grid de 181 px mais o conteúdo, barra superior abaixo de 48em, tabelas viram cartões no celular), escala tipográfica própria (`--cfg-fs-*`), confirmação de ações destrutivas com `<dialog>` (`BotaoConfirmar`), tokens de erro e aviso, `revalidatePath('/', 'layout')` ao salvar Apresentação, e um h2 por aba (Fontes de webhook, Nome e logo da empresa, Tag do Google Tag Manager, Convidar pessoas, Dados pessoais), visível também nas telas de erro. Ver [[administracao-multiempresa/configuracao-por-empresa]].
+  - **Dashboard, acessibilidade**: tabela semântica sobreposta com `aria-sort` e botões "Ordenar por <rótulo>"; dicas ⓘ com `role=tooltip` (foco, hover, clique, Esc); menus Exportar e Período com Esc, clique fora, setas e foco devolvido; foco visível ciano; KPIs esmaecidos durante o carregamento; faixa de erro com "Tentar de novo"; link "Pular para o conteúdo"; telas em construção leem a marca da Apresentação. Para o botão de nova tentativa caber, o topo da faixa de erro mudou de 684 para 680 px.
+  - **Dashboard, movimento**: entrada dos cards em CSS (300 ms, stagger de 40 ms), contadores por `requestAnimationFrame` sem GSAP (800 ms), funil como único momento autoral (barras em `scaleX`, até cerca de 900 ms) e sparkline revelada por `clip-path`. Tudo dentro de `prefers-reduced-motion: no-preference`, terminando no estado do SSR. Corrigido de quebra o `clearProps` do GSAP que apagava o blur do trapézio.
+  - **Portão de validação**: prettier nos arquivos alterados (3 só de formatação), `pnpm lint`, `pnpm typecheck` e `pnpm test` verdes.
+  - Decisões registradas: D22 a D30 em [[decisoes-tecnicas/decisoes]].
+- Verificação: 280 testes passando e 1 pulado (web 46, gráficos 19, API 152). Contra o `next dev` com a API real, o diff visual mediu **5,419%**, abaixo do limite de 5,5%. Com movimento reduzido, a captura antes e depois deu 0 px de diferença, e a captura sem JS bateu com a captura com JS. O `tsconfig.tsbuildinfo` foi restaurado byte a byte.
+- Entregue: código no disco, **sem commit**. Pendências em [[operacao/retomada]]: `pnpm qa:visual` em build de produção com `WEB_MOCK_API=1`, conferência no navegador do diálogo de confirmação e de Perfil/Tag, e o commit, que só sai quando o usuário pedir.
+- Complemento (orquestrador): `pnpm qa:visual` em build de produção com `WEB_MOCK_API=1`, como no CI, deu **5,19%** (limite 5,5%), igual ao de antes; conferido no navegador o diálogo de "Gerar segredo" (foco inicial em Cancelar, Esc fecha sem enviar).
+
+## [2026-10-16] update | Wiki completa da rodada de UX (/gera-wiki "registre tudo")
+- Pedido: "registre tudo".
+- Feito:
+  - [[design-system/tokens]]: nova seção com os tokens de estado (`--p-erro-*`, `--p-aviso`) e das Configurações (`--cfg-*`, com valores para celular e desktop).
+  - [[qa-visual/fidelidade-visual]]: medições de 2026-10-16 (CI e produção local em 5,19%, dev com a API real em 5,419%, por região) e armadilhas novas: medir só como o CI, `.next` dividido entre build e dev, re-rasterização de 684 px ao tocar `.kpi-val`, movimento só dentro de `no-preference`.
+  - [[arquitetura/stack]]: o movimento passa a ser CSS + rAF, com GSAP sem uso (D29).
+  - [[orquestracao-agentes/agentes-e-fases]]: formato do workflow de 6 subagentes (implementar → portão → registrar) e regras do brief comum.
+  - [[operacao/retomada]]: estado com o diff em produção; caminho do relatório do impeccable; resíduos da revisão; `/impeccable init` como opção.
+  - [[index]]: descrições atualizadas.
+- Correção: [[operacao/runbooks]] dizia que a rotação de segredo tinha 24 h de carência com os dois segredos valendo. O código invalida o antigo no clique, como diz o diálogo de confirmação. O runbook agora descreve o fluxo real e a carência virou pendência.
+- Entregue: wiki atualizada, sem commit.
+
+## [2026-10-16] update | Gasto em anúncios: lançamento manual e Meta Ads
+- Pedido: receber o gasto das contas de anúncio do Meta Ads no Investimento do painel e ter uma aba de lançamento manual.
+- Feito:
+  - API: tabelas `custos` e `meta_contas` (migração 0006), rotas `/empresas/atual/custos` e `/empresas/atual/meta/contas`, sincronização de hora em hora no `server.ts`, códigos de erro novos em `apps/api/docs/erros.md`, OpenAPI regenerado.
+  - Web: abas Configurações → Gastos e Meta Ads; "Gestão de Custos" leva para Gastos.
+  - Wiki: D31, [[arquitetura/modelo-de-dados]], [[administracao-multiempresa/configuracao-por-empresa]], [[operacao/runbooks]] (token do Meta), [[operacao/retomada]].
+- Entregue: código no disco, testes verdes, sem commit.
+
+## [2026-10-16] fix | Painel ocupa a tela inteira no desktop
+- Pedido: "o app está minimizado ou cortado no desktop, ele não ocupa a tela inteira do usuário".
+- Feito: escala proporcional da tela fixa em `apps/web/app/tela.css` (D32 em [[decisoes-tecnicas/decisoes]]). Vale também para Relatórios e Ajuda, que usam a mesma `.tela`.
+- Entregue: CSS no disco, diff visual inalterado (5,419% contra o dev), sem commit.
+
+## [2026-10-16] update | Configurações ocupam a tela, transição por aba, hover do funil e Instalação com submenu
+- Pedido: "as outras opções também estão curtas, não respeitam a tela do usuário"; animar as transições com Hyperframes; funil em SVG; hover em cada etapa do funil; Tag GTM, Webhooks e Meta Ads dentro de Instalação, como submenus com passo a passo.
+- Feito (D33 em [[decisoes-tecnicas/decisoes]]):
+  - Configurações na moldura e na escala do painel;
+  - `template.tsx` com entrada por aba;
+  - hover e dica no funil (que já era SVG puro);
+  - submenu de Instalação com guias de passo a passo para Tag do GTM, Webhooks e Meta Ads.
+- Medidas da wiki de UX (especialista 1): contêiner de até 1440 px, margem de 48 px e texto de no mínimo 15–16 px.
+- Entregue: código no disco, diff visual 5,419% (inalterado) e testes verdes, sem commit.
+
+## [2026-10-16] update | Funil com neon e clique que abre a lista da etapa e a ficha do usuário
+- Pedido: "no funil o hover deve acender mais onde está em cima e não apagar o restante, adicione um efeito neon; se o usuário clicar deve abrir uma lista, por exemplo do FTD, e de onde veio com ícone do canal; clicando na lista abre o usuário como um CRM, com UTM e dados que o webhook informa".
+- Feito (D34 em [[decisoes-tecnicas/decisoes]]):
+  - hover com neon e sem escurecer as outras etapas;
+  - etapas clicáveis e acessíveis por teclado;
+  - rotas `/empresas/atual/eventos` e `/empresas/atual/leads/:leadKey` (analista ou acima, com RLS e mascaramento);
+  - gaveta com a lista por canal e a ficha (origem, linha do tempo e webhooks);
+  - amostra de 36 pessoas no seed;
+  - ícones novos do @tabler: fechar, voltar, usuário, webhook e link.
+- Corrigido no teste: clique numa etapa durante a saída da gaveta não abria a etapa; o rótulo "Depósitos depois" virou "Depósitos (com o FTD)".
+- Entregue: código no disco, testes verdes, diff visual 5,357%, sem commit.
+
+## [2026-10-16] update | Tutoriais em balão, conta e Sair na sidebar, gaveta com 10 itens e fundos
+- Pedidos:
+  - "na área de gestão de custo, vc precisa ter um ux e uma explicação explícita, use o hyperframe para fazer uma animação explicando", em formato de "balãozinho";
+  - "temos que ter aquele ícone da foto do usuário e o botão de sair da plataforma que leva pra tela de login";
+  - limitar a gaveta de eventos a 10 itens, mantendo o botão de ver mais;
+  - fundos das imagens #4, #5 e #6, otimizados.
+- Feito (D35 em [[decisoes-tecnicas/decisoes]]):
+  - tutoriais GSAP em popover com seta (Gastos, Meta Ads, Tag, Webhooks e Instalação);
+  - rodapé de conta na sidebar, com avatar de iniciais e Sair levando para `/login`;
+  - gaveta com 10 itens e "Ver todos";
+  - fundos em WebP: 123 KB no total, contra 3,2 MB dos originais.
+- Também nesta sessão:
+  - atalho Hoje nos filtros;
+  - script `pnpm --filter @trafego/api db:ficticio`, que gera 30 dias de dados fictícios de todos os canais com UTMs (`--remover` apaga).
+- Entregue:
+  - código no disco, sem commit;
+  - diff visual 5,198% (CI, limite 5,5%) e 67 testes do web verdes.
+
+## [2026-10-16] update | Login em vidro, Argon2id, "lembrar de mim" e avatar clicável
+- Pedido: avatar do usuário clicável; login igual à imagem enviada; "Faça seu login" no primeiro acesso e "Bem-vindo de volta" depois; validação toda no backend com JWT e hash seguro.
+- Feito (D36 em [[decisoes-tecnicas/decisoes]]):
+  - senha em Argon2id (OWASP), migração automática do scrypt antigo, comparação em tempo constante;
+  - JWT com claim `sv` (trocar a senha derruba as outras sessões), 30 dias com "lembrar de mim";
+  - cookie `ja_entrou` decide o título; login em cartão de vidro com ícones do @tabler, olho na senha e botão em gradiente;
+  - avatar, nome e e-mail na sidebar levam ao Perfil;
+  - fundo de Configurações mais visível.
+- Entregue: código no disco, sem commit. Testes novos de senha e sessão verdes; diff 5,198%; web 67 testes.
+
+## [2026-10-16] update | Fundo de ondas em SVG nas telas internas
+- Pedido: "faça os fundos de dentro do app com svg utilizando o hyperframe" e "nada que deixe o site muito pesado".
+- Feito (D37 em [[decisoes-tecnicas/decisoes]]):
+  - `FundoOndas` em Relatórios e Ajuda: fitas de fios, crista e pontos em SVG, gerados por hash, sem imagem;
+  - entrada e respiração GSAP no contrato Hyperframes; para sozinha em cerca de 86 s;
+  - enxugado depois da medição: pontos em 3 caminhos, sem filtro, halo parado, GSAP sob demanda, `will-change` só durante a animação;
+  - prettier aplicado em arquivos pendentes de sessões anteriores (`acoes-funil.ts`, `TelaLeads.tsx`, `contratos/src/leads.ts`, `icons/index.ts`, `gaveta-funil.test.tsx`), que reprovariam o CI.
+- Entregue:
+  - código no disco, sem commit;
+  - 61 quadros por segundo no pior caso;
+  - HTML de `/relatorios` de 93 KB para 47 KB;
+  - diff 5,198%; web com 71 testes.

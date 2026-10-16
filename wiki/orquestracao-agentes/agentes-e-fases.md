@@ -1,6 +1,6 @@
 ---
 tipo: processo
-atualizado: 2026-10-15
+atualizado: 2026-10-16
 tags: [orquestracao, agentes, fases, gates, opus]
 ---
 
@@ -42,3 +42,23 @@ Orquestrador (esta sessão) despacha subagentes Opus 5.5 em modo Auto, um por es
 - Dois agentes nunca escrevem nos mesmos arquivos ao mesmo tempo; integração por PR revisado pelo orquestrador.
 - Toda entrega relevante atualiza a wiki ([[log]]) via orquestrador.
 - Chamadas pagas (geração de imagem, deploy) só com confirmação do usuário.
+
+## Orquestração por workflow (2026-10-16)
+Na rodada de UX, o orquestrador rodou um workflow do Claude Code (`pasio-finalizar-ux`) com 6 subagentes. Levou cerca de 35 min e 620 mil tokens dos subagentes, sem nenhum erro. Formato que funcionou:
+
+1. **Implementar**: em paralelo, duas frentes com áreas de escrita disjuntas.
+   - Dashboard, em cadeia: o agente de UX/acessibilidade termina e entrega o resultado ao agente de movimento. Os dois mexem em `componentes/*`, `tela.css` e `lib/tela.ts`, por isso um espera o outro.
+   - Configurações: `app/(admin)/configuracoes/**` e `app/(conta)/**`.
+2. **Validar**: um único agente de portão (prettier nos arquivos alterados, `pnpm lint`, `typecheck` e `test`) passa a ser o único escritor de todo o working tree.
+3. **Registrar**, em paralelo:
+   - detector e relatório do impeccable, sem editar código;
+   - wiki, escrevendo só em `wiki/**`.
+
+Regras que o brief comum deu a todos, e que valem para as próximas rodadas:
+- Não parar nem reiniciar a API (3011) e o `next dev` (3000). Não rodar `next build`/`next start`; o diff em produção fica com o orquestrador.
+- Sem commit, sem `git checkout/reset/stash`, sem dependência nova, sem chamada paga.
+- Não deixar `apps/web/tsconfig.tsbuildinfo` alterado. Os agentes copiavam o arquivo antes do `tsc` e o restauravam depois.
+- O que estiver fora da própria área vai para "pendente", e o orquestrador decide.
+- Cada agente devolve JSON com `arquivos_alterados`, `feito`, `pendente`, `decisoes` e `verificacao`; o orquestrador repassa esse resultado ao agente seguinte.
+
+Ao terminar, o orquestrador rodou o `qa:visual` como no CI e conferiu no navegador o diálogo de confirmação. Ver [[qa-visual/fidelidade-visual]].

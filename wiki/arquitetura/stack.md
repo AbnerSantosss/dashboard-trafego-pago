@@ -1,7 +1,7 @@
 ---
 tipo: arquitetura
-atualizado: 2026-10-15
-tags: [stack, nextjs, fastify, postgresql, pnpm, d3, gsap]
+atualizado: 2026-10-16
+tags: [stack, nextjs, fastify, postgresql, pnpm, d3, movimento]
 ---
 
 # Stack
@@ -16,7 +16,7 @@ Aprovada pelo usuário em 2026-10-15 (alternativa Python FastAPI descartada).
 | Banco | PostgreSQL + Drizzle ORM | RLS nativa por `tenant_id`, jsonb para payload bruto |
 | Fila | pg-boss | Sem Redis no início; BullMQ/Redis se a carga exigir |
 | Gráficos | d3 v7 | Funil trapezoidal, sparklines |
-| Animação | GSAP | Contadores, entrada em cascata, seek-safe, reduced-motion |
+| Animação | CSS + `requestAnimationFrame` (GSAP sem uso desde D29) | Entrada em cascata em CSS, contadores e funil por rAF, só `transform`/`opacity`/`clip-path`, desligado em reduced-motion |
 | Auth | Auth.js | Papéis por empresa: admin, analista, leitor |
 | Testes | Vitest, Playwright, pixelmatch | Unitário, e2e, regressão visual |
 | Lint/format | ESLint, Prettier | Padrão em todos os pacotes |
@@ -29,7 +29,7 @@ packages/design     tokens.css, tokens.json, ícones SVG, marca (logo PASIO)
 packages/rules      motor de regras (mapeamento, classificador)
 packages/fixtures   dados exatos da imagem de referência
 packages/contratos  tipos compartilhados API↔web (contrato de /metricas/visao-geral)
-packages/graficos   Funil (d3), Sparkline e Contador (GSAP), SSR-safe, prefers-reduced-motion
+packages/graficos   Funil (d3), Sparkline e Contador (CSS + rAF, D29), SSR-safe, prefers-reduced-motion
 prototype/          protótipo estático pixel-fiel (Fase 1)
 wiki/               esta wiki
 ```

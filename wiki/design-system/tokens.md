@@ -1,7 +1,7 @@
 ---
 tipo: design-system
-atualizado: 2026-10-15
-tags: [tokens, cores, tipografia, espacamento]
+atualizado: 2026-10-16
+tags: [tokens, cores, tipografia, espacamento, configuracoes, movimento]
 ---
 
 # Tokens de design
@@ -55,3 +55,33 @@ Medidas refeitas na `ref-1.png` com PIL; valores finais em `packages/design/toke
 
 ## Divergências medidas pelo protótipo (pendente de reconciliação, P1.1)
 O protótipo (`prototype/estilo.css`, variáveis `--p-*`) mediu na imagem valores diferentes de 18 tokens, entre eles `--bg-nav-active` (#002E72 vs #0A307C), `--text-secondary` (#C2CFE2 vs #D1E3F4), `--positive` (#36DBC5 no delta e #19F4D3 no ponto de status vs #06F6C7), `--bg-card` (#071B29 vs #061B28), `--border-card` (#132739 vs #0C2030), `--button-clear-*`, `--funnel-connector` (#4A5D6E vs #A6C6F2) e `--text-muted` (#A0B1C4 vs #D6E6F5). A lista completa, com comentário por linha, está no próprio `estilo.css`. Antes do React (Fase 4), o agente design-fidelity confere cada par na imagem e corrige `tokens.css`/`tokens.json`, para que o React use só tokens.
+
+## Tokens fora da tela de referência (2026-10-16)
+A imagem de referência só cobre o dashboard. As telas que não entram no diff (Configurações, login, convite, redefinir senha) têm tokens próprios, definidos em código e não no `tokens.css` (D23, D26).
+
+**Estados** (`apps/web/app/tela.css`, prefixo `--p-`, valem no app inteiro):
+
+| Token | Valor | Uso |
+|---|---|---|
+| `--p-erro-bg` | #2A1220 | fundo da faixa de erro e de `.cfg-erro` |
+| `--p-erro-borda` | #5A2433 | borda das mesmas faixas |
+| `--p-erro-txt` | #FFB3C1 | texto de erro |
+| `--p-aviso` | #FFD27A | estado "atenção" (ex.: passos da aba Instalação) |
+
+**Configurações** (`apps/web/app/(admin)/configuracoes/configuracoes.css`, prefixo `--cfg-`):
+
+| Token | Celular | ≥ 48em | Uso |
+|---|---|---|---|
+| `--cfg-fs-titulo` | 1.5rem | 1.5rem | h1 "Configurações" e título das telas de conta |
+| `--cfg-fs-sub` | 1.125rem | 1.125rem | h2 de seção |
+| `--cfg-fs-corpo` | 1rem | 0.9375rem | texto corrido |
+| `--cfg-fs-micro` | 0.8125rem | 0.8125rem | dicas e rótulos de tabela em cartão |
+| `--cfg-alvo` | 3rem | 2.5rem | altura mínima de botões e campos |
+| `--cfg-raio` | 0.5rem | 0.5rem | raio de campos, botões e cartões |
+| `--cfg-campo-borda` | #4F6F8F | #4F6F8F | borda de campo, contraste 3:1 com o fundo |
+| `--cfg-entra` | cubic-bezier(.165,.84,.44,1) | igual | curva de entrada (D29) |
+| `--cfg-sai` | cubic-bezier(.55,0,.675,.19) | igual | curva de saída |
+
+- Inputs usam `font-size: max(1rem, 16px)` para o iOS não dar zoom ao focar.
+- Foco visível ciano em todo o app: `outline` 2px na cor `--p-nav-ic-ativo` (rgb 112,238,254), também nos menus do dashboard (D30).
+- Movimento: durações de 200 a 400 ms nas Configurações; no dashboard, ver D29 em [[decisoes-tecnicas/decisoes]].

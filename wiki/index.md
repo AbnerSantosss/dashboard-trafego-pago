@@ -21,14 +21,14 @@ Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde
 
 ## Arquitetura
 - [[arquitetura/visao-geral]] — fluxo webhook → regras → agregação → painel, limites do sistema
-- [[arquitetura/stack]] — monorepo pnpm, Next.js, Fastify, PostgreSQL, d3, GSAP, pacotes contratos e graficos
+- [[arquitetura/stack]] — monorepo pnpm, Next.js, Fastify, PostgreSQL, d3, movimento em CSS + rAF, pacotes contratos e graficos
 - [[arquitetura/modelo-de-dados]] — tabelas, isolamento por tenant, tipos canônicos de evento
 
 ## Decisões técnicas
 - [[decisoes-tecnicas/decisoes]] — registro de decisões (ADR) com motivo e consequências
 
 ## Design system
-- [[design-system/tokens]] — paleta, tipografia, espaçamentos e raios extraídos da imagem de referência
+- [[design-system/tokens]] — paleta, tipografia, espaçamentos e raios da imagem de referência; tokens de estado e das Configurações
 - [[design-system/componentes-referencia]] — cada bloco da tela Visão Geral com medidas
 - [[design-system/dados-de-referencia]] — valores exatos da imagem usados como fixture
 
@@ -40,18 +40,18 @@ Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde
 - [[regras-de-tratamento/metricas-e-kpis]] — definição de cada KPI, funil e taxa
 
 ## Administração multiempresa
-- [[administracao-multiempresa/configuracao-por-empresa]] — webhooks, regras, apresentação (logo, nome, paleta), usuários, convites, perfil, tag GTM
+- [[administracao-multiempresa/configuracao-por-empresa]] — aba Instalação (passo a passo), webhooks, regras, apresentação, usuários, convites, perfil, tag GTM
 
 ## QA visual
-- [[qa-visual/fidelidade-visual]] — gates G0 a G4, limite de 2% de diff, como rodar a comparação
+- [[qa-visual/fidelidade-visual]] — gates G0 a G4, limite do CI (5,5%), medições, como medir igual ao CI e armadilhas
 
 ## Operação
-- [[operacao/runbooks]] — onboarding de empresa, rotação de segredo, reprocessamento, dead-letter
+- [[operacao/runbooks]] — onboarding de empresa, rotação de segredo (sem carência), reprocessamento, dead-letter
 - [[operacao/retomada]] — estado atual e próximos passos
 - [[operacao/ambiente-e-seguranca]] — repositório público, segredos, alvos que exigem confirmação, rotina
 
 ## Orquestração de agentes
-- [[orquestracao-agentes/agentes-e-fases]] — orquestrador, nove subagentes, áreas exclusivas, fases e gates
+- [[orquestracao-agentes/agentes-e-fases]] — orquestrador, subagentes, áreas exclusivas, fases, gates e o formato de workflow usado na rodada de UX
 
 ## Registro
 - [[log]] — histórico curado da wiki

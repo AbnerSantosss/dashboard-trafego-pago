@@ -1,7 +1,7 @@
 ---
 tipo: especificacao
 atualizado: 2026-10-16
-tags: [multiempresa, tenant, configuracao, apresentacao, logo, pasio]
+tags: [multiempresa, tenant, configuracao, apresentacao, logo, pasio, instalacao, responsividade]
 ---
 
 # Configuração por empresa
@@ -59,3 +59,54 @@ Abas atuais em `/configuracoes`: Perfil, Usuários, Tag GTM, Webhooks, Apresenta
 - **Webhooks**: a plataforma manda cadastro, FTD e depósito (redepósito também é `deposito`) com o mesmo `user_id` do dataLayer.
 - Contas: telas `/login`, `/redefinir` e `/convite` em `apps/web/app/(conta)/`; cookie de sessão e middleware em D20.
 - Armadilha: o admin do seed (`admin@pasio.local`) não recebe e-mail; para testar o login real, convide um e-mail de verdade.
+
+## Instalação, layout fluido e confirmação (2026-10-16)
+Abas atuais, nesta ordem: **Instalação**, Perfil, Usuários, Tag GTM, Webhooks, Apresentação. O endereço `/configuracoes` ainda redireciona para Perfil.
+
+### Aba Instalação: passo a passo para colocar o painel no ar
+Tela em `apps/web/app/(admin)/configuracoes/instalacao/`, com título "Coloque o painel para funcionar" e contagem de passos feitos. Cada passo mostra o estado, uma frase com dados reais e, quando cabe, um valor com botão de copiar (`Copiavel.tsx`) e um link para a aba onde se resolve. Os sete passos, na ordem:
+1. **Endereço público da API**: o servidor e o endereço que a plataforma e a tag usam (`WEBHOOK_URL_PUBLICA`). Sem ele, o passo fica em atenção.
+2. **Nome e logo da empresa**: a Apresentação.
+3. **Fonte de webhook**: uma fonte ativa com segredo utilizável. Fica em atenção se a fonte existe sem segredo.
+4. **Tag no Google Tag Manager**: o código da aba Tag GTM. Fica sempre como **manual**, porque não dá para conferir daqui.
+5. **Plataforma enviando eventos**: as últimas entregas das fontes ativas, com data e hora no fuso da empresa.
+6. **Tradução dos eventos**: as regras. Entregas processadas contam como feito; entregas com erro, como atenção.
+7. **Equipe com acesso**: membros e convites.
+
+O estado sai de `montarPassos()` em `apps/web/lib/instalacao.ts`, uma função pura testada em `apps/web/testes/instalacao.test.ts`, e vale um destes quatro:
+- `feito`: dado lido e certo.
+- `atencao`: falta uma ação do admin.
+- `pendente`: ainda não começou ou não deu para ler.
+- `manual`: só a pessoa pode conferir.
+
+Quando a página não consegue ler um dado (API fora do ar, sem permissão), a situação vira "Não foi possível conferir agora." e o passo **nunca** aparece como concluído. O passo manual não entra na contagem de feitos. Ver D28 em [[decisoes-tecnicas/decisoes]].
+
+### Layout fluido e tipografia
+- Casca em grid: coluna de 181 px com a sidebar fixa ao rolar, mais o conteúdo fluido. Abaixo de 48em a navegação vira barra superior e as abas rolam na horizontal.
+- No celular as tabelas viram cartões: o cabeçalho fica só para leitor de tela e cada célula mostra seu rótulo (`data-rotulo`). A tabela da Instalação não muda.
+- Quatro tamanhos de texto (`--cfg-fs-titulo`, `-sub`, `-corpo`, `-micro`), alvos de toque de 48 px no celular e 40 px no desktop, campos com 16 px ou mais. Cada aba abre com um h2 próprio, que aparece também na tela de erro.
+- Erros e avisos usam os tokens `--p-erro-*` e `--p-aviso`. Ver D22, D23 e D26.
+
+### Ações destrutivas
+Remover membro, cancelar convite, rotacionar ou gerar segredo e remover logo passam por `BotaoConfirmar` (`Confirmar.tsx`): um `<dialog>` modal com a consequência escrita, Cancelar e um botão de perigo que envia o formulário. Esc e clique no fundo fecham sem enviar. Ver D25.
+
+### Armadilhas
+- Salvar a Apresentação chama `revalidatePath('/', 'layout')`, então a marca muda também nas telas em construção (D27).
+- Conferir no navegador o diálogo de confirmação e as abas Perfil e Tag; até agora só foram conferidos por HTML e testes.
+
+## Gastos e Meta Ads (2026-10-16)
+- **Configurações → Gastos** (`/configuracoes/gastos`, papel analista ou admin): lançamento manual de gasto (data, canal, campanha, valor em reais, observação), lista dos últimos 30 dias, 90 dias ou 12 meses, com total e soma por canal. Remover só vale para gasto manual. O item "Gestão de Custos" da sidebar leva para cá.
+- **Configurações → Meta Ads** (`/configuracoes/meta-ads`, só admin): conectar conta de anúncios com ID e token de usuário do sistema (`ads_read`). Ao conectar, lê 30 dias; depois a API relê os últimos 3 dias de hora em hora. Botões: Sincronizar, Pausar/Retomar, Trocar token e Desconectar (apaga o gasto lido da conta). Passo a passo do token em [[operacao/runbooks]].
+- Todo gasto entra no **Investimento** do painel, no dia e canal informados (D31).
+
+### Armadilhas
+- Na empresa demo, lançar ou sincronizar gasto num dia reagrega esse dia a partir de eventos e custos e apaga os números de demonstração dele (o seed grava direto em `metrics_daily`).
+- Se um webhook também mandar evento `gasto` no canal Meta, o gasto conta duas vezes. Use uma das duas fontes por canal.
+- Não há conversão de moeda: uma conta em USD soma como se fosse BRL. A tela avisa.
+- Trocar o canal de uma conta não move o gasto já gravado: sincronize de novo.
+
+## Instalação com submenu (2026-10-16)
+- Tag GTM, Webhooks e Meta Ads ficam dentro de Instalação, num submenu de botões: Visão geral, Tag do GTM, Webhooks e Meta Ads. As rotas não mudaram (`/configuracoes/tag`, `/webhooks` e `/meta-ads`), e a aba Instalação fica marcada nas quatro.
+- Cada uma começa com um passo a passo numerado (`Guia.tsx`, textos em `guias.tsx`) e depois mostra o painel de configuração.
+- Para mudar um texto do guia, edite `guias.tsx`. O exemplo de envio assinado continua na Visão geral, no passo da plataforma.
+- Desktop: as Configurações usam a mesma moldura e escala do painel (D33).

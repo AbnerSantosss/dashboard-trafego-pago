@@ -39,11 +39,19 @@ Esquema em `apps/api/src/db/schema.ts` (Drizzle), migrações em `apps/api/drizz
 - **Canal reservado `__funil__`**: os números do funil da imagem (320.840 / 40.000 / 30.000 / 6.000 / 600) não fecham com a tabela por canal (600 FTDs contra 995), então ficam em um canal próprio. Regra para toda consulta: **canais que começam com `__` ficam fora da tabela, dos KPIs e da lista de canais** e só alimentam o funil (D11).
 - Seed: `pnpm --filter @trafego/api db:seed` (`src/db/seed.ts`, recusa `NODE_ENV=production`, idempotente). Cria empresa `pasio`, apresentação completa, fonte `demo` (segredo impresso uma vez no console; no banco só o hash scrypt) e `admin@pasio.local` (admin). 264 linhas em `metrics_daily` (24 dias × canais, período atual e anterior), somas por canal iguais à imagem. Ver [[design-system/dados-de-referencia]] para o que a imagem não permite reproduzir.
 
+### Gasto em anúncios (migração 0006, 2026-10-16)
+- `custos`: um gasto por dia, canal e campanha, com `origem` `manual` ou `meta`, `valor` numérico, `campanha`, `descricao`, `criado_por` e `meta_conta_id` (cascade). RLS por `tenant_id` com FORCE, como as demais.
+- `meta_contas`: conta de anúncios conectada (`conta_id` `act_…`, único por empresa), `token_enc` cifrado em AES-256-GCM com a mesma chave das fontes (`WEBHOOK_CHAVE_CIFRA`), `canal` (padrão `Meta`), `moeda`, `ativo`, `ultima_sync`, `ultimo_erro`.
+- `agregarIncremental` soma `custos` ao `investimento` de `metrics_daily`, com `page = ''`. Ver D31 em [[decisoes-tecnicas/decisoes]].
+
 ## Tipos canônicos de evento
 `gasto`, `clique`, `visita`, `cadastro`, `ftd`, `deposito`.
 
 ## Derivados
 CPA = gasto / ftds; ROAS = depósitos / gasto; taxa do funil = etapa / etapa anterior. Definições completas em [[regras-de-tratamento/metricas-e-kpis]].
+
+## Leitura por pessoa (D34)
+`GET /empresas/atual/eventos?etapa=` lê `events` por etapa (visitas, cadastro, ftd). Base e cliques não têm registro por pessoa e voltam vazios. `GET /empresas/atual/leads/:leadKey` junta os `events` do `lead_key`, os toques da tag e os `webhook_events` que os geraram, com campos de senha, token e cartão mascarados. As duas rotas exigem analista ou acima e passam por RLS. O seed grava a amostra `demo-*` (36 pessoas) sem mexer em `metrics_daily`.
 
 ## Armadilhas
 - Afiliados pode não ter investimento: CPA e ROAS ficam nulos, nunca zero (a imagem mostra "–").
