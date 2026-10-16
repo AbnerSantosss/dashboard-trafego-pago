@@ -1,0 +1,104 @@
+# Produção (P7.2, D39): stack do Portainer criada a partir deste repositório. Nenhum segredo passa
+# por aqui nem pelas variáveis da stack: o serviço `segredos` os gera no próprio servidor na primeira
+# subida. As variáveis que sobram estão em deploy/producao.env.example.
+# Web e API ficam só em 127.0.0.1 do servidor; o túnel Cloudflare do host publica os dois.
+services:
+  # Senhas do banco, segredo das sessões e chave de cifra: 32 bytes aleatórios em hex, gerados uma
+  # vez e guardados no volume `segredos`. Ele acompanha o `pgdata` em qualquer backup: sem a chave
+  # de cifra, os segredos de webhook e os tokens do Meta gravados no banco não abrem.
+  segredos:
+    image: alpine:3.20
+    restart: 'no'
+    volumes:
+      - segredos:/segredos
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        for n in postgres_senha app_user_senha auth_secret webhook_chave_cifra; do
+          if [ ! -s /segredos/$$n ]; then
+            head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n' > /segredos/$$n
+          fi
+        done
+        chmod 444 /segredos/*
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      segredos:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/segredos/postgres_senha
+      POSTGRES_DB: trafego
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - segredos:/run/segredos:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d trafego']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  api:
+    build:
+      context: .
+      target: api
+    image: trafego-pasio-api:latest
+    # Sempre a partir do código: "Pull and redeploy" no Portainer reconstrói a imagem.
+    pull_policy: build
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      API_PORT: 3001
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Senhas, AUTH_SECRET, chave de cifra e URLs do banco vêm de /run/segredos
+      # (src/segredos-do-servidor.ts). A app usa app_user (sujeito a RLS); o preparo e a fila
+      # pg-boss usam o dono das tabelas.
+      WEB_URL: ${WEB_URL:?defina WEB_URL}
+      WEBHOOK_URL_PUBLICA: ${WEBHOOK_URL_PUBLICA:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?defina ADMIN_EMAIL}
+      ADMIN_NOME: ${ADMIN_NOME:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USUARIO: ${SMTP_USUARIO:-}
+      SMTP_SENHA: ${SMTP_SENHA:-}
+      EMAIL_REMETENTE: ${EMAIL_REMETENTE:-}
+      META_GRAPH_VERSAO: ${META_GRAPH_VERSAO:-}
+    volumes:
+      - segredos:/run/segredos:ro
+    ports:
+      - '127.0.0.1:${API_PORTA:-3481}:3001'
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3001/health > /dev/null']
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 6
+
+  web:
+    build:
+      context: .
+      target: web
+    image: trafego-pasio-web:latest
+    pull_policy: build
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      API_URL: http://api:3001
+      WEB_EMPRESA: pasio
+      WEBHOOK_URL_PUBLICA: ${WEBHOOK_URL_PUBLICA:-}
+    ports:
+      - '127.0.0.1:${WEB_PORTA:-3480}:3000'
+
+volumes:
+  pgdata:
+  segredos:

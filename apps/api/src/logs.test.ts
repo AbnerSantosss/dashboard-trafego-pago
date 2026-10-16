@@ -15,9 +15,10 @@ describe('logs estruturados', () => {
     });
     await app.ready();
 
+    // /health loga só a partir de warn (healthcheck do contêiner); uma rota qualquer loga em info.
     const res = await app.inject({
       method: 'GET',
-      url: '/health',
+      url: '/rota-inexistente',
       headers: {
         authorization: 'Bearer token-ficticio-abc',
         'x-signature': 'assinatura-ficticia-xyz',

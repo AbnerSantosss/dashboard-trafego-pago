@@ -74,6 +74,25 @@ describe('CORS e rate limit', () => {
     expect(res.json().erro.requestId).toBeTruthy();
     await app.close();
   });
+
+  it('a chave do limite é o IP da borda (cf-connecting-ip), não o do túnel', async () => {
+    const { buildApp } = await import('../app.js');
+    const { carregarEnv } = await import('../env.js');
+    const app = await buildApp({
+      env: carregarEnv({ NODE_ENV: 'test' }),
+      logger: false,
+      limiteTaxa: 2,
+    });
+    const de = (ip: string) =>
+      app.inject({ method: 'GET', url: '/health', headers: { 'cf-connecting-ip': ip } });
+    await de('203.0.113.7');
+    await de('203.0.113.7');
+    expect((await de('203.0.113.7')).statusCode).toBe(429);
+    expect((await de('2001:db8::1')).statusCode).toBe(200);
+    // Valor que não é IP é ignorado: conta no IP da conexão, que ainda tem cota.
+    expect((await de('qualquer-coisa')).statusCode).toBe(200);
+    await app.close();
+  });
 });
 
 const disponivel = await bancoDisponivel('rotas/auth.test');

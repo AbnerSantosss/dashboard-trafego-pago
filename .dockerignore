@@ -1,0 +1,17 @@
+**/node_modules
+**/.next
+**/dist
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!.env.example
+.git
+.github
+.claude
+.impeccable
+registro
+wiki
+tests/visual/saida
+test-results
+playwright-report
+coverage

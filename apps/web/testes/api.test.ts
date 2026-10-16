@@ -71,4 +71,23 @@ describe('lib/api', () => {
       mensagem: 'Banco fora. (HTTP 503)',
     });
   });
+
+  it('repassa o IP do visitante (cf-connecting-ip) nas rotas com e sem login', async () => {
+    const fetch = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+      void url;
+      void init;
+      return resposta(200, {});
+    });
+    const cli = criarClienteApi(config, {
+      fetch: fetch as unknown as F,
+      sessao: async () => ({ token: 'tok', empresa: 'pasio' }),
+      ip: async () => '203.0.113.7',
+    });
+    await cli.visaoGeral({});
+    await cli.entrar('a@b.c', 'senha-qualquer');
+    for (const [, init] of fetch.mock.calls) {
+      expect((init!.headers as Record<string, string>)['cf-connecting-ip']).toBe('203.0.113.7');
+    }
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
 });

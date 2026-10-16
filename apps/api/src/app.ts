@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { isIP } from 'node:net';
 import Fastify, { LogController, type FastifyServerOptions } from 'fastify';
 import sensible from '@fastify/sensible';
 import swagger from '@fastify/swagger';
@@ -140,6 +141,13 @@ export async function buildApp(opcoes: OpcoesApp = {}) {
     global: true,
     max: opcoes.limiteTaxa ?? 300,
     timeWindow: '1 minute',
+    // Atrás do túnel Cloudflare todo visitante chega com o IP do gateway do Docker. A chave é o IP
+    // real, que a borda grava em cf-connecting-ip (e o web repassa nas chamadas que faz por ele);
+    // vale para as rotas com limite próprio que não definem a sua chave.
+    keyGenerator: (req) => {
+      const borda = req.headers['cf-connecting-ip'];
+      return typeof borda === 'string' && isIP(borda) ? borda : req.ip;
+    },
   });
   // HS256 com o segredo compartilhado com o web (Auth.js).
   await app.register(jwt, {

@@ -18,6 +18,8 @@ export const rotasHealth: FastifyPluginAsyncZod<{ versao: string }> = async (app
   app.get(
     '/health',
     {
+      // O healthcheck do contêiner chama a cada 10 s: sem log por requisição, para não encher o log.
+      logLevel: 'warn',
       schema: {
         tags: ['infra'],
         summary: 'Healthcheck',

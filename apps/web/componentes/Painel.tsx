@@ -683,7 +683,10 @@ export function Painel({ dados, erro, filtros }: Props) {
         )}
       </div>
       {dados && dados.canais.length === 0 && (
-        <p className="tabela-vazia">Nenhum dado para os filtros escolhidos.</p>
+        // Sem canais, o Total ocupa a primeira linha (62 px): o aviso fica logo abaixo dele.
+        <p className="tabela-vazia" style={{ top: linhaY(0) + 62 + 18 }}>
+          Nenhum dado para os filtros escolhidos.
+        </p>
       )}
 
       {/* Ícones ⓘ: depois da tabela para ficarem acima dos alvos de ordenação. */}

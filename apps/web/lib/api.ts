@@ -79,12 +79,32 @@ const TEMPO_LIMITE_MS = 4_000;
 
 type Fetch = typeof fetch;
 
+/**
+ * IP do visitante que a borda da Cloudflare grava em `cf-connecting-ip`. Vai junto nas chamadas à
+ * API para o rate-limit contar por visitante, e não pelo IP do servidor web. Fora de uma
+ * requisição do Next (testes, build), não há.
+ */
+async function lerIpDoVisitante(): Promise<string | undefined> {
+  try {
+    const { headers } = await import('next/headers');
+    return (await headers()).get('cf-connecting-ip') ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function criarClienteApi(
   config: ConfigApi,
-  deps: { fetch?: Fetch; agora?: () => number; sessao?: () => Promise<SessaoCookie> } = {},
+  deps: {
+    fetch?: Fetch;
+    agora?: () => number;
+    sessao?: () => Promise<SessaoCookie>;
+    ip?: () => Promise<string | undefined>;
+  } = {},
 ) {
   const f = deps.fetch ?? fetch;
   const lerSessao = deps.sessao ?? lerSessaoDoCookie;
+  const lerIp = deps.ip ?? lerIpDoVisitante;
   const agora = deps.agora ?? Date.now;
   let cache: { token: string; expiraEm: number } | null = null;
 
@@ -139,6 +159,7 @@ export function criarClienteApi(
   ): Promise<Resultado<T>> {
     try {
       const sessao = await lerSessao();
+      const ip = await lerIp();
       for (let tentativa = 0; tentativa < 2; tentativa++) {
         const token = sessao.token ?? (await obterToken());
         const headers: Record<string, string> = {
@@ -146,6 +167,7 @@ export function criarClienteApi(
           'x-tenant': sessao.empresa ?? config.empresa,
         };
         if (corpo !== undefined) headers['content-type'] = 'application/json';
+        if (ip) headers['cf-connecting-ip'] = ip;
         const r = await f(`${config.apiUrl}${caminho}`, {
           method: metodo,
           headers,
@@ -179,11 +201,14 @@ export function criarClienteApi(
     corpo?: unknown,
   ): Promise<Resultado<T>> {
     try {
+      const headers: Record<string, string> = {};
+      if (corpo !== undefined) headers['content-type'] = 'application/json';
+      const ip = await lerIp();
+      if (ip) headers['cf-connecting-ip'] = ip;
       const r = await f(`${config.apiUrl}${caminho}`, {
         method: metodo,
-        ...(corpo !== undefined
-          ? { headers: { 'content-type': 'application/json' }, body: JSON.stringify(corpo) }
-          : {}),
+        headers,
+        ...(corpo !== undefined ? { body: JSON.stringify(corpo) } : {}),
         cache: 'no-store',
         signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
       });
