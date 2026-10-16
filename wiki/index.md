@@ -12,6 +12,7 @@ Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde
 
 ## Comece por aqui
 - [[operacao/retomada]] — onde o trabalho parou, CI, próximos passos em ordem, como subir local
+- [[operacao/producao]] — painel no ar: endereços, stack do Portainer, túnel, segredos, atualizar, backup
 
 ## Como usar esta wiki
 - Antes de mexer em qualquer área, leia a página da categoria correspondente.
@@ -21,7 +22,7 @@ Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde
 
 ## Arquitetura
 - [[arquitetura/visao-geral]] — fluxo webhook → regras → agregação → painel, limites do sistema
-- [[arquitetura/stack]] — monorepo pnpm, Next.js, Fastify, PostgreSQL, d3, movimento em CSS + rAF, pacotes contratos e graficos
+- [[arquitetura/stack]] — monorepo pnpm, Next.js, Fastify, PostgreSQL, d3, movimento em CSS + rAF, pacotes contratos e graficos, imagens Docker de produção
 - [[arquitetura/modelo-de-dados]] — tabelas, isolamento por tenant, tipos canônicos de evento
 
 ## Decisões técnicas
@@ -46,7 +47,8 @@ Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde
 - [[qa-visual/fidelidade-visual]] — gates G0 a G4, limite do CI (5,5%), medições, como medir igual ao CI e armadilhas
 
 ## Operação
-- [[operacao/runbooks]] — onboarding de empresa, rotação de segredo (sem carência), reprocessamento, dead-letter
+- [[operacao/producao]] — o que está no ar (endereços, stack `trafego-pasio`, rotas do túnel, segredos gerados no servidor), senha do admin, atualizar, logs, backup, armadilhas e pendências
+- [[operacao/runbooks]] — onboarding de empresa, rotação de segredo (sem carência), reprocessamento, dead-letter, instalação de produção do zero
 - [[operacao/retomada]] — estado atual e próximos passos
 - [[operacao/ambiente-e-seguranca]] — repositório público, segredos, alvos que exigem confirmação, rotina
 

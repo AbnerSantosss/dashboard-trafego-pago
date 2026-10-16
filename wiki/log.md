@@ -244,3 +244,11 @@ tags: [log, historico]
   - stack `trafego-pasio` criada no Portainer pelo Git, com 3 variáveis (`WEB_URL`, `WEBHOOK_URL_PUBLICA`, `ADMIN_EMAIL`). Primeiro build em cerca de 4,5 minutos: `segredos` saiu com 0, db e api saudáveis, web no ar;
   - rotas no túnel `servidor-abner`, com DNS criado pela Cloudflare: `pasio.proxserverabner.site` → `http://localhost:3480` e `pasio-api.proxserverabner.site` → `http://localhost:3481`;
   - conferido pelos endereços públicos: `/health` ok, `/login` 200, raiz redireciona para `/login` e `/auth/sessao-dev` 404. O preparo criou a PASIO e o admin, e a página de nova senha abriu pelo link do log para o usuário digitar a própria senha.
+
+## [2026-10-16] update | Wiki da produção: página própria e páginas relacionadas em dia
+- Pedido: "salve tudo na wiki".
+- Feito:
+  - página nova [[operacao/producao]]: endereços (painel, API, webhooks, Portainer, túnel), stack `trafego-pasio` com as 3 variáveis (sem o valor do e-mail), contêineres e portas, rotas do túnel, segredos gerados no servidor, senha do admin (link no log, e como recuperar sem SMTP), atualizar com Pull and redeploy, logs, backup e restauração dos dois volumes, armadilhas e pendências;
+  - [[index]] com a página em "Comece por aqui" e em Operação; [[arquitetura/stack]] com a seção Produção; [[operacao/ambiente-e-seguranca]] sem a regra antiga "segredos só nas variáveis do Portainer" e com a seção Produção; [[operacao/runbooks]] e [[operacao/retomada]] apontando para a página nova; nota em D9 de [[decisoes-tecnicas/decisoes]] remetendo a D39;
+  - `PLANO-DE-ACAO.md`: P7.2b e P7.2c concluídas com o que foi feito de verdade (sem cloudflared na stack, rotas `pasio` e `pasio-api`); P7.2 no ar, faltando o webhook de produção processar um evento de teste; tabela de fases em [[orquestracao-agentes/agentes-e-fases]].
+- Entregue: wiki e plano coerentes com o deploy, sem segredos nem o e-mail do admin.

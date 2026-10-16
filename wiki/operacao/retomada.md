@@ -9,7 +9,7 @@ tags: [retomada, estado-atual, proximos-passos, ci, operacao]
 Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou, o que está pendente e em que ordem. Atualize ao fim de cada sessão de trabalho relevante.
 
 ## Onde paramos (2026-10-16, fim do dia)
-- **Deploy (P7.2) no ar** em `https://pasio.proxserverabner.site` (API em `https://pasio-api.proxserverabner.site`). Stack `trafego-pasio` no Portainer, rotas no túnel `servidor-abner`. Falta: o usuário definir a senha do admin pelo link do log (se passar de 1 hora, reiniciar o contêiner `trafego-pasio-api-1` gera outro), entrar e configurar a Tag do GTM, os webhooks e o Meta Ads com os endereços públicos. Atualizar: Portainer → stack → Pull and redeploy. Backup: volumes `trafego-pasio_pgdata` e `trafego-pasio_segredos`, juntos.
+- **Deploy (P7.2) no ar** em `https://pasio.proxserverabner.site` (API em `https://pasio-api.proxserverabner.site`). Stack `trafego-pasio` no Portainer, rotas no túnel `servidor-abner`. Falta: o usuário definir a senha do admin pelo link do log (se passar de 1 hora, reiniciar o contêiner `trafego-pasio-api-1` gera outro), entrar e configurar a Tag do GTM, os webhooks e o Meta Ads com os endereços públicos. Atualizar: Portainer → stack → Pull and redeploy. Backup: volumes `trafego-pasio_pgdata` e `trafego-pasio_segredos`, juntos. Tudo sobre o ambiente no ar (endereços, contêineres, senha do admin, atualizar, logs, backup, armadilhas e pendências) em [[operacao/producao]].
 - **Histórico do deploy** (D39 em [[decisoes-tecnicas/decisoes]], passo a passo em [[operacao/runbooks]], seção Produção):
   - arquivos novos: `Dockerfile`, `.dockerignore`, `docker-compose.prod.yml`, `deploy/producao.env.example`, `apps/api/src/db/producao.ts`, `segredos-do-servidor.ts` e os testes de ambos;
   - os segredos são gerados no próprio servidor (serviço `segredos`): ninguém cola senha no Portainer. O backup leva os volumes `pgdata` **e** `segredos`;
@@ -47,7 +47,7 @@ Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou,
   Antes do commit, falta só a conferência no navegador (passo 2); o diff visual como no CI já passou (passo 1).
 - Local: `pnpm lint`, `pnpm typecheck` e `pnpm test` verdes, com 280 testes passando e 1 pulado. Diff visual medido como o CI (build de produção com `WEB_MOCK_API=1`): **5,19%**, igual ao de antes da rodada. Contra o `next dev` com a API real dá 5,419%; essa diferença vem do modo de medir, não do código ([[qa-visual/fidelidade-visual]]).
 - Relatório da revisão de UX (impeccable, dual-agent, 20/40 antes das correções e cerca de 28/40 estimado depois): `.impeccable/critique/2026-10-16T07-32-12Z__apps-web.md`, fora do git. Decidir se `.impeccable/critique/` entra no repositório. A pasta `.impeccable/live/` é descartável.
-- **Direção sugerida, aguardando decisão do usuário**: parar de adicionar funcionalidades e ir direto para o deploy (Fase 7), para o painel ser usado de verdade; o resto entra só se fizer falta no uso. Motivo: o pedido original era "receber webhooks e transformar em dados no painel", e o plano de 41 tarefas mais os pedidos novos (usuários, convites, login, tag GTM) tornaram o projeto um produto completo. O que importa para o usuário já funciona localmente: tela igual à imagem com dados reais, webhooks virando métricas e Configurações.
+- **Direção sugerida, seguida em 2026-10-16 (deploy feito)**: parar de adicionar funcionalidades e ir direto para o deploy (Fase 7), para o painel ser usado de verdade; o resto entra só se fizer falta no uso. Motivo: o pedido original era "receber webhooks e transformar em dados no painel", e o plano de 41 tarefas mais os pedidos novos (usuários, convites, login, tag GTM) tornaram o projeto um produto completo. O que importa para o usuário já funciona localmente: tela igual à imagem com dados reais, webhooks virando métricas e Configurações.
 - Fases 1 a 6 concluídas e enviadas para `main` em `github.com/AbnerSantosss/dashboard-trafego-pago` (repositório **público**, ver [[operacao/ambiente-e-seguranca]]).
   - `a567b2b`: Fase 6 (CI, e2e de isolamento G3, item Configurações na sidebar).
   - `5216d62`: Configurações (perfil, usuários e convites, login, tag GTM e cruzamento com o webhook). Detalhes em [[administracao-multiempresa/configuracao-por-empresa]] e nas decisões D19 a D21 de [[decisoes-tecnicas/decisoes]].
@@ -90,7 +90,7 @@ O workflow `.github/workflows/ci.yml` tem dois jobs, e os dois estão **verdes**
 6. **Testar o login real**: em Configurações → Usuários, convidar um e-mail de verdade, aceitar o convite pelo link e entrar. O admin do seed (`admin@pasio.local`) não recebe e-mail; em dev, sem cookie, o painel continua como admin demo (`sessao-dev`).
 7. **Fase 7 — Entrega** (ver `PLANO-DE-ACAO.md`). A aba Instalação é o roteiro de colocar uma empresa no ar.
    - P7.1 wiki essencial (como rodar, cadastrar empresa e webhook, runbook de deploy).
-   - P7.2 deploy: arquivos prontos (D39). A stack do Portainer tem web, api e postgres; o cloudflared é o do host. Segredos só nas variáveis da stack; `WEBHOOK_URL_PUBLICA` é a origem pública da API (sem ela a tag GTM só funciona na máquina local). **Deploy só com confirmação explícita do usuário.**
+   - P7.2 deploy: **no ar desde 2026-10-16** (D39, [[operacao/producao]]). Stack `trafego-pasio` com segredos, db, api e web; o cloudflared é o do host; segredos gerados no servidor. Falta o critério de aceite: um webhook de produção processar um evento de teste. Mexer na stack ou no túnel continua pedindo confirmação explícita do usuário.
    - P7.3 entrega final e **Gate G4**: o usuário aprova a fidelidade na tela real.
 8. ~~Pendência visual da Fase 5: a tabela de fontes cortava a coluna de ações em larguras estreitas.~~ Resolvida em 2026-10-16: abaixo de 48em, as tabelas das Configurações viram cartões (D23).
 
@@ -110,4 +110,4 @@ Detalhes em [[operacao/runbooks]] (seção Ambiente local). Resumo do que foi us
 - Movimento no dashboard: qualquer animação nova tem de ficar dentro de `@media (prefers-reduced-motion: no-preference)` e terminar no estado do SSR, senão o diff do CI muda (D29).
 - Antes de cada push: varredura de segredos (o repositório é público) e conferir que `.env.local` e `registro/` seguem ignorados.
 
-Relacionado: [[log]], [[operacao/ambiente-e-seguranca]], [[orquestracao-agentes/agentes-e-fases]].
+Relacionado: [[log]], [[operacao/producao]], [[operacao/ambiente-e-seguranca]], [[orquestracao-agentes/agentes-e-fases]].

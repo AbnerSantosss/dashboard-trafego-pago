@@ -35,7 +35,7 @@ Orquestrador (esta sessão) despacha subagentes Opus 5.5 em modo Auto, um por es
 | 4 Dashboard React | 8–14 | tela Visão Geral conectada à API (concluída 2026-10-15) | — |
 | 5 Administração (enxuta, D15) | 12–14 | apresentação (nome/logo), webhooks (segredo) (concluída 2026-10-15) | — |
 | 6 QA (enxuta, D15) | 14–15 | pnpm check + diff visual no CI, e2e isolamento | G3 |
-| 7 Entrega | 15–17 | wiki essencial, Portainer + túnel, aprovação | G4 |
+| 7 Entrega | 15–17 | wiki essencial, Portainer + túnel (no ar em 2026-10-16, falta o webhook de teste), aprovação | G4 |
 
 ## Regras de despacho
 - Brief de cada subagente: objetivo, arquivos permitidos, página da wiki a ler, critério de pronto, proibições (segredos, Hyperframes runtime, chamadas pagas).

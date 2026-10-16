@@ -45,7 +45,7 @@ pnpm dev                  # web em :3000, api em :3001
 Variáveis em `.env.example` (sem valores). Nenhum segredo no repositório ([[decisoes-tecnicas/decisoes]] D8).
 
 ## Produção (Portainer + túnel Cloudflare)
-Arquivos: `Dockerfile` (alvos `api` e `web`), `docker-compose.prod.yml` (segredos, db, api, web) e `deploy/producao.env.example` (lista de variáveis). Decisão em [[decisoes-tecnicas/decisoes]] D39.
+Arquivos: `Dockerfile` (alvos `api` e `web`), `docker-compose.prod.yml` (segredos, db, api, web) e `deploy/producao.env.example` (lista de variáveis). Decisão em [[decisoes-tecnicas/decisoes]] D39. O que já está no ar (endereços, contêineres, senha do admin, backup e armadilhas) fica em [[operacao/producao]]; esta seção é a instalação do zero.
 
 1. Nenhum segredo para gerar ou colar: na primeira subida, o serviço `segredos` cria as senhas do banco, o `AUTH_SECRET` e a chave de cifra no volume `segredos`, e as subidas seguintes reaproveitam esses arquivos.
 2. Portainer → ambiente `local` → Stacks → Add stack → **Repository**: URL do repositório público, referência `refs/heads/main`, compose `docker-compose.prod.yml`. Em Environment variables, preencher `WEB_URL`, `WEBHOOK_URL_PUBLICA`, `ADMIN_EMAIL` (e SMTP, se houver). Deploy (o primeiro build leva alguns minutos).
@@ -55,4 +55,4 @@ Arquivos: `Dockerfile` (alvos `api` e `web`), `docker-compose.prod.yml` (segredo
 
 Atualizar: Portainer → stack → **Pull and redeploy** (rebuild das imagens a partir da `main`). Os dados ficam nos volumes `pgdata` e `segredos` da stack, e o backup leva **os dois**: sem a chave de cifra, os segredos de webhook e os tokens do Meta gravados no banco não abrem. Apagar o volume `segredos` com o banco já criado deixa a API sem acesso a ele.
 
-Relacionado: [[ingestao-webhooks/contrato-webhook]], [[arquitetura/stack]].
+Relacionado: [[ingestao-webhooks/contrato-webhook]], [[arquitetura/stack]], [[operacao/producao]].

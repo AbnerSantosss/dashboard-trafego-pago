@@ -136,10 +136,10 @@ Formato: **ID** — tarefa · agente · entrega · critério de aceite · depend
 
 ### Fase 7 — Entrega
 - **P7.1** — Wiki essencial: como rodar local, como cadastrar empresa e webhook, runbook de deploy · docs-wiki · `wiki/` · pessoa nova sobe e usa só com a wiki · P6.2
-- **P7.2** — Deploy em produção · backend-ingestion · ambientes · webhook de produção processa evento de teste · P6.2
+- **P7.2** — Deploy em produção · backend-ingestion · ambientes · webhook de produção processa evento de teste · P6.2 · **no ar 2026-10-16** (D39; falta o webhook de teste, ver `wiki/operacao/producao.md`)
   - P7.2a — Repositório **público** já criado em 2026-10-15 (`github.com/AbnerSantosss/dashboard-trafego-pago`); manter sem segredos (varredura antes de cada push; `.env` e `registro/` fora do git) · com confirmação · D9
-  - P7.2b — Stack no Portainer (`portainer.proxserverabner.site`): `docker-compose.prod.yml` com web, api, postgres e cloudflared; segredos só em variáveis do Portainer · com confirmação · D9
-  - P7.2c — Túnel Cloudflare (conta `fb20af5d…`) apontando o hostname público para o serviço web; token do túnel fora do repositório · com confirmação · D9
+  - P7.2b — Stack no Portainer (`portainer.proxserverabner.site`): `docker-compose.prod.yml` com segredos, db, api e web, sem cloudflared (o túnel roda no host); segredos gerados no próprio servidor (volume `segredos`), variáveis da stack só com endereços e e-mail do admin · com confirmação · D9, D39 · **concluída 2026-10-16** (stack `trafego-pasio`)
+  - P7.2c — Túnel Cloudflare (conta `fb20af5d…`, túnel `servidor-abner`) com rotas `pasio.proxserverabner.site` → web (`localhost:3480`) e `pasio-api.proxserverabner.site` → API (`localhost:3481`); token do túnel fora do repositório · com confirmação · D9, D39 · **concluída 2026-10-16**
 - **P7.3** — Entrega final: demo com a empresa seed, `log.md`, pendências · orquestrador · entrega · **Gate G4**: usuário aprova a fidelidade na tela real · P7.2
 
 ---

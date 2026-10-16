@@ -1,7 +1,7 @@
 ---
 tipo: referencia
 atualizado: 2026-10-16
-tags: [seguranca, ambiente, segredos, repositorio-publico, auto-mode, claude-code]
+tags: [seguranca, ambiente, segredos, repositorio-publico, auto-mode, claude-code, producao]
 ---
 
 # Ambiente e segurança
@@ -17,9 +17,14 @@ Retrato do ambiente e das fronteiras de confiança do projeto, levantado em 2026
 ## Segredos
 - Configuração local por `.env`: `DATABASE_URL`, `AUTH_SECRET`, `WEBHOOK_CHAVE_CIFRA`, `SMTP_*`, `EMAIL_REMETENTE`.
 - Ignorados pelo git: `.env`, `.env.*`, `apps/api/.env.local`. Só o `.env.example` (sem valores) é versionado. `registro/` também fica fora.
-- Chaves de API (OpenRouter, kie.ai, muapi, banco) e credenciais nunca entram em código, wiki, log, commit ou artifact (regra do `CLAUDE.md`). Em produção, só nas variáveis do Portainer.
+- Chaves de API (OpenRouter, kie.ai, muapi, banco) e credenciais nunca entram em código, wiki, log, commit ou artifact (regra do `CLAUDE.md`). Em produção, as senhas do banco, o `AUTH_SECRET` e a chave de cifra são gerados no próprio servidor e ficam no volume `trafego-pasio_segredos` (D39); as variáveis da stack no Portainer têm só endereços e o e-mail do admin, e esse e-mail não entra no repositório nem na wiki. Detalhes em [[operacao/producao]].
 - A análise marcou `apps/api/drizzle/0004_sources_secret_enc.sql` como local sensível. Conferido: é só a migração que cria a coluna `secret_enc` (sem valores); o que é sensível é o **conteúdo** dessa coluna no banco, cifrado com `WEBHOOK_CHAVE_CIFRA` (D18).
 - Serviços públicos de colar texto (gist, pastebin) ficam fora da fronteira de confiança.
+
+## Produção
+- No ar desde 2026-10-16: painel em `pasio.proxserverabner.site` e API em `pasio-api.proxserverabner.site`, pelo túnel Cloudflare `servidor-abner`; stack `trafego-pasio` em `portainer.proxserverabner.site`.
+- Web e API publicam só em `127.0.0.1` do servidor (3480 e 3481) e o banco não publica porta: tudo de fora passa pelo túnel.
+- Mexer na stack, nas rotas do túnel ou nos volumes é ação de produção e pede confirmação do usuário. Ver [[operacao/producao]].
 
 ## Alvos que exigem confirmação
 - Qualquer host, namespace ou contêiner com `prod` ou `production` como palavra ou segmento do nome.
@@ -36,4 +41,4 @@ Retrato do ambiente e das fronteiras de confiança do projeto, levantado em 2026
 ## O que não foi levantado
 Ficaram de fora porque o escopo escolhido foi "só este projeto": outros repositórios da conta, documentação de repositórios irmãos, uso recente em outros projetos. As regras de permissão existentes do modo automático não puderam ser lidas; a proposta não sugeriu regras novas de permitir ou bloquear, só o texto de ambiente acima.
 
-Relacionado: [[operacao/retomada]], [[operacao/runbooks]], [[decisoes-tecnicas/decisoes]].
+Relacionado: [[operacao/producao]], [[operacao/retomada]], [[operacao/runbooks]], [[decisoes-tecnicas/decisoes]].
