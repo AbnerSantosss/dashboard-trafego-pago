@@ -2,6 +2,7 @@
 
 ## Leitura automática da wiki
 - No início de toda sessão, leia `wiki/index.md` e as últimas 30 linhas de `wiki/log.md`.
+- Para retomar o trabalho, leia `wiki/operacao/retomada.md` (estado, CI e próximos passos em ordem) e mantenha essa página atualizada ao fim de cada sessão.
 - Antes de mexer em uma área, leia a página da categoria correspondente em `wiki/`.
 - Ao concluir trabalho relevante, registre em `wiki/log.md` (`## [AAAA-MM-DD] <tipo> | <resumo>`) e atualize a página afetada. Decisões vão em `wiki/decisoes-tecnicas/decisoes.md`.
 - Convenções da wiki: frontmatter YAML (`tipo`, `atualizado`, `tags`), kebab-case sem acento, links `[[nome]]`.

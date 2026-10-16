@@ -93,3 +93,9 @@ tags: [log, historico]
 - Verificação: tsc, eslint e prettier limpos; telas conferidas no navegador com a API real; a tag respondeu 204. Convite não foi disparado no teste para não mandar e-mail real.
 - Armadilha: `TaskStop` no shell da API deixa o `tsx` órfão segurando a porta 3011; é preciso encerrar o processo node.
 - Entregue: código no disco, sem commit. Pendente: definir `WEBHOOK_URL_PUBLICA` em produção e trocar a senha de app do Gmail usada no teste.
+
+## [2026-10-16] update | Página de retomada e retrato de ambiente e segurança
+- Pedido: "salve tudo isso na wiki, deixe pronto e orientado para quando eu abrir possa continuar" (após o `/auto-mode-setup` do Claude Code).
+- Feito: [[operacao/retomada]] (onde paramos, estado do CI, próximos passos em ordem, como subir local, armadilhas) e [[operacao/ambiente-e-seguranca]] (repositório público e sem proteção na `main`, segredos, alvos que pedem confirmação, rotina). Índice com seção "Comece por aqui"; `CLAUDE.md` aponta para a retomada.
+- Achado: no primeiro run do CI novo (`5216d62`) o job check passou e o job visual falhou com `ERR_CONNECTION_REFUSED` em `localhost:3000` (o servidor web não chegou vivo ao passo do comparador no runner Windows). É o primeiro item da retomada.
+- Entregue: wiki atualizada e commitada.

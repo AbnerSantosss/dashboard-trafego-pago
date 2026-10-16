@@ -1,6 +1,6 @@
 ---
 tipo: indice
-atualizado: 2026-10-15
+atualizado: 2026-10-16
 tags: [wiki, indice, dashboard, trafego-pago, multiempresa]
 ---
 
@@ -9,6 +9,9 @@ tags: [wiki, indice, dashboard, trafego-pago, multiempresa]
 Painel de resultados de aquisição (investimento, FTDs, CPA, depósitos, ROAS, funil e canais) alimentado por webhooks, com configuração de webhooks, regras de tratamento e apresentação por empresa. Primeira empresa: PASIO (pasion.poker). Projeto técnico.
 
 Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde D15). Painel interativo do plano: https://claude.ai/artifact/KcEDCoT1Qws3MjLLHMFgY6
+
+## Comece por aqui
+- [[operacao/retomada]] — onde o trabalho parou, CI, próximos passos em ordem, como subir local
 
 ## Como usar esta wiki
 - Antes de mexer em qualquer área, leia a página da categoria correspondente.
@@ -44,6 +47,8 @@ Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde
 
 ## Operação
 - [[operacao/runbooks]] — onboarding de empresa, rotação de segredo, reprocessamento, dead-letter
+- [[operacao/retomada]] — estado atual e próximos passos
+- [[operacao/ambiente-e-seguranca]] — repositório público, segredos, alvos que exigem confirmação, rotina
 
 ## Orquestração de agentes
 - [[orquestracao-agentes/agentes-e-fases]] — orquestrador, nove subagentes, áreas exclusivas, fases e gates
