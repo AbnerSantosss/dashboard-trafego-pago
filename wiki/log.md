@@ -211,3 +211,8 @@ tags: [log, historico]
   - 61 quadros por segundo no pior caso;
   - HTML de `/relatorios` de 93 KB para 47 KB;
   - diff 5,198%; web com 71 testes.
+
+## [2026-10-16] update | Commit e push de D34 a D37
+- Pedido: "faz o commit e o push se nao tiver repor pode criar um" (o repositório já existia).
+- Feito: `64c95a4` (código) e `752c4dc` (wiki) enviados para `main`. Conferido antes que não sobe chave nem senha real.
+- Entregue: CI verde nos dois jobs (check e visual), run 38895390480.
