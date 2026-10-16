@@ -78,19 +78,28 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter "@trafego/web..." build
       - run: pnpm --filter @trafego/qa-visual exec playwright install chromium
-      - name: Sobe o web com a fixture
+      # Servidor e comparador no mesmo passo: no runner Windows o `next start` iniciado com
+      # Start-Process não sobrevive ao fim do passo, e o passo seguinte achava a porta 3000 fechada.
+      - name: Sobe o web com a fixture e compara com a referência
         shell: pwsh
         run: |
-          Start-Process -NoNewWindow -FilePath pnpm.cmd -ArgumentList '--filter','@trafego/web','start' `
+          $web = Start-Process -PassThru -NoNewWindow -FilePath pnpm.cmd -ArgumentList '--filter','@trafego/web','start' `
             -RedirectStandardOutput web.log -RedirectStandardError web-erro.log
-          for ($i = 0; $i -lt 60; $i++) {
-            try { if ((Invoke-WebRequest -UseBasicParsing http://localhost:3000/).StatusCode -eq 200) { exit 0 } } catch {}
-            Start-Sleep -Seconds 2
+          $pronto = $false
+          for ($i = 0; $i -lt 60 -and -not $pronto; $i++) {
+            try { $pronto = (Invoke-WebRequest -UseBasicParsing http://localhost:3000/).StatusCode -eq 200 } catch {}
+            if (-not $pronto) { Start-Sleep -Seconds 2 }
           }
-          Get-Content web.log, web-erro.log
-          throw 'O web não respondeu em 120 s.'
-      # Limite 5,5% (D19): a tela aceita em D17 mede 5,16% com a fixture; acima disso é regressão.
-      - run: pnpm qa:visual --alvo http://localhost:3000 --limite 5.5
+          if (-not $pronto) {
+            Get-Content web.log, web-erro.log
+            throw 'O web não respondeu em 120 s.'
+          }
+          # Limite 5,5% (D19): a tela aceita em D17 mede 5,16% com a fixture; acima disso é regressão.
+          pnpm qa:visual --alvo http://localhost:3000 --limite 5.5
+          $codigo = $LASTEXITCODE
+          if ($codigo -ne 0) { Get-Content web.log, web-erro.log }
+          taskkill /T /F /PID $web.Id | Out-Null
+          exit $codigo
       - if: always()
         uses: actions/upload-artifact@v4
         with:
