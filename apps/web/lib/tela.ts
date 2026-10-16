@@ -215,6 +215,9 @@ function caixa(
   return { tipo: 'caixa', cls, x, y, w, h, ...(estilo ? { estilo } : {}) };
 }
 
+/** Item extra do rodapé da sidebar, fora da fixture da imagem. */
+export const ITEM_CONFIGURACOES = { id: 'configuracoes', rotulo: 'Configurações' } as const;
+
 export function montarSidebar(menu: ItemMenu[], ativo: string): No[] {
   const nos: No[] = [];
   for (const m of menu.filter((i) => i.posicao === 'topo')) {
@@ -242,6 +245,12 @@ export function montarSidebar(menu: ItemMenu[], ativo: string): No[] {
       ),
     );
     nos.push(T('nav.ajuda', 53, 707, ajuda.id === ativo ? 'nav nav-on' : 'nav', ajuda.rotulo));
+    // Configurações não está na imagem de referência: fica no rodapé, 40 px acima da Ajuda.
+    const cfgOn = ativo === ITEM_CONFIGURACOES.id;
+    nos.push(
+      ic('nav.config.ic', 'configuracoes', 20.5, 650, 20, 20, cfgOn ? 'nav-ic-ativo' : 'nav-ic'),
+    );
+    nos.push(T('nav.config', 53, 667, cfgOn ? 'nav nav-on' : 'nav', ITEM_CONFIGURACOES.rotulo));
   }
   return nos;
 }

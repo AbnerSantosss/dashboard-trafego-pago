@@ -18,6 +18,7 @@ export const mapa = {
   'gestao-custos': ['outline', 'database', 'Menu: Gestão de Custos'],
   relatorios: ['outline', 'file-text', 'Menu: Relatórios'],
   ajuda: ['outline', 'help-circle', 'Rodapé da sidebar: Ajuda'],
+  configuracoes: ['outline', 'settings', 'Rodapé da sidebar: Configurações (acima da Ajuda)'],
   exportar: ['outline', 'download', 'Botão Exportar'],
   'chevron-down': ['outline', 'chevron-down', 'Botão Exportar e selects dos filtros'],
   investimento: ['outline', 'coins', 'Tile do KPI Investimento total'],

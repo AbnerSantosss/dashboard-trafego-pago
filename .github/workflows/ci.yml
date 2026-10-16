@@ -1,0 +1,99 @@
+# CI da Fase 6 (P6.1, D15/D19): qualidade completa + regressão visual. Qualquer falha bloqueia o merge
+# (marque os jobs `check` e `visual` como obrigatórios na proteção da branch main).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: check (lint, format, typecheck, testes, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          # Senhas exclusivas do banco descartável do CI; não servem para nenhum outro ambiente.
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: trafego
+        ports:
+          - 5460:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://app_user:app_user@localhost:5460/trafego
+      DATABASE_ADMIN_URL: postgres://postgres:postgres@localhost:5460/trafego
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Papéis e migrações do banco
+        run: |
+          psql "$DATABASE_ADMIN_URL" -v ON_ERROR_STOP=1 -f docker/initdb/01-papeis.sql
+          pnpm --filter @trafego/api db:migrate
+      - run: pnpm lint
+      - run: pnpm format
+      - run: pnpm typecheck
+      - name: Testes (falha se algum teste de banco for pulado)
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm test 2>&1 | tee teste.log
+          if grep -q PULADOS teste.log; then
+            echo "::error::Testes de banco foram pulados: o Postgres do CI não respondeu."
+            exit 1
+          fi
+      - run: pnpm build
+
+  visual:
+    name: visual (diff contra ref-1.png)
+    # A fonte da tela é Segoe UI, que só existe no Windows; em Linux o diff mediria a fonte substituta.
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      WEB_MOCK_API: '1'
+      AUTH_SECRET: segredo-somente-do-ci-visual-sem-uso-real-0123456789
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter "@trafego/web..." build
+      - run: pnpm --filter @trafego/qa-visual exec playwright install chromium
+      - name: Sobe o web com a fixture
+        shell: pwsh
+        run: |
+          Start-Process -NoNewWindow -FilePath pnpm.cmd -ArgumentList '--filter','@trafego/web','start' `
+            -RedirectStandardOutput web.log -RedirectStandardError web-erro.log
+          for ($i = 0; $i -lt 60; $i++) {
+            try { if ((Invoke-WebRequest -UseBasicParsing http://localhost:3000/).StatusCode -eq 200) { exit 0 } } catch {}
+            Start-Sleep -Seconds 2
+          }
+          Get-Content web.log, web-erro.log
+          throw 'O web não respondeu em 120 s.'
+      # Limite 5,5% (D19): a tela aceita em D17 mede 5,16% com a fixture; acima disso é regressão.
+      - run: pnpm qa:visual --alvo http://localhost:3000 --limite 5.5
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diff-visual
+          path: tests/visual/saida
+          if-no-files-found: ignore

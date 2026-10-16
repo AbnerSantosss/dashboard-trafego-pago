@@ -1,6 +1,6 @@
 import { referencia } from '@trafego/fixtures';
 import Link from 'next/link';
-import { montarSidebar, NAV_Y } from '@/lib/tela';
+import { ITEM_CONFIGURACOES, montarSidebar, NAV_Y } from '@/lib/tela';
 import { Nos } from './Nos';
 
 export const ROTAS: Record<string, string> = {
@@ -8,9 +8,10 @@ export const ROTAS: Record<string, string> = {
   'gestao-custos': '/gestao-de-custos',
   relatorios: '/relatorios',
   ajuda: '/ajuda',
+  configuracoes: '/configuracoes',
 };
 
-/** Sidebar de 180 px: logo, menu principal e Ajuda no rodapé. */
+/** Sidebar de 180 px: logo, menu principal e, no rodapé, Configurações e Ajuda. */
 export function Sidebar({
   ativo,
   logoUrl = '/brand/pasio-logo.png',
@@ -63,6 +64,14 @@ export function Sidebar({
             </Link>
           );
         })}
+        <Link
+          href={ROTAS.configuracoes!}
+          className="alvo nav-link"
+          style={{ left: 8, top: 640, width: 160, height: 30 }}
+          aria-current={ativo === ITEM_CONFIGURACOES.id ? 'page' : undefined}
+        >
+          <span className="so-leitor">{ITEM_CONFIGURACOES.rotulo}</span>
+        </Link>
       </nav>
     </aside>
   );
