@@ -701,6 +701,746 @@
         }
       }
     },
+    "/auth/sessao-dev": {
+      "post": {
+        "summary": "Login de desenvolvimento sem senha (não existe em produção)",
+        "tags": [
+          "auth"
+        ],
+        "description": "Somente desenvolvimento local: emite um token de 12 h para o e-mail informado, sem senha. Não é registrada quando NODE_ENV=production. Será substituída pelo Auth.js.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 320
+                  }
+                },
+                "required": [
+                  "email"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "JWT de 12 h, sem claim tenant"
+                    },
+                    "usuario": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "nome": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "email",
+                        "nome"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "empresas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "papel": {
+                            "type": "string",
+                            "enum": [
+                              "admin",
+                              "analista",
+                              "leitor"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "slug",
+                          "nome",
+                          "papel"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "token",
+                    "usuario",
+                    "empresas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metricas/visao-geral": {
+      "get": {
+        "summary": "Visão Geral: KPIs, funil e tabela por canal",
+        "tags": [
+          "metricas"
+        ],
+        "description": "Qualquer papel. Lido sob RLS. Sem de/ate: 24 dias terminando no último dia com dados. Canais com prefixo __ nunca aparecem em kpis/canais/opcoes (só no funil). Cache em memória por instância, 15 s (Cache-Control: private, max-age=15).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            },
+            "in": "query",
+            "name": "de",
+            "required": false,
+            "description": "AAAA-MM-DD, inclusivo, no fuso da empresa"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+            },
+            "in": "query",
+            "name": "ate",
+            "required": false,
+            "description": "AAAA-MM-DD, inclusivo, no fuso da empresa"
+          },
+          {
+            "schema": {
+              "default": "anterior",
+              "type": "string",
+              "enum": [
+                "anterior",
+                "nenhum"
+              ]
+            },
+            "in": "query",
+            "name": "comparar",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": "todos",
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "query",
+            "name": "canal",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": "todas",
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "query",
+            "name": "campanha",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "header",
+            "name": "x-tenant",
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "periodo": {
+                      "type": "object",
+                      "properties": {
+                        "de": {
+                          "type": "string"
+                        },
+                        "ate": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "de",
+                        "ate"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "comparacao": {
+                      "nullable": true,
+                      "type": "object",
+                      "properties": {
+                        "de": {
+                          "type": "string"
+                        },
+                        "ate": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "de",
+                        "ate"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "atualizadoEm": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "apresentacao": {
+                      "type": "object",
+                      "properties": {
+                        "nomeExibicao": {
+                          "type": "string"
+                        },
+                        "logoUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "subtitulo": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "kpis": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "investimento",
+                              "ftds",
+                              "cpa",
+                              "depositos",
+                              "roas"
+                            ]
+                          }
+                        },
+                        "columns": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "channels": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "canal": {
+                                "type": "string"
+                              },
+                              "cor": {
+                                "type": "string"
+                              },
+                              "ordem": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "canal",
+                              "cor",
+                              "ordem"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "palette": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "currency": {
+                          "type": "string"
+                        },
+                        "timezone": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "nomeExibicao",
+                        "logoUrl",
+                        "subtitulo",
+                        "kpis",
+                        "columns",
+                        "channels",
+                        "palette",
+                        "currency",
+                        "timezone"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "kpis": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "investimento",
+                              "ftds",
+                              "cpa",
+                              "depositos",
+                              "roas"
+                            ]
+                          },
+                          "valor": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "valorAnterior": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "variacaoPct": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "sparkline": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "valor",
+                          "valorAnterior",
+                          "variacaoPct",
+                          "sparkline"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "funil": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "base",
+                              "cliques",
+                              "visitas",
+                              "cadastro",
+                              "ftd"
+                            ]
+                          },
+                          "valor": {
+                            "type": "number"
+                          },
+                          "taxaPct": {
+                            "nullable": true,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "valor",
+                          "taxaPct"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "canais": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "canal": {
+                            "type": "string"
+                          },
+                          "cor": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "investimento": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "cliques": {
+                            "type": "number"
+                          },
+                          "visitas": {
+                            "type": "number"
+                          },
+                          "cadastros": {
+                            "type": "number"
+                          },
+                          "ftdsQtd": {
+                            "type": "number"
+                          },
+                          "ftdsValor": {
+                            "type": "number"
+                          },
+                          "depositos": {
+                            "type": "number"
+                          },
+                          "cpa": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "roas": {
+                            "nullable": true,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "canal",
+                          "cor",
+                          "investimento",
+                          "cliques",
+                          "visitas",
+                          "cadastros",
+                          "ftdsQtd",
+                          "ftdsValor",
+                          "depositos",
+                          "cpa",
+                          "roas"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "total": {
+                      "type": "object",
+                      "properties": {
+                        "canal": {
+                          "type": "string"
+                        },
+                        "cor": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "investimento": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "cliques": {
+                          "type": "number"
+                        },
+                        "visitas": {
+                          "type": "number"
+                        },
+                        "cadastros": {
+                          "type": "number"
+                        },
+                        "ftdsQtd": {
+                          "type": "number"
+                        },
+                        "ftdsValor": {
+                          "type": "number"
+                        },
+                        "depositos": {
+                          "type": "number"
+                        },
+                        "cpa": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "roas": {
+                          "nullable": true,
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "canal",
+                        "cor",
+                        "investimento",
+                        "cliques",
+                        "visitas",
+                        "cadastros",
+                        "ftdsQtd",
+                        "ftdsValor",
+                        "depositos",
+                        "cpa",
+                        "roas"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "opcoes": {
+                      "type": "object",
+                      "properties": {
+                        "canais": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "campanhas": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "canais",
+                        "campanhas"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "periodo",
+                    "comparacao",
+                    "atualizadoEm",
+                    "apresentacao",
+                    "kpis",
+                    "funil",
+                    "canais",
+                    "total",
+                    "opcoes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/webhooks/{empresa}/{fonte}": {
       "post": {
         "summary": "Recebe um webhook assinado",

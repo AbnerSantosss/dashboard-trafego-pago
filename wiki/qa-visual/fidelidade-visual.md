@@ -44,3 +44,8 @@ Textos dinâmicos (valores, datas), logo e nome da empresa, cores de acento conf
 - Antialiasing varia por SO. O número de 4,18% vale no Windows (Segoe UI local); em CI Linux sem essa fonte o diff sobe. Antes de ligar o diff no CI, fixar uma fonte empacotada no repositório ou rodar o diff no Windows.
 - `prototype/index.html` e `prototype/calibracao.json` são gerados: não formatar com Prettier (mudar espaços do HTML muda o render) nem editar à mão.
 - Sparklines e funil são SVG: comparar a forma, não o traço exato; usar `threshold` do pixelmatch em 0,1.
+
+## Medições da Fase 4 (tela React, 2026-10-15)
+- Contra a imagem: 5,39% (API real, seed PASIO). Contra o protótipo: 1,45%. Aceito em D17 ([[decisoes-tecnicas/decisoes]]).
+- Como medir a tela real: subir a API (`API_PORT=3011` se a 3001 estiver ocupada) e o web com `API_URL` apontando para ela, depois `pnpm qa:visual -- --alvo http://localhost:3000`. Com `WEB_MOCK_API=1` o web usa a fixture sem API.
+- O harness compara só contra `ref-1.png`; para medir contra o protótipo, capture-o com `--somente-captura` e compare as duas capturas com pixelmatch.

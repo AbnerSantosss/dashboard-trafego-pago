@@ -59,3 +59,14 @@ tags: [log, historico]
   - Orquestrador: coluna `events.base` (migração 0003), `ate` exclusivo no reprocessamento (`lt`), teste de determinismo do simulador fixado em data (dependia do relógio), `.env.example` com `WEBHOOK_*`.
 - Armadilhas: segredo do webhook ainda vem de `WEBHOOK_SEGREDOS` até P5.2 (D13); pg-boss precisa de `DATABASE_ADMIN_URL`; `db:migrate` não lê `.env`; status `processando` não existe; o teste de 10 mil eventos só roda com `TESTE_LENTO=1`.
 - Entregue: commit da Fase 3 enviado ao repositório. Próximo: Fase 4 (dashboard React ligado à API, fidelidade ao protótipo).
+
+## [2026-10-15] update | Fase 4 concluída: dashboard React ligado à API de métricas, funil d3, GSAP, filtros na URL, exportação
+- Pedido: "Siga para a Fase 4." e, no meio, "reduz, mantém só o essencial" (plano enxugado, D15).
+- Três subagentes em paralelo (D7) com contrato fixado em `packages/contratos` pelo orquestrador; `pnpm check` verde (lint, prettier, typecheck, testes, build).
+  - **API (P4.8)**: `GET /metricas/visao-geral` (período padrão de 24 dias até o último dia com dados, comparação com período anterior, filtros de canal/campanha, funil por canal `__funil__`, sparkline diária, cache 15 s) e `POST /auth/sessao-dev`. 7 testes reproduzem os números da imagem (33.840 / 995 / 226.190, funil 320.840→600) e o isolamento entre empresas. Docs em `apps/api/docs/metricas.md`. Ver D16.
+  - **Gráficos (P4.3, P4.4)**: `@trafego/graficos` com `Funil` (vértices do protótipo, viewBox absoluto, degradê por etapa, conectores), `Sparkline` (curva monotônica desenhada por dashoffset) e `Contador` (GSAP 900 ms, tabular-nums); SSR mostra o estado final, `prefers-reduced-motion` desliga tudo; 10 testes.
+  - **Web (P4.1, P4.2, P4.5–P4.7)**: layout do protótipo em React (`apps/web/componentes`, `lib/regras.ts`, `lib/api.ts`), filtros na URL, ordenação da tabela, exportação CSV/PNG, rotas de casca (Gestão de Custos, Relatórios, Ajuda), faixa de erro quando a API falha, `WEB_MOCK_API=1` para medir sem API; 10 testes.
+  - Orquestrador: corrigiu o `top` do funil (3 px), o import `./metricas.js` em `@trafego/contratos`, plano e wiki enxutos (D15), gate visual D17.
+- Medição: 5,39% contra a imagem, 1,45% contra o protótipo (ver [[qa-visual/fidelidade-visual]]).
+- Armadilhas: porta 3001 pode estar ocupada por outro processo da máquina (usar `API_PORT`); o `<Funil>` só pode ser montado em `top: 322`; `sessao-dev` não existe em produção, então o web em produção ainda não tem token (pendência para a Fase 7).
+- Entregue: commit da Fase 4. Próximo: Fase 5 enxuta (apresentação nome/logo, webhooks por empresa).

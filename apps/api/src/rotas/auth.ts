@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { buscarMembership, emitirToken, listarEmpresas } from '../auth/plugin.js';
@@ -119,6 +119,45 @@ export const rotasAuth: FastifyPluginAsyncZod = async (app) => {
       });
       if (!tenant) throw ErroApi.de('nao_encontrado', 'Empresa não encontrada.');
       return { empresa: { ...empresa, ...tenant }, apresentacao: apres ?? null };
+    },
+  );
+};
+
+export const schemaSessaoDev = z.object({
+  token: z.string().describe('JWT de 12 h, sem claim tenant'),
+  usuario: z.object({ id: z.uuid(), email: z.string(), nome: z.string() }),
+  empresas: z.array(schemaEmpresa),
+});
+
+/**
+ * Login de desenvolvimento, SEM SENHA: basta o e-mail de um usuário existente.
+ * Temporário até o Auth.js (Fase 5). O `buildApp` só registra este plugin quando
+ * `NODE_ENV !== 'production'`; em produção a rota não existe (404).
+ */
+export const rotasSessaoDev: FastifyPluginAsyncZod = async (app) => {
+  app.post(
+    '/auth/sessao-dev',
+    {
+      schema: {
+        tags: ['auth'],
+        summary: 'Login de desenvolvimento sem senha (não existe em produção)',
+        description:
+          'Somente desenvolvimento local: emite um token de 12 h para o e-mail informado, sem ' +
+          'senha. Não é registrada quando NODE_ENV=production. Será substituída pelo Auth.js.',
+        body: z.object({ email: z.string().min(3).max(320) }),
+        response: { 200: schemaSessaoDev, 400: schemaRespostaErro, 404: schemaRespostaErro },
+      },
+    },
+    async (request) => {
+      const email = request.body.email.trim().toLowerCase();
+      const [usuario] = await app.db
+        .select({ id: users.id, email: users.email, nome: users.nome })
+        .from(users)
+        .where(sql`lower(${users.email}) = ${email}`)
+        .limit(1);
+      if (!usuario) throw ErroApi.de('nao_encontrado', 'Usuário não encontrado.');
+      const token = emitirToken(app, { sub: usuario.id, email: usuario.email });
+      return { token, usuario, empresas: await listarEmpresas(app.db, usuario.id) };
     },
   );
 };

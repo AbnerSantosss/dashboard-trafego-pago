@@ -71,9 +71,11 @@ Fluxo: plano aprovado → `/gera-wiki` → tarefa despachada com área exclusiva
 | 2 Fundação | 3–8 | Esquema multiempresa com RLS, auth e papéis, API base, seed |
 | 3 Ingestão | 7–15 | Webhooks assinados, armazenamento bruto, fila, regras, classificador, agregações |
 | 4 Dashboard | 7–16 | Shell, KPIs, funil, animações, tabela, filtros, exportar, ligação à API |
-| 5 Administração | 12–18 | Empresas, webhooks, regras, apresentação, usuários |
-| 6 QA | 16–19 | Regressão visual, e2e, carga e segurança, a11y |
-| 7 Entrega | 18–20 | Wiki completa, deploy, demonstração, **Gate G4** |
+| 5 Administração (enxuta) | 12–14 | Apresentação (nome, logo), webhooks por empresa (segredo) · D15 |
+| 6 QA (enxuta) | 14–15 | `pnpm check` + diff visual contra a imagem; e2e mínimo de isolamento (**Gate G3**) · D15 |
+| 7 Entrega | 15–17 | Wiki essencial, Portainer + túnel Cloudflare, **Gate G4** · D15 |
+
+> **Escopo reduzido em 2026-10-15 (D15):** a pedido do usuário, as fases 5–7 ficam só com o essencial. Itens riscados abaixo saem do plano e podem voltar como melhorias depois da entrega.
 
 Dias são úteis e estimados; fases 2/3 e 4/5 correm em paralelo porque os agentes são distintos.
 
@@ -122,26 +124,23 @@ Formato: **ID** — tarefa · agente · entrega · critério de aceite · depend
 - **P4.7** — Exportar CSV e PNG; rotas Gestão de Custos e Relatórios (estrutura) · frontend-ui · exportação e rotas · CSV com as colunas da tabela; PNG na resolução da tela · P4.5 · D14–D16
 - **P4.8** — Ligação à API de métricas com cache por empresa e período · backend-ingestion · hooks · primeira pintura com dados < 1,5 s com seed local · P3.5 · D14–D16
 
-### Fase 5 — Administração
-- **P5.1** — Empresas: criar, editar, logo, slug, fuso, moeda · tenant-admin · admin de tenants · admin cria empresa e recebe painel vazio · P2.2 · D12–D14
-- **P5.2** — Webhooks por empresa: fontes, segredo, rotação, URL, log de entregas · tenant-admin · admin de webhooks · segredo exibido uma vez; log dos últimos 100 · P3.1 · D13–D16
-- **P5.3** — Editor de regras com teste ao vivo · tenant-admin · editor · regra inválida bloqueada com mensagem · P3.3 · D14–D17
-- **P5.4** — Apresentação: KPIs visíveis e ordem, nome exibido, ícone/logo (upload), paleta, colunas · tenant-admin · admin de apresentação · painel reflete sem recarregar · P4.6 · D15–D18
-- **P5.5** — Usuários e papéis; convites por e-mail · tenant-admin · admin de usuários · leitor não vê a administração · P2.2 · D15–D17
+### Fase 5 — Administração (enxuta, D15)
+- **P5.1** — Apresentação: nome exibido e logo (upload PNG/SVG) em Configurações → Apresentação · tenant-admin · tela + rota PATCH /empresas/atual/apresentacao · painel reflete após recarregar · P4.8
+- **P5.2** — Webhooks por empresa: listar fontes, gerar/rotacionar segredo (exibido uma vez) · tenant-admin · tela + rotas · segredo nunca persistido em claro · P3.1
+- ~~P5.3 Editor de regras com teste ao vivo~~ · ~~P5.4 KPIs/paleta/colunas configuráveis~~ · ~~P5.5 Usuários, papéis e convites~~ — removidos (D15); papéis continuam só via seed/SQL.
 
-### Fase 6 — QA
-- **P6.1** — Regressão visual automatizada contra referência e protótipo · qa-visual · suíte no CI · diff ≤ 2% por tela; falha bloqueia merge · P4.7 · D16–D18
-- **P6.2** — E2E: webhook → regra → agregação → painel · qa-visual · suíte e2e · passa para 2 empresas isoladas (**Gate G3**) · P5.3 · D17–D19
-- **P6.3** — Carga e segurança (assinatura, replay, limite por empresa) · qa-visual · relatório · 500 ev/s sem perda; replay rejeitado · P3.6 · D17–D19
-- **P6.4** — Acessibilidade e responsividade 1024–1920 · qa-visual · relatório e correções · sem erro crítico no axe · P4.7 · D18–D19
+### Fase 6 — QA (enxuta, D15)
+- **P6.1** — `pnpm check` (lint, typecheck, testes) e `pnpm qa:visual` contra a imagem (≤ 4,5%, D10) rodando no CI do GitHub · qa-visual · workflow · falha bloqueia merge · P4.8
+- **P6.2** — E2E mínimo: webhook → agregação → `/metricas/visao-geral` para 2 empresas isoladas (**Gate G3**) · qa-visual · teste Vitest · passa nas duas · P4.8
+- ~~P6.3 Carga 500 ev/s~~ · ~~P6.4 Acessibilidade e responsividade~~ — removidos (D15).
 
 ### Fase 7 — Entrega
-- **P7.1** — Wiki: arquitetura, regras, runbook de onboarding de empresa e operação de webhooks · docs-wiki · `wiki/` completa · pessoa nova onboarda uma empresa só com a wiki · P6.2 · D18–D20
-- **P7.2** — Deploy (preview e produção), variáveis, backups, monitoramento de fila · backend-ingestion · ambientes · webhook de produção processa evento de teste · P6.3 · D19–D20
-  - P7.2a — Repositório **público** já criado em 2026-10-15 (`github.com/AbnerSantosss/dashboard-trafego-pago`); manter sem segredos (varredura antes de cada push; `.env` e `registro/` fora do git); pode virar privado depois · com confirmação · D9
+- **P7.1** — Wiki essencial: como rodar local, como cadastrar empresa e webhook, runbook de deploy · docs-wiki · `wiki/` · pessoa nova sobe e usa só com a wiki · P6.2
+- **P7.2** — Deploy em produção · backend-ingestion · ambientes · webhook de produção processa evento de teste · P6.2
+  - P7.2a — Repositório **público** já criado em 2026-10-15 (`github.com/AbnerSantosss/dashboard-trafego-pago`); manter sem segredos (varredura antes de cada push; `.env` e `registro/` fora do git) · com confirmação · D9
   - P7.2b — Stack no Portainer (`portainer.proxserverabner.site`): `docker-compose.prod.yml` com web, api, postgres e cloudflared; segredos só em variáveis do Portainer · com confirmação · D9
   - P7.2c — Túnel Cloudflare (conta `fb20af5d…`) apontando o hostname público para o serviço web; token do túnel fora do repositório · com confirmação · D9
-- **P7.3** — Entrega final: demo com a empresa seed, `log.md`, pendências · orquestrador · entrega · **Gate G4**: usuário aprova a fidelidade na tela real · P7.1 · D20
+- **P7.3** — Entrega final: demo com a empresa seed, `log.md`, pendências · orquestrador · entrega · **Gate G4**: usuário aprova a fidelidade na tela real · P7.2
 
 ---
 

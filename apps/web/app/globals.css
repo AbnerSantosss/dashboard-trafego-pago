@@ -1,8 +1,4 @@
-@import 'tailwindcss';
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
 @import '@trafego/design/tokens.css';
-
-body {
-  background: var(--bg-app, #03111e);
-  color: var(--text-primary, #fff);
-  font-family: var(--font-sans, Inter, 'Segoe UI', sans-serif);
-}
+@import './tela.css';

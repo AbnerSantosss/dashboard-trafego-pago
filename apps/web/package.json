@@ -11,18 +11,25 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@trafego/contratos": "workspace:*",
     "@trafego/design": "workspace:*",
     "@trafego/fixtures": "workspace:*",
+    "@trafego/graficos": "workspace:*",
+    "html-to-image": "^1.11.13",
+    "jose": "^6.0.0",
     "next": "^15.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.0.0",
+    "@testing-library/react": "^16.1.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "jsdom": "^26.0.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.6.0",
+    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.0.0"
   }
 }

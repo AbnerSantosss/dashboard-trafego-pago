@@ -28,6 +28,8 @@ apps/api            Fastify (webhooks, métricas, admin)
 packages/design     tokens.css, tokens.json, ícones SVG, marca (logo PASIO)
 packages/rules      motor de regras (mapeamento, classificador)
 packages/fixtures   dados exatos da imagem de referência
+packages/contratos  tipos compartilhados API↔web (contrato de /metricas/visao-geral)
+packages/graficos   Funil (d3), Sparkline e Contador (GSAP), SSR-safe, prefers-reduced-motion
 prototype/          protótipo estático pixel-fiel (Fase 1)
 wiki/               esta wiki
 ```

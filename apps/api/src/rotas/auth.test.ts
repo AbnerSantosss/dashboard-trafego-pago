@@ -1,8 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { App } from '../app.js';
-import { appComBanco, bancoDisponivel, criarCenario, type Cenario } from '../auth/banco-teste.js';
+import {
+  appComBanco,
+  bancoDisponivel,
+  criarCenario,
+  URL_APP,
+  type Cenario,
+} from '../auth/banco-teste.js';
 import { emitirToken } from '../auth/plugin.js';
-import { schemaEmpresaAtual, schemaMe, schemaTrocaEmpresa } from './auth.js';
+import { schemaEmpresaAtual, schemaMe, schemaSessaoDev, schemaTrocaEmpresa } from './auth.js';
 
 describe('GET /ready com banco fora', () => {
   let app: App;
@@ -178,5 +184,70 @@ describe.skipIf(!disponivel)('rotas de autenticação (com banco)', () => {
     });
     expect(vazio.statusCode).toBe(400);
     expect(vazio.json().erro.codigo).toBe('empresa_nao_informada');
+  });
+});
+
+describe.skipIf(!disponivel)('POST /auth/sessao-dev', () => {
+  let app: App;
+  let c: Cenario;
+
+  beforeAll(async () => {
+    c = await criarCenario(['leitor', 'admin']);
+    app = await appComBanco();
+    await app.ready();
+  });
+
+  afterAll(async () => {
+    await app?.close();
+    await c?.limpar();
+  });
+
+  it('devolve token aceito em /me', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/auth/sessao-dev',
+      payload: { email: c.usuario.email },
+    });
+    expect(res.statusCode).toBe(200);
+    const corpo = schemaSessaoDev.parse(res.json());
+    expect(corpo.usuario.id).toBe(c.usuario.id);
+    expect(corpo.empresas).toHaveLength(2);
+    const me = await app.inject({
+      method: 'GET',
+      url: '/me',
+      headers: { authorization: `Bearer ${corpo.token}` },
+    });
+    expect(me.statusCode).toBe(200);
+    expect(me.json().empresaAtiva).toBeNull();
+  });
+
+  it('e-mail desconhecido → 404 nao_encontrado', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/auth/sessao-dev',
+      payload: { email: 'ninguem-existe@teste.local' },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(res.json().erro.codigo).toBe('nao_encontrado');
+  });
+
+  it('em produção a rota não existe', async () => {
+    const { buildApp } = await import('../app.js');
+    const { carregarEnv } = await import('../env.js');
+    const prod = await buildApp({
+      env: carregarEnv({
+        NODE_ENV: 'production',
+        DATABASE_URL: URL_APP,
+        AUTH_SECRET: 'segredo-de-teste-somente-local-0123456789abcdef',
+      }),
+      logger: false,
+    });
+    const res = await prod.inject({
+      method: 'POST',
+      url: '/auth/sessao-dev',
+      payload: { email: c.usuario.email },
+    });
+    expect(res.statusCode).toBe(404);
+    await prod.close();
   });
 });

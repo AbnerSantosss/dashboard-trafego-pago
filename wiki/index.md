@@ -8,7 +8,7 @@ tags: [wiki, indice, dashboard, trafego-pago, multiempresa]
 
 Painel de resultados de aquisição (investimento, FTDs, CPA, depósitos, ROAS, funil e canais) alimentado por webhooks, com configuração de webhooks, regras de tratamento e apresentação por empresa. Primeira empresa: PASIO (pasion.poker). Projeto técnico.
 
-Documento-mestre: `PLANO-DE-ACAO.md` na raiz (41 tarefas, 8 fases, 10 agentes). Painel interativo do plano: https://claude.ai/artifact/KcEDCoT1Qws3MjLLHMFgY6
+Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde D15). Painel interativo do plano: https://claude.ai/artifact/KcEDCoT1Qws3MjLLHMFgY6
 
 ## Como usar esta wiki
 - Antes de mexer em qualquer área, leia a página da categoria correspondente.
@@ -18,7 +18,7 @@ Documento-mestre: `PLANO-DE-ACAO.md` na raiz (41 tarefas, 8 fases, 10 agentes). 
 
 ## Arquitetura
 - [[arquitetura/visao-geral]] — fluxo webhook → regras → agregação → painel, limites do sistema
-- [[arquitetura/stack]] — monorepo pnpm, Next.js, Fastify, PostgreSQL, d3, GSAP
+- [[arquitetura/stack]] — monorepo pnpm, Next.js, Fastify, PostgreSQL, d3, GSAP, pacotes contratos e graficos
 - [[arquitetura/modelo-de-dados]] — tabelas, isolamento por tenant, tipos canônicos de evento
 
 ## Decisões técnicas

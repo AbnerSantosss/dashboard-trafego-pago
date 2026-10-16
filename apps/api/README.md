@@ -77,3 +77,8 @@ Contrato completo em [docs/webhooks.md](docs/webhooks.md).
 - Logs: JSON (pino), `requestId` em toda linha e no cabeçalho `x-request-id`; `authorization`, `x-signature` e `cookie` são omitidos.
 - Limite de corpo: 1 MB.
 - Rotas novas: plugin em `src/rotas/`, schemas zod em `schema` (entram no OpenAPI automaticamente).
+
+## Métricas e login de desenvolvimento
+
+- `GET /metricas/visao-geral` — KPIs, funil e tabela por canal da empresa ativa (qualquer papel, RLS, cache de 15 s por instância). Detalhes em [docs/metricas.md](docs/metricas.md).
+- `POST /auth/sessao-dev` — token sem senha a partir do e-mail; **só existe fora de produção**, temporário até o Auth.js.

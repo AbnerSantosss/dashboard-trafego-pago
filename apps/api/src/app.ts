@@ -16,7 +16,8 @@ import {
 import { carregarEnv, type Env } from './env.js';
 import { registrarTratamentoDeErros } from './erros.js';
 import { rotasHealth } from './rotas/health.js';
-import { rotasAuth } from './rotas/auth.js';
+import { rotasAuth, rotasSessaoDev } from './rotas/auth.js';
+import { rotasMetricas } from './rotas/metricas.js';
 import { authPlugin } from './auth/plugin.js';
 import type { Db } from './db/client.js';
 import { rotasWebhookAdmin, rotasWebhookRecebimento } from './rotas/webhooks.js';
@@ -149,6 +150,9 @@ export async function buildApp(opcoes: OpcoesApp = {}) {
 
   await app.register(rotasHealth, { versao: VERSAO });
   await app.register(rotasAuth);
+  // Login sem senha só fora de produção (temporário até o Auth.js, Fase 5).
+  if (env.NODE_ENV !== 'production') await app.register(rotasSessaoDev);
+  await app.register(rotasMetricas);
 
   const configWebhooks = lerConfigWebhooks(process.env);
   const opcoesWh = opcoes.webhooks ?? {};

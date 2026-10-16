@@ -1,8 +1,30 @@
-export default function Home() {
+import { Painel } from '@/componentes/Painel';
+import { Sidebar } from '@/componentes/Sidebar';
+import { api } from '@/lib/api';
+import { lerFiltros, paraQueryApi } from '@/lib/regras';
+
+export const dynamic = 'force-dynamic';
+
+type Busca = Promise<Record<string, string | string[] | undefined>>;
+
+/** Visão Geral: busca no servidor (sem cache) e entrega os dados crus ao painel cliente. */
+export default async function VisaoGeral({ searchParams }: { searchParams: Busca }) {
+  const filtros = lerFiltros(await searchParams);
+  const r = await api().visaoGeral(paraQueryApi(filtros));
+  const dados = r.ok ? r.dados : null;
   return (
-    <main style={{ padding: 32 }}>
-      <h1 style={{ fontSize: 28, fontWeight: 600 }}>Visão Geral de Aquisição</h1>
-      <p>Fase 0: fundação do monorepo. O dashboard chega na Fase 4.</p>
-    </main>
+    <div className="tela">
+      <Sidebar
+        ativo="visao-geral"
+        {...(dados?.apresentacao.logoUrl ? { logoUrl: dados.apresentacao.logoUrl } : {})}
+        {...(dados?.apresentacao.nomeExibicao
+          ? { nomeEmpresa: dados.apresentacao.nomeExibicao }
+          : {})}
+      />
+      <div className="divisor" />
+      <Painel dados={dados} erro={r.ok ? null : r.mensagem} filtros={filtros} />
+      <div className="faixa-topo" aria-hidden="true" />
+      <div className="faixa-direita" aria-hidden="true" />
+    </div>
   );
 }
