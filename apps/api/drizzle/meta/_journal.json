@@ -43,6 +43,13 @@
       "when": 1792120107404,
       "tag": "0005_usuarios_convites_atribuicao",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792137038686,
+      "tag": "0006_custos_meta_ads",
+      "breakpoints": true
     }
   ]
 }

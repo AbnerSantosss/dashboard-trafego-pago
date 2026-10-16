@@ -38,6 +38,11 @@
   --p-total-bg: #0d2644; /* = token --bg-total-row */
   --p-grade-total: #011c38;
   --p-blur: 0px;
+  /* Estados de erro e aviso (faixa de erro do painel e formulários das Configurações). */
+  --p-erro-bg: #2a1220;
+  --p-erro-borda: #5a2433;
+  --p-erro-txt: #ffb3c1;
+  --p-aviso: #ffd27a;
   --p-fonte: 'Segoe UI', system-ui, sans-serif;
 }
 
@@ -47,8 +52,12 @@
 html,
 body {
   margin: 0;
-  min-width: 1315px;
   background: var(--p-bg-main);
+}
+/* Só o painel (tela fixa, comparada com a referência) exige 1315 px; Configurações e conta são fluidas. */
+html:has(.tela),
+body:has(.tela) {
+  min-width: 1315px;
 }
 body {
   font-family: var(--p-fonte);
@@ -61,6 +70,43 @@ body {
   width: 1315px;
   height: 710px;
   overflow: hidden;
+}
+
+/*
+ * Desktop: a tela fixa de 1315×710 é ampliada (ou reduzida) por igual até caber na janela, centrada na
+ * horizontal. `tan(atan2(a, b))` dá a razão a/b como número puro, o que `zoom` exige. Com a janela em
+ * 1315×710 (a captura do teste visual) a escala é exatamente 1 e nada muda. O fundo da página continua a
+ * sidebar e o divisor nas faixas que sobram, para não aparecer moldura.
+ */
+@media (min-width: 900px) {
+  html:has(.tela),
+  body:has(.tela) {
+    min-width: 0;
+    overflow: hidden;
+  }
+  body:has(.tela) {
+    --tela-escala: min(tan(atan2(100vw, 1315px)), tan(atan2(100vh, 710px)));
+    --tela-borda: calc((100vw - 1315px * var(--tela-escala)) / 2 + 180px * var(--tela-escala));
+    height: 100vh;
+    background: linear-gradient(
+      to right,
+      var(--bg-sidebar) var(--tela-borda),
+      var(--p-divisor) var(--tela-borda),
+      var(--p-divisor) calc(var(--tela-borda) + 1px),
+      var(--p-bg-main) calc(var(--tela-borda) + 1px)
+    );
+  }
+  body:has(.tela) .tela {
+    margin-inline: auto;
+    zoom: var(--tela-escala);
+  }
+}
+/* As faixas de artefato só existem na captura de referência; ampliadas, viram moldura. */
+@media not ((width: 1315px) and (height: 710px)) {
+  .faixa-topo,
+  .faixa-direita {
+    display: none;
+  }
 }
 .tela > *,
 .principal > *,
@@ -190,6 +236,126 @@ body {
 }
 .nav-on {
   color: var(--text-primary);
+}
+
+/* Conta no rodapé da sidebar: avatar, nome e Sair. Acima de Configurações (y 640) porque a
+   Ajuda ocupa a última linha da referência; traço fino separa a conta do menu. */
+.sb-conta {
+  left: 8px;
+  top: 586px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 164px;
+  height: 42px;
+  padding: 0 2px 0 8px;
+  border-radius: 8px;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.sb-conta::before {
+  position: absolute;
+  top: -9px;
+  right: 8px;
+  left: 8px;
+  height: 1px;
+  background: var(--p-divisor);
+  content: '';
+}
+.sb-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgb(112 238 254 / 0.35);
+  border-radius: 50%;
+  background: #0a2b47;
+  color: var(--p-nav-ic-ativo);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.sb-avatar-ic {
+  width: 18px;
+  height: 18px;
+}
+.sb-conta-link {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  height: 100%;
+  margin-left: -6px;
+  padding-left: 6px;
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 150ms ease;
+}
+.sb-conta-link:hover,
+.sb-conta-link:focus-visible {
+  background: var(--p-nav-ativo);
+}
+.sb-conta-link:hover .sb-avatar,
+.sb-conta-link:focus-visible .sb-avatar {
+  border-color: rgb(112 238 254 / 0.7);
+}
+.sb-conta-texto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+.sb-conta-nome,
+.sb-conta-email {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.sb-conta-nome {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.sb-conta-email {
+  color: var(--p-text-sec);
+  font-size: 10.5px;
+}
+.sb-conta-entrar {
+  color: var(--p-text-sec);
+  font-size: 13px;
+}
+.sb-conta-entrar:hover,
+.sb-conta-entrar:focus-visible {
+  background: var(--p-nav-ativo);
+  color: var(--text-primary);
+}
+.sb-sair {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--p-text-sec);
+  cursor: pointer;
+}
+.sb-sair:hover {
+  background: var(--p-nav-ativo);
+  color: #ff8f8f;
+}
+.sb-sair:focus-visible,
+.sb-conta-entrar:focus-visible {
+  outline: 2px solid var(--p-nav-ic-ativo);
+  outline-offset: 1px;
+}
+.sb-sair-ic {
+  width: 18px;
+  height: 18px;
 }
 
 /* Cabeçalho */
@@ -466,6 +632,82 @@ body {
   outline: 2px solid var(--p-nav-ic-ativo);
   outline-offset: 1px;
 }
+/*
+ * Células da tabela por canal: a linha acende de leve e a célula ganha um contorno ciano. O brilho
+ * fica em pseudo-elementos e só muda opacity; em repouso nada aparece (o diff visual não muda).
+ */
+.alvo-linha {
+  position: absolute;
+  z-index: 3;
+  left: 650px;
+  width: 650px;
+}
+.alvo-linha::before {
+  content: '';
+  position: absolute;
+  inset: 1px 0 0;
+  background: rgb(112 238 254 / 0.035);
+  opacity: 0;
+  pointer-events: none;
+}
+.alvo-tabela {
+  top: 1px;
+  bottom: 0;
+  border-radius: 0;
+}
+.alvo-tabela::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 5px;
+  background: rgb(112 238 254 / 0.07);
+  box-shadow:
+    inset 0 0 0 1px rgb(112 238 254 / 0.38),
+    0 0 14px rgb(112 238 254 / 0.12);
+  opacity: 0;
+  pointer-events: none;
+}
+.alvo-linha:hover::before,
+.alvo-linha:has([data-ativo])::before,
+.alvo-tabela:hover::after,
+.alvo-tabela[data-ativo]::after {
+  opacity: 1;
+}
+.alvo-tabela[data-ativo]::after {
+  background: rgb(112 238 254 / 0.11);
+  box-shadow:
+    inset 0 0 0 1px rgb(112 238 254 / 0.6),
+    0 0 18px rgb(112 238 254 / 0.22);
+}
+/* Cards de KPI: contorno ciano e brilho no pseudo-elemento; em repouso nada aparece. */
+.alvo-kpi::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background: linear-gradient(20deg, rgb(112 238 254 / 0.02) 0%, rgb(112 238 254 / 0.07) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(112 238 254 / 0.5),
+    0 0 22px rgb(112 238 254 / 0.16);
+  opacity: 0;
+  pointer-events: none;
+}
+.alvo-kpi:hover::after,
+.alvo-kpi[data-ativo]::after {
+  opacity: 1;
+}
+.alvo-kpi[data-ativo]::after {
+  box-shadow:
+    inset 0 0 0 1px rgb(112 238 254 / 0.7),
+    0 0 26px rgb(112 238 254 / 0.24);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .alvo-kpi::after,
+  .alvo-linha::before,
+  .alvo-tabela::after {
+    transition: opacity 160ms cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+}
 .alvo-select select {
   width: 100%;
   height: 100%;
@@ -526,7 +768,14 @@ body {
 .menu-exportar button:focus-visible,
 .popover-periodo button:hover {
   background: var(--p-nav-ativo);
-  outline: none;
+}
+/* Foco visível nos menus e popovers: mesmo contorno ciano dos alvos (.alvo:focus-visible). */
+.menu-exportar button:focus-visible,
+.popover-periodo button:focus-visible,
+.popover-periodo input:focus-visible,
+.faixa-erro button:focus-visible {
+  outline: 2px solid var(--p-nav-ic-ativo);
+  outline-offset: -2px;
 }
 .menu-exportar button:disabled {
   opacity: 0.5;
@@ -553,6 +802,43 @@ body {
   border: 1px solid var(--p-limpar-borda);
   color: var(--p-limpar-txt);
 }
+/* Atalhos (Hoje, Ontem, Últimos 7 dias) acima da data personalizada. */
+.popover-periodo {
+  width: 236px;
+}
+.pp-atalhos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pp-atalhos button {
+  padding: 7px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.pp-atalhos button[aria-pressed='true'] {
+  background: var(--p-nav-ativo);
+  color: var(--text-primary);
+  box-shadow: inset 2px 0 0 var(--p-nav-ic-ativo);
+}
+.pp-personalizada {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 8px 4px 2px;
+  border: 0;
+  border-top: 1px solid var(--p-filtro-borda);
+}
+.pp-personalizada legend {
+  float: left;
+  margin-bottom: 2px;
+  padding: 0;
+  font-size: 11px;
+  color: var(--p-filtro-rot);
+}
 
 /* Área do funil: o componente de @trafego/graficos desenha aqui. */
 .area-funil {
@@ -575,20 +861,165 @@ body {
   position: absolute;
   z-index: 6;
   left: 194px;
-  top: 684px;
+  top: 680px;
   width: 1106px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin: 0;
-  padding: 4px 10px;
-  border: 1px solid #5a2433;
+  padding: 3px 4px 3px 10px;
+  border: 1px solid var(--p-erro-borda);
   border-radius: 6px;
-  background: #2a1220;
+  background: var(--p-erro-bg);
   font-size: 11.5px;
-  color: #ffb3c1;
+  color: var(--p-erro-txt);
+}
+.faixa-erro button {
+  flex: none;
+  padding: 3px 10px;
+  border: 1px solid var(--p-erro-borda);
+  border-radius: 5px;
+  background: transparent;
+  font: 600 11.5px var(--p-fonte);
+  color: var(--p-erro-txt);
+  cursor: pointer;
+}
+.faixa-erro button:hover {
+  background: var(--p-erro-borda);
+}
+.faixa-erro button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* Carregando: enquanto a busca refaz (aria-busy no <main>), os valores dos KPIs esmaecem.
+   filter em vez de opacity para não sobrescrever a opacidade calibrada de cada texto. */
+.kpi-val {
+  transition: filter 0.2s ease-out;
+}
+.principal[aria-busy='true'] .kpi-val {
+  filter: blur(var(--p-blur)) opacity(0.45);
+}
+/* A região principal recebe foco pelo link de pular; ela não é um controle, então sem contorno. */
+.principal:focus {
+  outline: none;
+}
+
+/* Ícones ⓘ: alvo acima dos alvos de ordenação e dica sob o ícone. */
+.alvo-info {
+  z-index: 4;
+  border-radius: 50%;
+}
+.dica {
+  position: absolute;
+  z-index: 10;
+  margin: 0;
+  padding: 8px 10px;
+  background: var(--p-bg-button);
+  border: 1px solid var(--p-filtro-borda);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+  font: 12px/1.45 var(--p-fonte);
+  color: var(--p-filtro-val);
+  white-space: normal;
+}
+.dica[hidden] {
+  display: none;
+}
+
+/* Link "Pular para o conteúdo": fora da tela até receber foco (não aparece na captura). */
+.pular-link {
+  position: absolute;
+  z-index: 20;
+  left: 8px;
+  top: -48px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--p-bg-button);
+  border: 1px solid var(--p-filtro-borda);
+  font: 600 13px var(--p-fonte);
+  color: var(--p-nav-ic-ativo);
+  text-decoration: none;
+}
+.pular-link:focus {
+  top: 8px;
+  outline: 2px solid var(--p-nav-ic-ativo);
+  outline-offset: 2px;
+}
+
+/* Entrada do painel (doutrina de movimento do Hyperframes, só referência). Cada card (KPI, funil,
+   tabela) vem num invólucro .entrada de 0×0 em (0, 0), que não muda coordenadas. Ele entra com
+   opacidade + subida de 8 px, curva out-quart, 300 ms, em cascata de 40 ms (--atraso, lib/tela.ts
+   ENTRADA): tudo termina em ≤ 460 ms. Só transform e opacity; fill-mode backwards, então ao fim nada
+   fica aplicado e o estado final é o do HTML do servidor. Com reduce não há animação nenhuma (o estado
+   inicial já é o final); sem JS a entrada roda igual, só por CSS. */
+.entrada {
+  left: 0;
+  top: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .entrada {
+    animation: entrada-card 300ms cubic-bezier(0.165, 0.84, 0.44, 1) var(--atraso, 0ms) backwards;
+  }
+}
+@keyframes entrada-card {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .t,
   .ic {
     animation-duration: 0s;
+  }
+  .kpi-val {
+    transition: none;
+  }
+}
+
+/*
+ * Fundo de ondas em SVG das telas internas (FundoOndas.tsx): ocupa a área de conteúdo, atrás do
+ * texto. Antes do JS (data-fo='espera') e com movimento permitido, as camadas ficam escondidas para a
+ * timeline começar do zero sem piscar; se o JS não rodar, aparecem paradas em 3 s.
+ */
+.principal > .fo {
+  left: 181px;
+  top: 0;
+  width: 1134px;
+  height: 710px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.fo > * {
+  position: absolute;
+  inset: 0;
+}
+.fo-camada {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+/* Só enquanto a timeline roda; depois as camadas voltam a ser pintura comum, sem custo. */
+.fo[data-fo='anima'] .fo-camada {
+  will-change: transform;
+}
+/* Halo atrás da torção da fita e outro, mais fraco, no alto à direita. Parado depois da entrada. */
+.fo-brilho {
+  background:
+    radial-gradient(ellipse 380px 230px at 520px 480px, rgb(47 107 255 / 0.3), transparent 70%),
+    radial-gradient(ellipse 420px 300px at 960px 170px, rgb(40 60 210 / 0.18), transparent 70%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fo[data-fo='espera'] > * {
+    opacity: 0;
+    animation: fo-sem-js 0s 3s forwards;
+  }
+}
+@keyframes fo-sem-js {
+  to {
+    opacity: 1;
   }
 }

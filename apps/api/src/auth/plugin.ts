@@ -2,7 +2,9 @@
  * Autenticação e papéis por empresa.
  *
  * A API confia num JWT HS256 assinado com `AUTH_SECRET` (o mesmo segredo do web/Auth.js).
- * Claims: `sub` (uuid do usuário), `email` e, opcionalmente, `tenant` (uuid da empresa ativa).
+ * Claims: `sub` (uuid do usuário), `email` e, opcionalmente, `tenant` (uuid da empresa ativa) e
+ * `sv` (versão da senha). Com `sv`, o token deixa de valer assim que a senha muda: trocar a senha
+ * encerra as outras sessões, inclusive as de "lembrar de mim".
  *
  * Decora:
  * - `app.db`: Drizzle conectado como `app_user` (sem BYPASSRLS), fechado no `onClose`.
@@ -14,6 +16,7 @@
  *   para que toda consulta de rota passe pelo RLS.
  */
 import { and, eq, or, type SQL } from 'drizzle-orm';
+import { versaoSenha } from '../conta/senha.js';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import {
@@ -22,6 +25,7 @@ import {
   criarDb,
   memberships,
   tenants,
+  users,
   type Db,
   type Role,
   type Tx,
@@ -33,6 +37,10 @@ export const schemaClaims = z.object({
   sub: z.uuid(),
   email: z.email(),
   tenant: z.uuid().optional(),
+  sv: z
+    .string()
+    .regex(/^[0-9a-f]{16}$/)
+    .optional(),
 });
 
 export type ClaimsToken = z.infer<typeof schemaClaims>;
@@ -74,6 +82,8 @@ declare module 'fastify' {
 
 /** Validade padrão do token emitido pela API (troca de empresa e testes). */
 export const VALIDADE_TOKEN = '12h';
+/** Validade com "lembrar de mim" marcado no login. */
+export const VALIDADE_TOKEN_LEMBRAR = '30d';
 
 /** Peso de cada papel: quem tem peso maior pode tudo que os menores podem. */
 export const PESO_PAPEL: Record<Role, number> = { leitor: 1, analista: 2, admin: 3 };
@@ -177,6 +187,16 @@ async function pluginAuth(app: FastifyInstance, opcoes: OpcoesAuth): Promise<voi
     }
     const claims = schemaClaims.safeParse(bruto);
     if (!claims.success) throw ErroApi.de('token_invalido', 'Token com claims inválidas.');
+    if (claims.data.sv) {
+      const [u] = await db
+        .select({ senhaHash: users.senhaHash })
+        .from(users)
+        .where(eq(users.id, claims.data.sub))
+        .limit(1);
+      if (!u || versaoSenha(u.senhaHash) !== claims.data.sv) {
+        throw ErroApi.de('token_invalido', 'Sessão encerrada: a senha foi trocada.');
+      }
+    }
     request.usuario = { id: claims.data.sub, email: claims.data.email };
   };
 

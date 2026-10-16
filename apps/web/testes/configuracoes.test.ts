@@ -5,7 +5,8 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 process.env.WEB_MOCK_API = '1';
 
 const { revalidatePath } = await import('next/cache');
-const { acaoWebhook, salvarApresentacao } = await import('@/app/(admin)/configuracoes/acoes');
+const { acaoGastos, acaoMeta, acaoWebhook, salvarApresentacao } =
+  await import('@/app/(admin)/configuracoes/acoes');
 const v = await import('@/app/(admin)/configuracoes/validacao');
 const { adminMock } = await import('@/lib/mock');
 const { api } = await import('@/lib/api');
@@ -66,6 +67,53 @@ describe('formatação', () => {
   });
 });
 
+describe('gastos e Meta Ads', () => {
+  it('lê valor em reais no formato brasileiro', () => {
+    expect(v.lerValorReais('150,25')).toBe(150.25);
+    expect(v.lerValorReais('R$ 1.234,50')).toBe(1234.5);
+    expect(v.lerValorReais('1.500')).toBe(1500);
+    expect(v.lerValorReais('99.9')).toBe(99.9);
+    expect(v.lerValorReais('0')).toBeNull();
+    expect(v.lerValorReais('1,234')).toBeNull();
+    expect(v.lerValorReais('-5')).toBeNull();
+    expect(v.lerValorReais('abc')).toBeNull();
+    expect(v.lerValorReais('')).toBeNull();
+  });
+  it('formata reais e datas', () => {
+    expect(v.formatarReais(1234.5)).toBe('R$ 1.234,50');
+    expect(v.formatarDia('2026-03-09')).toBe('09/03/2026');
+    expect(v.formatarDia('ontem')).toBe('ontem');
+  });
+  it('normaliza o ID da conta do Meta', () => {
+    expect(v.normalizarContaMeta(' 123 456 789 ')).toBe('act_123456789');
+    expect(v.normalizarContaMeta('act_123456789')).toBe('act_123456789');
+    expect(v.normalizarContaMeta('minha-conta')).toBeNull();
+    expect(v.normalizarContaMeta('12')).toBeNull();
+  });
+  it('traduz os erros de gasto e Meta', () => {
+    expect(v.mensagemErroApi({ mensagem: 'x', codigo: 'custo_nao_encontrado' })).toMatch(/gasto/i);
+    expect(v.mensagemErroApi({ mensagem: 'x', codigo: 'meta_conta_existente' })).toMatch(/já/);
+    expect(
+      v.mensagemErroApi({ mensagem: 'O token do Meta expirou.', codigo: 'meta_recusou' }),
+    ).toMatch(/token do Meta expirou/);
+  });
+  it('recusa lançamento inválido antes de chamar a API', async () => {
+    const base = { intencao: 'lancar', dia: '2026-03-09', canal: 'Google', valor: '150,00' };
+    expect((await acaoGastos(v.ESTADO_INICIAL, fd({ ...base, valor: '0' }))).mensagem).toMatch(
+      /maior que zero/,
+    );
+    expect((await acaoGastos(v.ESTADO_INICIAL, fd({ ...base, canal: ' ' }))).mensagem).toMatch(
+      /canal/,
+    );
+    expect((await acaoGastos(v.ESTADO_INICIAL, fd({ ...base, dia: '' }))).mensagem).toMatch(/data/);
+    const r = await acaoMeta(
+      v.ESTADO_INICIAL,
+      fd({ intencao: 'conectar', contaId: 'minha-conta', token: 'x'.repeat(30) }),
+    );
+    expect(r.ok).toBe(false);
+  });
+});
+
 describe('actions com WEB_MOCK_API=1', () => {
   beforeEach(() => {
     adminMock.reiniciar();
@@ -81,8 +129,7 @@ describe('actions com WEB_MOCK_API=1', () => {
     expect(a.ok && a.dados.logoUrl).toBe(
       `data:image/png;base64,${Buffer.from(PNG).toString('base64')}`,
     );
-    expect(revalidatePath).toHaveBeenCalledWith('/');
-    expect(revalidatePath).toHaveBeenCalledWith('/configuracoes/apresentacao');
+    expect(revalidatePath).toHaveBeenCalledWith('/', 'layout');
   });
 
   it('remover logo envia null; arquivo inválido não chega à API', async () => {
@@ -98,7 +145,7 @@ describe('actions com WEB_MOCK_API=1', () => {
       fd({ nomeExibicao: 'X', logo: new File(['oi'], 'a.gif', { type: 'image/gif' }) }),
     );
     expect(ruim.ok).toBe(false);
-    expect(revalidatePath).toHaveBeenCalledTimes(4);
+    expect(revalidatePath).toHaveBeenCalledTimes(2);
   });
 
   it('cria fonte e devolve o segredo uma vez; slug repetido vira mensagem', async () => {

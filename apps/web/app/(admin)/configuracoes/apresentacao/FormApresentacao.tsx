@@ -2,6 +2,7 @@
 import type { ApresentacaoResposta } from '@trafego/contratos';
 import { useActionState, useState } from 'react';
 import { salvarApresentacao } from '../acoes';
+import { BotaoConfirmar } from '../Confirmar';
 import {
   ESTADO_INICIAL,
   formatarBytes,
@@ -78,13 +79,28 @@ export function FormApresentacao({ atual }: { atual: ApresentacaoResposta }) {
       </label>
 
       <div className="cfg-acoes">
-        <button type="submit" className="cfg-botao cfg-botao-primario" disabled={pendente}>
+        <button
+          type="submit"
+          className="cfg-botao cfg-botao-primario"
+          disabled={pendente}
+          aria-busy={pendente}
+        >
           {pendente ? 'Salvando…' : 'Salvar'}
         </button>
         {atual.logoUrl && (
-          <button type="submit" name="remover" value="1" className="cfg-botao" disabled={pendente}>
-            Remover logo
-          </button>
+          <BotaoConfirmar
+            rotulo="Remover logo"
+            titulo="Remover o logo enviado?"
+            texto={
+              atual.logoPadraoUrl
+                ? 'O menu volta a mostrar o logo padrão da empresa. Para usar este de novo, envie o arquivo outra vez.'
+                : 'O menu passa a mostrar o nome em texto. Para usar este logo de novo, envie o arquivo outra vez.'
+            }
+            confirmar="Remover logo"
+            nome="remover"
+            valor="1"
+            desabilitado={pendente}
+          />
         )}
       </div>
 

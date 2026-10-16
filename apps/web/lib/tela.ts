@@ -12,7 +12,35 @@ import type { CSSProperties } from 'react';
 import { calibracao } from './calibracao';
 import type { TomDelta } from './regras';
 
-export interface NoTexto {
+/**
+ * Entrada em cascata (doutrina de movimento do Hyperframes, só referência): os nós de um mesmo card
+ * entram juntos, num invólucro animado por CSS (opacidade + subida curta, out-quart).
+ */
+export interface Entrada {
+  /** Chave estável do card (ex.: "kpi.0", "funil"). */
+  grupo: string;
+  /** Atraso do card na cascata, em ms. */
+  atrasoMs: number;
+}
+
+/** Cascata: 40 ms entre cards, 300 ms cada; o último (KPI 5) termina em 4 × 40 + 300 = 460 ms. */
+export const ENTRADA = {
+  passoMs: 40,
+  duracaoMs: 300,
+  /** Atraso dos cards de baixo: entram em diagonal enquanto a fila de KPIs ainda chega. */
+  funilMs: 60,
+  tabelaMs: 100,
+  /** O funil começa a se desenhar quando o card dele já está quase opaco. */
+  desenhoFunilMs: 140,
+  /** A sparkline começa depois do card. */
+  sparkMs: 150,
+} as const;
+
+interface NoBase {
+  entrada?: Entrada;
+}
+
+export interface NoTexto extends NoBase {
   tipo: 'texto';
   slot: string;
   x: number;
@@ -23,7 +51,7 @@ export interface NoTexto {
   /** Valor animado pelo Contador (KPIs). */
   contador?: { valor: number; id: KpiId };
 }
-export interface NoIcone {
+export interface NoIcone extends NoBase {
   tipo: 'icone';
   slot: string;
   nome: string;
@@ -34,7 +62,7 @@ export interface NoIcone {
   cls?: string;
   cor?: string;
 }
-export interface NoCaixa {
+export interface NoCaixa extends NoBase {
   tipo: 'caixa';
   cls: string;
   x: number;
@@ -43,7 +71,7 @@ export interface NoCaixa {
   h: number;
   estilo?: CSSProperties;
 }
-export interface NoSpark {
+export interface NoSpark extends NoBase {
   tipo: 'spark';
   slot: string;
   x: number;
@@ -136,8 +164,92 @@ export const FILTROS_GEO: Record<
     chev: 1102.5,
   },
 };
+/** Id da região principal (<main>) das telas fixas, alvo do link "Pular para o conteúdo". */
+export const ID_CONTEUDO = 'conteudo';
+
 export const LIMPAR_GEO = { x: 1138, y: 83, w: 162, h: 58 };
 export const EXPORTAR_GEO = { x: 1151, y: 21, w: 142, h: 39 };
+
+/** Ícones ⓘ da tela: o desenho (x, y, w, h) e a explicação que o botão sobreposto mostra. */
+export interface InfoTela {
+  id: 'funil' | 'tabela' | 'cpa' | 'roas';
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rotulo: string;
+  texto: string;
+}
+export const INFOS: Record<InfoTela['id'], InfoTela> = {
+  funil: {
+    id: 'funil',
+    x: 361,
+    y: 300,
+    w: 15,
+    h: 15,
+    rotulo: 'Sobre o Funil de Aquisição',
+    texto:
+      'Da base contatada ao primeiro depósito (FTD). A porcentagem à direita de cada etapa é a conversão em relação à etapa anterior.',
+  },
+  tabela: {
+    id: 'tabela',
+    x: 847,
+    y: 300,
+    w: 15,
+    h: 15,
+    rotulo: 'Sobre Desempenho por canal',
+    texto:
+      'Resultados do período por canal de aquisição. Use os cabeçalhos das colunas para ordenar; a linha Total soma todos os canais.',
+  },
+  cpa: {
+    id: 'cpa',
+    x: 1206,
+    y: 339.5,
+    w: 14,
+    h: 14,
+    rotulo: 'Sobre CPA',
+    texto: 'Custo por FTD: investimento dividido pela quantidade de FTDs (primeiros depósitos).',
+  },
+  roas: {
+    id: 'roas',
+    x: 1278,
+    y: 339.5,
+    w: 14,
+    h: 14,
+    rotulo: 'Sobre ROAS',
+    texto:
+      'Retorno sobre o investimento: depósitos no período divididos pelo investimento. Acima de 1x, os depósitos superam o que foi investido.',
+  },
+};
+
+/** Lado do alvo clicável dos ícones ⓘ (o desenho tem 14–15 px; o alvo fica centrado nele). */
+export const ALVO_INFO = 24;
+const LARGURA_DICA = 260;
+const LIMITE_DIREITO = 1300;
+
+/** Caixa do alvo e posição da dica (abaixo do ícone, sem passar da borda direita da tela). */
+export function geometriaInfo(i: InfoTela) {
+  const alvo = {
+    left: i.x + i.w / 2 - ALVO_INFO / 2,
+    top: i.y + i.h / 2 - ALVO_INFO / 2,
+    width: ALVO_INFO,
+    height: ALVO_INFO,
+  };
+  const dica = {
+    left: Math.min(i.x - 8, LIMITE_DIREITO - LARGURA_DICA),
+    top: i.y + i.h + 8,
+    width: LARGURA_DICA,
+  };
+  return { alvo, dica };
+}
+
+/**
+ * Textos da tabela desenhada que ficam fora da árvore de acessibilidade: o leitor de tela lê a
+ * tabela semântica (role="table") que o Painel monta por cima, com cabeçalhos e ordenação.
+ */
+export function slotSoVisual(slot: string): boolean {
+  return slot.startsWith('th.') || slot.startsWith('linha.') || slot.startsWith('total.');
+}
 
 const KPI_GEO = [
   { x: 194, w: 213, tile: 199, col: 261, spark: 347, aj: [0, 1, -2, 0], ic: [-2, -2] },
@@ -146,6 +258,8 @@ const KPI_GEO = [
   { x: 854, w: 225, tile: 863, col: 925, spark: 1019, aj: [-1, 2, -2, 2], ic: [-2, 0] },
   { x: 1092, w: 208, tile: 1103, col: 1164, spark: 1240, aj: [3, 1, -3, 1], ic: [2, 1] },
 ] as const;
+/** Caixa de cada card de KPI, para os alvos clicáveis do Painel. */
+export const KPI_ALVOS = KPI_GEO.map((g) => ({ x: g.x, y: 156, w: g.w, h: 114 }));
 const TILE_COR: Record<KpiId, [string, string]> = {
   investimento: ['#022B5E', '#0F80F5'],
   ftds: ['#012D5C', '#0D7BF4'],
@@ -183,6 +297,12 @@ const COR_ICONE_CANAL: Record<string, string> = {
 };
 const chaveCanal = (c: string) => c.trim().toLowerCase();
 
+/** Ícone e cor do canal, os mesmos da tabela por canal (lista e ficha do funil reaproveitam). */
+export function iconeDoCanal(canal: string): { nome: string; cor: string } {
+  const k = chaveCanal(canal);
+  return { nome: ICONE_CANAL[k] ?? 'canal-outros', cor: COR_ICONE_CANAL[k] ?? '#748BA5' };
+}
+
 // ---------------------------------------------------------------------------
 // Montagem
 
@@ -213,6 +333,9 @@ function caixa(
   estilo?: CSSProperties,
 ): NoCaixa {
   return { tipo: 'caixa', cls, x, y, w, h, ...(estilo ? { estilo } : {}) };
+}
+function icInfo(slot: string, i: InfoTela, cls: string): NoIcone {
+  return ic(slot, 'info', i.x, i.y, i.w, i.h, cls);
 }
 
 /** Item extra do rodapé da sidebar, fora da fixture da imagem. */
@@ -279,6 +402,11 @@ export function montarCabecalho(
   return nos;
 }
 
+/** Marca os nós de `desde` até o fim como um card da cascata de entrada. */
+function marcarEntrada(nos: No[], desde: number, grupo: string, atrasoMs: number) {
+  for (let i = desde; i < nos.length; i++) nos[i]!.entrada = { grupo, atrasoMs };
+}
+
 export function montarPrincipal(c: ConteudoTela): No[] {
   const nos: No[] = montarCabecalho(c);
 
@@ -300,6 +428,7 @@ export function montarPrincipal(c: ConteudoTela): No[] {
   // KPIs
   c.kpis.slice(0, KPI_GEO.length).forEach((k, i) => {
     const g = KPI_GEO[i]!;
+    const inicio = nos.length;
     const [bg, fg] = TILE_COR[k.id];
     nos.push(caixa('kpi', g.x, 156, g.w, 114));
     nos.push(caixa('tile', g.tile, 167, 46, 46, { background: bg, color: fg }));
@@ -328,13 +457,15 @@ export function montarPrincipal(c: ConteudoTela): No[] {
     }
     if (k.sparkline)
       nos.push({ tipo: 'spark', slot: `kpi.${i}.spark`, x: g.spark, pontos: k.sparkline });
+    marcarEntrada(nos, inicio, `kpi.${i}`, i * ENTRADA.passoMs);
   });
 
   // Funil: só o card e o título; o desenho é do componente Funil. Os textos entram como nós
   // "fantasmas" (não desenhados) apenas para manter a contagem de chaves igual à do protótipo.
+  const inicioFunil = nos.length;
   nos.push(caixa('card funil-card', 194, 281, 444, 440));
   nos.push(T('funil.titulo', 208, 313, 'card-titulo', c.funil.titulo));
-  nos.push(ic('funil.info', 'info', 361, 300, 15, 15, 'ic-sec'));
+  nos.push(icInfo('funil.info', INFOS.funil, 'ic-sec'));
   c.funil.etapas.forEach((e, i) => {
     const topo = FUNIL_TOPOS[i] ?? 0;
     const ty = TAXA_Y[i] ?? 0;
@@ -352,11 +483,14 @@ export function montarPrincipal(c: ConteudoTela): No[] {
     );
   });
 
+  marcarEntrada(nos, inicioFunil, 'funil', ENTRADA.funilMs);
+
   // Tabela
   const tb = c.tabela;
+  const inicioTabela = nos.length;
   nos.push(caixa('card tabela-card', 650, 281, 650, 440));
   nos.push(T('tabela.titulo', 662, 313, 'card-titulo', tb.titulo));
-  nos.push(ic('tabela.info', 'info', 847, 300, 15, 15, 'ic-sec'));
+  nos.push(icInfo('tabela.info', INFOS.tabela, 'ic-sec'));
   const nLinhas = tb.linhas.length;
   const fimGrade = linhaY(nLinhas);
   for (let i = 1; i < COL_X.length - 1; i++)
@@ -379,9 +513,9 @@ export function montarPrincipal(c: ConteudoTela): No[] {
   nos.push(TC('th.5.1', cx(6) + 1, 383, 'th', sub[1]?.rotulo[0] ?? ''));
   r(6).forEach((l, j) => nos.push(TC(`th.6.${j}`, cx(7) + 2.5, 352 + j * 15.5, 'th', l)));
   r(7).forEach((l, j) => nos.push(TC(`th.7.${j}`, cx(8) + [0, -3][j]!, 358 + j * 18, 'th', l)));
-  nos.push(ic('th.7.info', 'info', 1206, 339.5, 14, 14, 'ic-sec'));
+  nos.push(icInfo('th.7.info', INFOS.cpa, 'ic-sec'));
   r(8).forEach((l, j) => nos.push(TC(`th.8.${j}`, cx(9) + [4, -1][j]!, 358 + j * 18, 'th', l)));
-  nos.push(ic('th.8.info', 'info', 1278, 339.5, 14, 14, 'ic-roas'));
+  nos.push(icInfo('th.8.info', INFOS.roas, 'ic-roas'));
 
   tb.linhas.forEach((l, i) => {
     const y0 = linhaY(i);
@@ -407,6 +541,7 @@ export function montarPrincipal(c: ConteudoTela): No[] {
     nos.push(T('total.canal', 660, y + 37, 'td-total', 'Total'));
     tb.total.forEach((v, j) => nos.push(TC(`total.${j}`, cx(j + 1) + 0.5, y + 37, 'td-total', v)));
   }
+  marcarEntrada(nos, inicioTabela, 'tabela', ENTRADA.tabelaMs);
   return nos;
 }
 

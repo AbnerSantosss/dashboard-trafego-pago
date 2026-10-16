@@ -8,12 +8,20 @@ export default async function Usuarios() {
   const [r, me] = await Promise.all([api().usuarios(), api().me()]);
   if (!r.ok) {
     return (
-      <p className="cfg-faixa-erro" role="alert">
-        {r.status === 403
-          ? mensagemErroApi(r)
-          : `Não foi possível carregar os usuários. ${r.mensagem}`}
-      </p>
+      <>
+        <h2 className="cfg-subtitulo cfg-sem-margem">Usuários e convites</h2>
+        <p className="cfg-faixa-erro" role="alert">
+          {r.status === 403
+            ? mensagemErroApi(r)
+            : `Não foi possível carregar os usuários. ${r.mensagem}`}
+        </p>
+      </>
     );
   }
-  return <PainelUsuarios {...r.dados} euId={me.ok ? me.dados.usuario.id : ''} />;
+  return (
+    <>
+      <h2 className="cfg-subtitulo cfg-sem-margem">Convidar pessoas</h2>
+      <PainelUsuarios {...r.dados} euId={me.ok ? me.dados.usuario.id : ''} />
+    </>
+  );
 }

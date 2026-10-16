@@ -12,17 +12,21 @@ import { randomBytes, scryptSync } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { sql } from 'drizzle-orm';
 import {
+  attributionTouches,
   comTenant,
   criarDb,
+  events,
   memberships,
   metricsDaily,
   presentation,
   sources,
   tenants,
   users,
+  webhookEvents,
   type Db,
 } from './client.js';
 import { apresentacaoDemo, LOGO_PADRAO, metricasDemo } from './seed/dados.js';
+import { pessoasDemo, PREFIXO_DEMO } from './seed/pessoas.js';
 
 export const SLUG_DEMO = 'pasio';
 export const EMAIL_ADMIN_DEMO = 'admin@pasio.local';
@@ -34,6 +38,8 @@ export interface ResultadoSeed {
   /** Presente só quando a fonte foi criada agora (o segredo em claro não fica guardado). */
   segredoNovo?: string;
   linhasMetricas: number;
+  /** Pessoas fictícias da amostra (lista por etapa e ficha do lead). */
+  pessoas: number;
 }
 
 /** Hash do segredo HMAC no formato `scrypt$<sal hex>$<hash hex>`. */
@@ -133,7 +139,24 @@ export async function executarSeed(db: Db): Promise<ResultadoSeed> {
         },
       });
 
-    const resultado: ResultadoSeed = { tenantId, userId, sourceId, linhasMetricas: linhas.length };
+    // Amostra de pessoas: apaga a anterior (pelo prefixo) e regrava. Os eventos dos webhooks saem
+    // junto pela FK em cascata. Não chama a agregação: os números do painel seguem os da imagem.
+    const prefixo = `${PREFIXO_DEMO}%`;
+    await tx.delete(webhookEvents).where(sql`${webhookEvents.eventKey} like ${prefixo}`);
+    await tx.delete(events).where(sql`${events.leadKey} like ${prefixo}`);
+    await tx.delete(attributionTouches).where(sql`${attributionTouches.leadKey} like ${prefixo}`);
+    const amostra = pessoasDemo(tenantId, sourceId);
+    await tx.insert(webhookEvents).values(amostra.webhooks);
+    await tx.insert(events).values(amostra.eventos);
+    await tx.insert(attributionTouches).values(amostra.toques);
+
+    const resultado: ResultadoSeed = {
+      tenantId,
+      userId,
+      sourceId,
+      linhasMetricas: linhas.length,
+      pessoas: amostra.toques.length,
+    };
     if (segredoNovo !== undefined) resultado.segredoNovo = segredoNovo;
     return resultado;
   });
@@ -149,7 +172,8 @@ async function principal() {
   try {
     const r = await executarSeed(db);
     console.log(
-      `Seed PASIO ok: tenant ${r.tenantId}, ${r.linhasMetricas} linhas em metrics_daily.`,
+      `Seed PASIO ok: tenant ${r.tenantId}, ${r.linhasMetricas} linhas em metrics_daily, ` +
+        `${r.pessoas} pessoas de exemplo.`,
     );
     console.log(`Usuário demo: ${EMAIL_ADMIN_DEMO} (admin).`);
     if (r.segredoNovo) {

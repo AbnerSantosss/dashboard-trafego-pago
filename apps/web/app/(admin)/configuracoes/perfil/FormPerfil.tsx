@@ -8,7 +8,7 @@ export function FormPerfil({ usuario }: { usuario: UsuarioConta }) {
   const [estado, enviar, pendente] = useActionState(salvarPerfil, ESTADO_INICIAL);
   return (
     <form action={enviar} className="cfg-form">
-      <div className="cfg-form-linha cfg-sem-margem">
+      <div className="cfg-form cfg-form-linha cfg-sem-margem">
         <label className="cfg-campo">
           <span className="cfg-rotulo">Nome</span>
           <input
@@ -31,33 +31,48 @@ export function FormPerfil({ usuario }: { usuario: UsuarioConta }) {
       </div>
       <label className="cfg-campo">
         <span className="cfg-rotulo">E-mail</span>
-        <input value={usuario.email} readOnly className="cfg-input" />
+        <input
+          value={usuario.email}
+          readOnly
+          className="cfg-input"
+          aria-describedby="perfil-email-dica"
+        />
+        <span id="perfil-email-dica" className="cfg-dica">
+          O e-mail é o login e não muda por aqui.
+        </span>
       </label>
 
       <fieldset className="cfg-grupo">
-        <legend className="cfg-rotulo">Trocar senha (deixe em branco para manter)</legend>
-        <input
-          name="senhaAtual"
-          type="password"
-          autoComplete="current-password"
-          placeholder="Senha atual"
-          className="cfg-input"
-        />
-        <input
-          name="novaSenha"
-          type="password"
-          autoComplete="new-password"
-          minLength={8}
-          placeholder="Nova senha"
-          className="cfg-input"
-        />
-        <input
-          name="confirmacao"
-          type="password"
-          autoComplete="new-password"
-          placeholder="Repita a nova senha"
-          className="cfg-input"
-        />
+        <legend className="cfg-subtitulo cfg-sem-margem">Trocar senha</legend>
+        <p className="cfg-dica">Deixe os três campos em branco para manter a senha atual.</p>
+        <label className="cfg-campo">
+          <span className="cfg-rotulo">Senha atual</span>
+          <input
+            name="senhaAtual"
+            type="password"
+            autoComplete="current-password"
+            className="cfg-input"
+          />
+        </label>
+        <label className="cfg-campo">
+          <span className="cfg-rotulo">Nova senha (mínimo 8 caracteres)</span>
+          <input
+            name="novaSenha"
+            type="password"
+            autoComplete="new-password"
+            minLength={8}
+            className="cfg-input"
+          />
+        </label>
+        <label className="cfg-campo">
+          <span className="cfg-rotulo">Repita a nova senha</span>
+          <input
+            name="confirmacao"
+            type="password"
+            autoComplete="new-password"
+            className="cfg-input"
+          />
+        </label>
       </fieldset>
 
       {estado.mensagem && (
@@ -66,8 +81,13 @@ export function FormPerfil({ usuario }: { usuario: UsuarioConta }) {
         </p>
       )}
       <div className="cfg-acoes">
-        <button type="submit" className="cfg-botao cfg-botao-primario" disabled={pendente}>
-          Salvar
+        <button
+          type="submit"
+          className="cfg-botao cfg-botao-primario"
+          disabled={pendente}
+          aria-busy={pendente}
+        >
+          {pendente ? 'Salvando…' : 'Salvar'}
         </button>
       </div>
     </form>

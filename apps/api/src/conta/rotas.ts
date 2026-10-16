@@ -6,7 +6,7 @@ import { and, eq, gt, isNull, sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { emitirToken, listarEmpresas } from '../auth/plugin.js';
+import { emitirToken, listarEmpresas, VALIDADE_TOKEN_LEMBRAR } from '../auth/plugin.js';
 import { comTenant, invites, memberships, ROLES, tenants, users } from '../db/client.js';
 import { ErroApi, schemaRespostaErro } from '../erros.js';
 import { htmlComBotao, type EnviadorEmail } from './email.js';
@@ -15,6 +15,7 @@ import {
   criarTokenRedefinicao,
   gerarHashSenha,
   lerTokenRedefinicao,
+  precisaRefazerHash,
   SENHA_MINIMA,
   sha256,
   tenantDoTokenConvite,
@@ -35,7 +36,9 @@ export const schemaUsuario = z.object({
 });
 type UsuarioConta = z.infer<typeof schemaUsuario>;
 export const schemaSessao = z.object({
-  token: z.string().describe('JWT de 12 h com a claim tenant da primeira empresa'),
+  token: z
+    .string()
+    .describe('JWT de 12 h (30 dias com `lembrar`) com a claim tenant da primeira empresa'),
   usuario: schemaUsuario,
   empresas: z.array(schemaEmpresa),
 });
@@ -68,14 +71,25 @@ const publico = (u: UsuarioConta): UsuarioConta => ({
   sobrenome: u.sobrenome,
 });
 
-async function sessao(app: FastifyInstance, usuario: UsuarioConta, tenant?: string) {
+async function sessao(
+  app: FastifyInstance,
+  usuario: UsuarioConta,
+  senhaHash: string | null,
+  opcoes: { tenant?: string; lembrar?: boolean } = {},
+) {
   const empresas = await listarEmpresas(app.db, usuario.id);
-  const ativa = tenant ?? empresas[0]?.id;
-  const token = emitirToken(app, {
-    sub: usuario.id,
-    email: usuario.email,
-    ...(ativa ? { tenant: ativa } : {}),
-  });
+  const ativa = opcoes.tenant ?? empresas[0]?.id;
+  const token = emitirToken(
+    app,
+    {
+      sub: usuario.id,
+      email: usuario.email,
+      ...(ativa ? { tenant: ativa } : {}),
+      // Versão da senha: trocar a senha invalida este token (ver auth/plugin.ts).
+      sv: versaoSenha(senhaHash),
+    },
+    opcoes.lembrar ? { expiresIn: VALIDADE_TOKEN_LEMBRAR } : {},
+  );
   return { token, usuario, empresas };
 }
 
@@ -92,7 +106,11 @@ export const rotasConta: FastifyPluginAsyncZod<OpcoesConta> = async (app, opcoes
       schema: {
         tags: ['conta'],
         summary: 'Login por e-mail e senha',
-        body: z.object({ email: z.string().max(320), senha: z.string().max(200) }),
+        body: z.object({
+          email: z.string().max(320),
+          senha: z.string().max(200),
+          lembrar: z.boolean().optional().describe('Sessão de 30 dias em vez de 12 h'),
+        }),
         response: { 200: schemaSessao, ...erros },
       },
     },
@@ -104,7 +122,13 @@ export const rotasConta: FastifyPluginAsyncZod<OpcoesConta> = async (app, opcoes
         .limit(1);
       const ok = await conferirSenha(request.body.senha, u?.senhaHash ?? null);
       if (!u || !ok) throw ErroApi.de('nao_autenticado', 'E-mail ou senha incorretos.');
-      return sessao(app, publico(u));
+      let senhaHash = u.senhaHash;
+      if (precisaRefazerHash(senhaHash)) {
+        // Hash legado (scrypt) ou fraco: refaz em Argon2id agora que a senha em claro está aqui.
+        senhaHash = await gerarHashSenha(request.body.senha);
+        await app.db.update(users).set({ senhaHash }).where(eq(users.id, u.id));
+      }
+      return sessao(app, publico(u), senhaHash, { lembrar: request.body.lembrar === true });
     },
   );
 
@@ -175,11 +199,12 @@ export const rotasConta: FastifyPluginAsyncZod<OpcoesConta> = async (app, opcoes
       if (!dados || !u || versaoSenha(u.senhaHash) !== dados.versao) {
         throw ErroApi.de('token_invalido', 'Link inválido ou expirado. Peça outro.');
       }
+      const senhaHash = await gerarHashSenha(request.body.senha);
       await app.db
         .update(users)
-        .set({ senhaHash: await gerarHashSenha(request.body.senha), updatedAt: new Date() })
+        .set({ senhaHash, updatedAt: new Date() })
         .where(eq(users.id, u.id));
-      return sessao(app, publico(u));
+      return sessao(app, publico(u), senhaHash);
     },
   );
 
@@ -198,7 +223,17 @@ export const rotasConta: FastifyPluginAsyncZod<OpcoesConta> = async (app, opcoes
           senhaAtual: z.string().max(200).optional(),
           novaSenha: schemaSenha.optional(),
         }),
-        response: { 200: z.object({ usuario: schemaUsuario }), 403: schemaRespostaErro, ...erros },
+        response: {
+          200: z.object({
+            usuario: schemaUsuario,
+            token: z
+              .string()
+              .optional()
+              .describe('Novo JWT quando a senha muda (o anterior deixa de valer)'),
+          }),
+          403: schemaRespostaErro,
+          ...erros,
+        },
       },
     },
     async (request) => {
@@ -223,7 +258,21 @@ export const rotasConta: FastifyPluginAsyncZod<OpcoesConta> = async (app, opcoes
         .where(eq(users.id, id))
         .returning(camposUsuario);
       if (!usuario) throw ErroApi.de('token_invalido', 'Usuário do token não existe.');
-      return { usuario };
+      if (!mudancas.senhaHash) return { usuario };
+      // A troca de senha encerra as outras sessões; esta recebe um token novo com o mesmo prazo.
+      const atual = request.user as { tenant?: string; exp?: number };
+      const restante = atual.exp ? atual.exp - Math.floor(Date.now() / 1000) : 0;
+      const token = emitirToken(
+        app,
+        {
+          sub: usuario.id,
+          email: usuario.email,
+          ...(atual.tenant ? { tenant: atual.tenant } : {}),
+          sv: versaoSenha(mudancas.senhaHash),
+        },
+        restante > 60 ? { expiresIn: restante } : {},
+      );
+      return { usuario, token };
     },
   );
 
@@ -304,6 +353,7 @@ export const rotasConta: FastifyPluginAsyncZod<OpcoesConta> = async (app, opcoes
       const c = await abrirConvite(request.params.token);
       if (!c) throw naoAchou();
       const b = request.body;
+      let senhaHash: string | null = null;
       const usuario = await comTenant(app.db, c.tenantId, async (tx): Promise<UsuarioConta> => {
         const [existente] = await tx
           .select({ ...camposUsuario, senhaHash: users.senhaHash })
@@ -316,12 +366,14 @@ export const rotasConta: FastifyPluginAsyncZod<OpcoesConta> = async (app, opcoes
             throw ErroApi.de('nao_autenticado', 'Este e-mail já tem conta: use a senha dela.');
           }
           u = publico(existente);
+          senhaHash = existente.senhaHash;
         } else {
           const dados = {
             nome: b.nome,
             sobrenome: b.sobrenome,
             senhaHash: await gerarHashSenha(b.senha),
           };
+          senhaHash = dados.senhaHash;
           [u] = existente
             ? await tx
                 .update(users)
@@ -345,7 +397,7 @@ export const rotasConta: FastifyPluginAsyncZod<OpcoesConta> = async (app, opcoes
         return u;
       });
       // A sessão nasce na empresa do convite.
-      return sessao(app, usuario, c.tenantId);
+      return sessao(app, usuario, senhaHash, { tenant: c.tenantId });
     },
   );
 };

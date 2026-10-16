@@ -1,11 +1,16 @@
 import '../(admin)/configuracoes/configuracoes.css';
 import './conta.css';
+import { FundoConta } from './FundoConta';
 
-/** Casca das telas públicas (login, convite, nova senha): cartão centralizado. */
+/** Casca das telas públicas (login, convite, nova senha): cartão de vidro com o logo, sobre as ondas. */
 export default function LayoutConta({ children }: { children: React.ReactNode }) {
   return (
-    <main className="conta-fundo">
-      <section className="conta-cartao">{children}</section>
-    </main>
+    <FundoConta>
+      <section className="conta-cartao">
+        {/* Logo padrão: as telas públicas ainda não sabem de qual empresa é o visitante. */}
+        <img className="conta-logo" src="/brand/pasio-logo.png" alt="PASIO" />
+        {children}
+      </section>
+    </FundoConta>
   );
 }

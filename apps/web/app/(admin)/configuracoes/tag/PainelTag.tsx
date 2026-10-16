@@ -1,20 +1,11 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
 
 export function PainelTag(props: { codigo: string; endpoint: string; semOrigemPublica: boolean }) {
   const [copiado, setCopiado] = useState(false);
   return (
     <div className="cfg-tag">
-      <ol className="cfg-passos">
-        <li>
-          No GTM, crie uma tag <strong>HTML personalizado</strong> e cole o código abaixo.
-        </li>
-        <li>
-          Acionador: <strong>All Pages</strong> (e, se o login do site não recarrega a página,
-          também o evento do dataLayer em que o <code>user_id</code> aparece).
-        </li>
-        <li>Publique o contêiner.</li>
-      </ol>
       <p className="cfg-dica">
         A tag guarda os parâmetros de clique (gclid, fbclid, ttclid, Kwai, Taboola) e as UTMs no
         navegador e envia para <code className="cfg-url">{props.endpoint}</code>. A primeira página
@@ -24,11 +15,20 @@ export function PainelTag(props: { codigo: string; endpoint: string; semOrigemPu
       </p>
       {props.semOrigemPublica && (
         <p className="cfg-erro">
-          Falta definir WEBHOOK_URL_PUBLICA no servidor do painel: o endereço acima só funciona
-          nesta máquina.
+          O endereço acima ainda é local: a tag só funciona depois que o servidor ganhar um endereço
+          público. Veja o passo 1 em <Link href="/configuracoes/instalacao">Instalação</Link>.
         </p>
       )}
-      <textarea className="cfg-codigo" readOnly value={props.codigo} rows={16} spellCheck={false} />
+      <label className="cfg-campo">
+        <span className="cfg-rotulo">Código da tag</span>
+        <textarea
+          className="cfg-codigo"
+          readOnly
+          value={props.codigo}
+          rows={16}
+          spellCheck={false}
+        />
+      </label>
       <div className="cfg-acoes">
         <button
           type="button"
@@ -40,7 +40,7 @@ export function PainelTag(props: { codigo: string; endpoint: string; semOrigemPu
             )
           }
         >
-          {copiado ? 'Copiado' : 'Copiar código'}
+          <span aria-live="polite">{copiado ? 'Copiado' : 'Copiar código'}</span>
         </button>
       </div>
     </div>

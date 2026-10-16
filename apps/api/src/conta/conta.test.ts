@@ -132,6 +132,57 @@ describe.skipIf(!disponivel)('conta e convites', () => {
     expect(sem.statusCode).toBe(403);
   });
 
+  it('lembrar de mim dá 30 dias; trocar a senha derruba as outras sessões', async () => {
+    const vence = (t: string) =>
+      JSON.parse(Buffer.from(t.split('.')[1]!, 'base64url').toString()).exp -
+      Math.floor(Date.now() / 1000);
+    const login = (lembrar?: boolean) =>
+      app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { email: cen.usuario.email, senha: 'senha-forte-123', lembrar },
+      });
+    const curto = (await login()).json().token as string;
+    const longo = (await login(true)).json().token as string;
+    expect(vence(curto)).toBeLessThanOrEqual(12 * 3600);
+    expect(vence(longo)).toBeGreaterThan(29 * 24 * 3600);
+
+    // Trocar empresa mantém o prazo do token de "lembrar de mim".
+    const troca = await app.inject({
+      method: 'POST',
+      url: '/me/empresa',
+      headers: { authorization: `Bearer ${longo}` },
+      payload: { empresa: cen.t2.slug },
+    });
+    expect(troca.statusCode).toBe(200);
+    expect(vence(troca.json().token)).toBeGreaterThan(29 * 24 * 3600);
+
+    const trocou = await app.inject({
+      method: 'PATCH',
+      url: '/me',
+      headers: { authorization: `Bearer ${longo}` },
+      payload: { senhaAtual: 'senha-forte-123', novaSenha: 'senha-nova-456' },
+    });
+    expect(trocou.statusCode).toBe(200);
+    const novo = trocou.json().token as string;
+    expect(vence(novo)).toBeGreaterThan(29 * 24 * 3600);
+
+    const velho = await app.inject({
+      method: 'GET',
+      url: '/me',
+      headers: { authorization: `Bearer ${curto}` },
+    });
+    expect(velho.statusCode).toBe(401);
+    expect(velho.json().erro.mensagem).toMatch(/senha foi trocada/);
+    const atual = await app.inject({
+      method: 'GET',
+      url: '/me',
+      headers: { authorization: `Bearer ${novo}` },
+    });
+    expect(atual.statusCode).toBe(200);
+    token = novo;
+  });
+
   it('só admin convida; o convidado aceita e passa a ver a empresa', async () => {
     const auth = { authorization: `Bearer ${token}` };
     const leitor = await app.inject({
@@ -210,9 +261,9 @@ describe.skipIf(!disponivel)('conta e convites', () => {
     expect(rm.statusCode).toBe(204);
 
     const [hash] = await db
-      .select({ h: sql<string>`left(${users.senhaHash}, 3)` })
+      .select({ h: sql<string>`left(${users.senhaHash}, 10)` })
       .from(users)
       .where(eq(users.id, idBruno));
-    expect(hash!.h).toBe('s1$');
+    expect(hash!.h).toBe('$argon2id$');
   });
 });

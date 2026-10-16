@@ -10,15 +10,21 @@ export default async function Perfil() {
   const r = await api().me();
   if (!r.ok) {
     return (
-      <p className="cfg-faixa-erro" role="alert">
-        Não foi possível carregar o perfil agora. {r.mensagem}
-      </p>
+      <>
+        <h2 className="cfg-subtitulo cfg-sem-margem">Dados pessoais</h2>
+        <p className="cfg-faixa-erro" role="alert">
+          Não foi possível carregar o perfil agora. {r.mensagem}
+        </p>
+      </>
     );
   }
   const { usuario, empresas } = r.dados;
   return (
     <div className="cfg-perfil">
-      <FormPerfil usuario={usuario} />
+      <div className="cfg-bloco">
+        <h2 className="cfg-subtitulo">Dados pessoais</h2>
+        <FormPerfil usuario={usuario} />
+      </div>
       <div className="cfg-bloco">
         <h2 className="cfg-subtitulo">Acesso</h2>
         <ul className="cfg-lista">

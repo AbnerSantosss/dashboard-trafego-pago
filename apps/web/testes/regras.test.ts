@@ -1,12 +1,16 @@
 import type { LinhaCanalMetrica } from '@trafego/contratos';
 import { describe, expect, it } from 'vitest';
 import {
+  consolidarKpi,
+  ETAPA_DO_KPI,
+  atalhoAtivo,
   formatarCelula,
   gerarCsv,
   lerFiltros,
   montarBusca,
   nomeArquivoCsv,
   ordenarLinhas,
+  periodoDoAtalho,
   proximaOrdenacao,
   textoAtualizacao,
   tomDelta,
@@ -95,5 +99,95 @@ describe('datas e CSV', () => {
     expect(nomeArquivoCsv('2024-05-01', '2024-05-24')).toBe(
       'desempenho-por-canal_2024-05-01_2024-05-24.csv',
     );
+  });
+});
+
+describe('atalhos de período', () => {
+  // 02:30 UTC de 16/10 ainda é 15/10 em São Paulo (UTC-3): o dia vem do fuso da empresa.
+  const agora = new Date('2026-10-16T02:30:00Z');
+  const fuso = 'America/Sao_Paulo';
+  it('hoje, ontem e últimos 7 dias contam a partir do dia no fuso', () => {
+    expect(periodoDoAtalho('hoje', agora, fuso)).toEqual({ de: '2026-10-15', ate: '2026-10-15' });
+    expect(periodoDoAtalho('ontem', agora, fuso)).toEqual({ de: '2026-10-14', ate: '2026-10-14' });
+    expect(periodoDoAtalho('7dias', agora, fuso)).toEqual({ de: '2026-10-09', ate: '2026-10-15' });
+    expect(periodoDoAtalho('hoje', agora, 'UTC')).toEqual({ de: '2026-10-16', ate: '2026-10-16' });
+  });
+  it('ontem atravessa a virada do mês', () => {
+    expect(periodoDoAtalho('ontem', new Date('2026-03-01T15:00:00Z'), fuso)).toEqual({
+      de: '2026-02-28',
+      ate: '2026-02-28',
+    });
+  });
+  it('reconhece o atalho aberto; outro período é data personalizada', () => {
+    expect(atalhoAtivo('2026-10-09', '2026-10-15', agora, fuso)).toBe('7dias');
+    expect(atalhoAtivo('2026-10-14', '2026-10-14', agora, fuso)).toBe('ontem');
+    expect(atalhoAtivo('2026-10-01', '2026-10-15', agora, fuso)).toBeNull();
+  });
+});
+
+describe('consolidado de KPI por canal', () => {
+  const linha = (canal: string, p: Partial<LinhaCanalMetrica>): LinhaCanalMetrica => ({
+    canal,
+    cor: null,
+    investimento: null,
+    cliques: 0,
+    visitas: 0,
+    cadastros: 0,
+    ftdsQtd: 0,
+    ftdsValor: 0,
+    depositos: 0,
+    cpa: null,
+    roas: null,
+    ...p,
+  });
+  const linhas = [
+    linha('Meta', {
+      investimento: 300,
+      ftdsQtd: 6,
+      ftdsValor: 600,
+      depositos: 900,
+      cpa: 50,
+      roas: 3,
+    }),
+    linha('Email', {
+      investimento: 100,
+      ftdsQtd: 4,
+      ftdsValor: 200,
+      depositos: 100,
+      cpa: 25,
+      roas: 1,
+    }),
+    linha('Outros', { ftdsQtd: 0 }),
+  ];
+
+  it('somas mostram a fatia do total, do maior para o menor', () => {
+    const r = consolidarKpi('investimento', linhas);
+    expect(r.map((l) => l.canal)).toEqual(['Meta', 'Email', 'Outros']);
+    expect(r[0]!.fracao).toBe(0.75);
+    expect(r[0]!.detalhe).toBe('75,0% do total');
+    expect(r[2]!.texto).toBe('–');
+    expect(r[2]!.detalhe).toBe('Sem gasto lançado');
+    expect(r.every((l) => !l.temPessoas)).toBe(true);
+  });
+
+  it('CPA vai do menor para o maior e explica a conta; sem FTD fica no fim', () => {
+    const r = consolidarKpi('cpa', linhas);
+    expect(r.map((l) => l.canal)).toEqual(['Email', 'Meta', 'Outros']);
+    expect(r[1]!.fracao).toBe(1);
+    expect(r[0]!.detalhe).toContain('÷ 4 FTDs');
+    expect(r[2]!.detalhe).toBe('Sem FTD no período');
+    expect(r.map((l) => l.temPessoas)).toEqual([true, true, false]);
+  });
+
+  it('FTDs leva à etapa ftd e mostra o valor do 1º depósito', () => {
+    const r = consolidarKpi('ftds', linhas);
+    expect(ETAPA_DO_KPI.ftds).toBe('ftd');
+    expect(ETAPA_DO_KPI.investimento).toBeNull();
+    expect(r[0]!.detalhe).toContain('60,0% do total');
+    expect(r[0]!.detalhe).toContain('no 1º depósito');
+  });
+
+  it('sem linhas não quebra', () => {
+    expect(consolidarKpi('roas', [])).toEqual([]);
   });
 });

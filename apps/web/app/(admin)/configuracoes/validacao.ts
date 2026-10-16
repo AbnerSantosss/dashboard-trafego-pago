@@ -13,7 +13,7 @@ export const LOGO_TIPOS: readonly LogoTipo[] = ['image/png', 'image/svg+xml'];
 export const LOGO_TAMANHO_MAXIMO = 512 * 1024;
 export const NOME_EXIBICAO_MAXIMO = 60;
 
-export const MSG_SUCESSO_APRESENTACAO = 'Salvo. Recarregue o painel para ver a mudança.';
+export const MSG_SUCESSO_APRESENTACAO = 'Salvo. O menu já mostra o nome e o logo novos.';
 export const MSG_SO_ADMIN = 'Só administradores da empresa podem alterar as configurações.';
 export const AVISO_SEGREDO = 'Guarde agora: ele não será mostrado de novo.';
 
@@ -87,6 +87,14 @@ export function mensagemErroApi(r: { mensagem: string; codigo?: string; status?:
       return 'Já existe uma fonte com esse slug.';
     case 'fonte_nao_encontrada':
       return 'Fonte não encontrada. Recarregue a página.';
+    case 'custo_nao_encontrado':
+      return 'Gasto não encontrado. Recarregue a página.';
+    case 'meta_conta_nao_encontrada':
+      return 'Conta do Meta não encontrada. Recarregue a página.';
+    case 'meta_conta_existente':
+      return 'Esta conta de anúncios já está conectada.';
+    case 'meta_recusou':
+      return semHttp(r.mensagem);
   }
   return `Não foi possível salvar agora. ${r.mensagem}`;
 }
@@ -96,3 +104,45 @@ export function urlWebhook(caminho: string, origem: string | undefined): string 
   const o = (origem ?? '').trim().replace(/\/+$/, '');
   return o ? `${o}${caminho}` : caminho;
 }
+
+/** Tira o sufixo ` (HTTP 422)` que o cliente da API acrescenta às mensagens de erro. */
+function semHttp(mensagem: string): string {
+  return mensagem.replace(/\s*\(HTTP \d{3}\)$/, '');
+}
+
+/**
+ * Lê um valor em reais digitado no formato brasileiro (`1.234,56`, `150,5`, `R$ 80`) ou com ponto
+ * decimal (`150.25`). Devolve null se não for um número positivo com até 2 casas.
+ */
+export function lerValorReais(texto: string): number | null {
+  let t = texto.replace(/R\$|\s/g, '');
+  if (!t) return null;
+  if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '');
+  if (!/^\d+(\.\d{1,2})?$/.test(t)) return null;
+  const n = Number(t);
+  return n > 0 ? n : null;
+}
+
+const REAIS = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+/** `1234.5` → `R$ 1.234,50`. */
+export function formatarReais(valor: number): string {
+  return REAIS.format(valor).replace(/[\u00a0\u202f]/g, ' ');
+}
+
+/** `2026-03-09` → `09/03/2026`. */
+export function formatarDia(dia: string): string {
+  const [a, m, d] = dia.split('-');
+  return a && m && d ? `${d}/${m}/${a}` : dia;
+}
+
+/** Aceita `act_123`, `123` ou com espaços; devolve `act_123` ou null (mesma regra da API). */
+export function normalizarContaMeta(valor: string): string | null {
+  const v = valor.trim().replace(/\s+/g, '');
+  const id = /^\d+$/.test(v) ? `act_${v}` : v;
+  return /^act_\d{3,20}$/.test(id) ? id : null;
+}
+
+/** Canais sugeridos no lançamento manual (o campo aceita qualquer outro). */
+export const CANAIS_SUGERIDOS = ['Meta', 'Google', 'TikTok', 'Email', 'SMS', 'Afiliados', 'Outros'];

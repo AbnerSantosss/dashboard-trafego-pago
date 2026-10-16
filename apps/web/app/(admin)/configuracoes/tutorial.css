@@ -1,0 +1,772 @@
+/*
+ * Tutorial animado em balão (Tutorial.tsx + tutoriais.tsx). O movimento não mora aqui: cada cena é
+ * uma timeline GSAP no contrato Hyperframes (linha-do-tempo.ts). Este arquivo só desenha o balão e
+ * o estado final das peças; com movimento reduzido a timeline pula direto para esse estado.
+ *
+ * A cena é medida em em e o tamanho da letra vem da largura do palco (cqi), então a mini-interface
+ * encolhe inteira no celular em vez de quebrar.
+ */
+
+/* ------------------------------------------------------------ botão que abre */
+.tt-abrir {
+  scroll-margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.875rem;
+  max-width: 100%;
+  min-height: 3.5rem;
+  padding: 0.625rem 1.25rem 0.625rem 0.625rem;
+  border: 1px solid #1e5374;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #0e2d45, #0a1e31);
+  box-shadow:
+    0 0 0 1px rgb(112 238 254 / 0.04) inset,
+    0 8px 22px rgb(0 0 0 / 0.3);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.tt-abrir:hover {
+  border-color: var(--p-nav-ic-ativo);
+}
+.tt-abrir-play {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--p-nav-ic-ativo);
+  box-shadow: 0 0 18px rgb(112 238 254 / 0.35);
+  color: #03111e;
+}
+.tt-abrir-ic,
+.tt-ic {
+  display: inline-flex;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+.tt-abrir-ic svg,
+.tt-ic svg,
+.tt-selo-ic svg,
+.tt-cursor-ic svg {
+  width: 100%;
+  height: 100%;
+}
+.tt-abrir-ic {
+  margin-left: 2px;
+}
+.tt-abrir-texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.tt-abrir-titulo {
+  font-weight: 600;
+}
+.tt-abrir-sub {
+  color: var(--p-funil-leg);
+  font-size: var(--cfg-fs-micro);
+}
+
+/* ------------------------------------------------------------ balão */
+/* Popover no top layer; o JS põe left/top (ou bottom), max-height, --seta-x e data-lado. */
+.tt-balao {
+  position: fixed;
+  inset: auto;
+  width: min(36rem, 100vw - 2rem);
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  border: 1px solid #1e5374;
+  border-radius: 0.875rem;
+  background: var(--p-card-bg);
+  box-shadow:
+    0 1.25rem 3rem rgb(0 0 0 / 0.55),
+    0 0 0 1px rgb(112 238 254 / 0.06);
+  color: var(--text-primary);
+  font-size: var(--cfg-fs-corpo);
+}
+.tt-balao > .tt-corpo {
+  max-height: inherit;
+  overflow-y: auto;
+  border-radius: inherit;
+}
+/* A seta: um quadrado girado com as duas bordas do lado do botão. */
+.tt-balao::before {
+  position: absolute;
+  left: var(--seta-x, 2rem);
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-left: -0.4375rem;
+  border: 1px solid #1e5374;
+  background: var(--p-card-bg);
+  transform: rotate(45deg);
+  content: '';
+}
+.tt-balao[data-lado='baixo']::before {
+  top: -0.4375rem;
+  border-right: 0;
+  border-bottom: 0;
+}
+.tt-balao[data-lado='cima']::before {
+  bottom: -0.4375rem;
+  border-top: 0;
+  border-left: 0;
+}
+.tt-corpo {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem 1.25rem;
+}
+.tt-cabeca {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.tt-kicker {
+  margin: 0 0 0.125rem;
+  color: var(--p-nav-ic-ativo);
+  font-size: var(--cfg-fs-micro);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tt-titulo {
+  margin: 0;
+  font-size: var(--cfg-fs-sub);
+  font-weight: 600;
+  text-wrap: balance;
+}
+.tt-icone-botao {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--cfg-alvo);
+  height: var(--cfg-alvo);
+  border: 1px solid var(--cfg-campo-borda);
+  border-radius: 0.5rem;
+  background: var(--p-bg-button);
+  color: var(--p-text-sec);
+  cursor: pointer;
+}
+.tt-icone-botao:hover:not(:disabled) {
+  border-color: var(--p-filtro-rot);
+  color: var(--text-primary);
+}
+.tt-icone-botao:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.tt-tocar {
+  border-color: var(--p-nav-ic-ativo);
+  background: var(--p-nav-ativo);
+  color: var(--text-primary);
+}
+
+/* Palco: fundo mais escuro que o diálogo, com uma grade de pontos discreta. */
+.tt-palco {
+  container-type: inline-size;
+  overflow: hidden;
+  border: 1px solid var(--p-card-borda);
+  border-radius: 0.75rem;
+  background:
+    radial-gradient(ellipse at 25% 0%, rgb(112 238 254 / 0.09), transparent 60%),
+    radial-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px) 0 0 / 1.25rem 1.25rem,
+    #06121e;
+}
+.tt-cena {
+  display: grid;
+  place-items: center;
+  height: 20em;
+  padding: 1em;
+  font-size: min(0.875rem, 2.35cqi);
+  line-height: 1.35;
+}
+
+.tt-legenda {
+  min-height: calc(1.5em * 4 + 1.25rem);
+}
+.tt-legenda-num {
+  margin: 0;
+  color: var(--p-funil-leg);
+  font-size: var(--cfg-fs-micro);
+  font-variant-numeric: tabular-nums;
+}
+.tt-legenda-titulo {
+  margin: 0.125rem 0 0.25rem;
+  font-size: var(--cfg-fs-corpo);
+  font-weight: 600;
+}
+.tt-legenda-texto {
+  max-width: 65ch;
+  margin: 0;
+  color: var(--p-text-sec);
+  text-wrap: pretty;
+}
+
+.tt-controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.tt-pontos {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tt-botoes {
+  display: flex;
+  gap: 0.5rem;
+}
+/* Cada ponto é um alvo de 40 px com uma trilha fina; a trilha da cena atual é o relógio. */
+.tt-ponto {
+  position: relative;
+  width: 2.75rem;
+  height: var(--cfg-alvo);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.tt-ponto::before,
+.tt-ponto-cheio {
+  position: absolute;
+  top: 50%;
+  right: 0.25rem;
+  left: 0.25rem;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 2px;
+  content: '';
+}
+.tt-ponto::before {
+  background: var(--p-campo-borda);
+}
+.tt-ponto:hover::before {
+  background: var(--cfg-campo-borda);
+}
+.tt-ponto-cheio {
+  background: var(--p-nav-ic-ativo);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+/* A barra da cena atual é o relógio: a timeline enche de 0 a 1. */
+.tt-ponto-cheio[data-estado='feito'] {
+  transform: none;
+}
+
+/* ------------------------------------------------------------ peças da cena */
+.tt-fila {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+}
+.tt-coluna {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75em;
+}
+.tt-grade {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4em;
+}
+.tt-grade .tt-linha {
+  justify-content: space-between;
+}
+
+.tt-janela {
+  overflow: hidden;
+  border: 1px solid var(--p-card-borda);
+  border-radius: 0.6em;
+  background: #0c1e30;
+  box-shadow: 0 0.8em 2em rgb(0 0 0 / 0.35);
+}
+.tt-janela-barra {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  height: 1.9em;
+  padding: 0 0.7em;
+  border-bottom: 1px solid var(--p-card-borda);
+  background: #081726;
+}
+.tt-janela-pontos {
+  flex: none;
+  width: 0.45em;
+  height: 0.45em;
+  margin-right: 1em;
+  border-radius: 50%;
+  background: #33506b;
+  box-shadow:
+    0.7em 0 0 #33506b,
+    1.4em 0 0 #33506b;
+}
+.tt-janela-titulo {
+  overflow: hidden;
+  color: var(--p-funil-leg);
+  font-size: 0.75em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tt-janela-corpo {
+  padding: 0.85em;
+}
+
+.tt-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+}
+.tt-campo-rot {
+  color: var(--p-funil-leg);
+  font-size: 0.72em;
+}
+.tt-campo-caixa {
+  display: flex;
+  align-items: center;
+  min-width: 7em;
+  height: 2.3em;
+  padding: 0 0.65em;
+  border: 1px solid var(--cfg-campo-borda);
+  border-radius: 0.35em;
+  background: var(--p-campo-bg);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.tt-alvo {
+  position: relative;
+}
+.tt-botao {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  align-self: flex-end;
+  height: 2.3em;
+  padding: 0 0.95em;
+  border: 1px solid var(--cfg-campo-borda);
+  border-radius: 0.35em;
+  background: var(--p-bg-button);
+  color: var(--p-text-sec);
+  font-size: 0.85em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.tt-fila .tt-botao {
+  align-self: center;
+}
+.tt-janela .tt-fila .tt-botao {
+  align-self: flex-end;
+}
+.tt-botao[data-primario] {
+  border-color: var(--p-limpar-borda);
+  background: var(--p-limpar-bg);
+  color: var(--p-limpar-txt);
+}
+/* Cursor (ícone pointer) e o anel do clique, ancorados no meio do botão. */
+.tt-cursor {
+  position: absolute;
+  z-index: 2;
+  top: 55%;
+  left: 62%;
+  width: 1.6em;
+  height: 1.6em;
+  color: #fff;
+  filter: drop-shadow(0 0.15em 0.3em rgb(0 0 0 / 0.6));
+}
+.tt-cursor-ic {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.tt-clique {
+  position: absolute;
+  z-index: 1;
+  top: 55%;
+  left: 62%;
+  width: 2em;
+  height: 2em;
+  margin: -1em 0 0 -1em;
+  border: 2px solid var(--p-nav-ic-ativo);
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.tt-selo {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.35em;
+  height: 1.9em;
+  padding: 0 0.7em;
+  border: 1px solid var(--p-limpar-borda);
+  border-radius: 999px;
+  background: var(--p-limpar-bg);
+  color: var(--p-limpar-txt);
+  font-size: 0.75em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tt-selo[data-tom='info'] {
+  border-color: #1d4a75;
+  background: #0b2945;
+  color: #9fd0ff;
+}
+.tt-selo[data-tom='aviso'] {
+  border-color: #5a4720;
+  background: #2b220f;
+  color: var(--p-aviso);
+}
+.tt-selo[data-tom='erro'] {
+  border-color: var(--p-erro-borda);
+  background: var(--p-erro-bg);
+  color: var(--p-erro-txt);
+}
+.tt-selo-ic {
+  display: inline-flex;
+  width: 1.15em;
+  height: 1.15em;
+}
+
+.tt-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 2em;
+  padding: 0 0.7em;
+  border: 1px dashed var(--cfg-campo-borda);
+  border-radius: 0.35em;
+  background: #0a1b2b;
+  color: var(--p-cal);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 0.78em;
+  white-space: nowrap;
+}
+
+.tt-troca {
+  display: inline-grid;
+}
+.tt-troca > * {
+  grid-area: 1 / 1;
+}
+
+.tt-linha {
+  display: flex;
+  align-items: center;
+  gap: 0.9em;
+  min-height: 2.4em;
+  padding: 0.3em 0.8em;
+  border: 1px solid var(--p-card-borda);
+  border-radius: 0.45em;
+  background: #0d2134;
+  color: var(--p-text-sec);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+.tt-linha strong {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.tt-linha[data-tom='ok'] {
+  border-color: var(--p-limpar-borda);
+}
+.tt-linha[data-tom='erro'] {
+  border-color: var(--p-erro-borda);
+}
+.tt-linha .tt-selo,
+.tt-linha .tt-botao,
+.tt-linha .tt-chip {
+  font-size: 0.88em;
+}
+
+.tt-no {
+  display: flex;
+  align-items: center;
+  gap: 0.65em;
+  width: 11.5em;
+  height: 4em;
+  padding: 0 0.8em;
+  border: 1px solid var(--p-card-borda);
+  border-radius: 0.6em;
+  background: #0d2134;
+}
+/* Halo atrás do destino (ambient-glow-bloom): a timeline leva a opacidade a 0,3. */
+.tt-no-brilho {
+  position: absolute;
+  z-index: -1;
+  inset: -1.5em;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(112 238 254 / 0.9), transparent);
+  opacity: 0.3;
+  pointer-events: none;
+}
+.tt-no[data-destaque] {
+  position: relative;
+  isolation: isolate;
+  border-color: rgb(112 238 254 / 0.6);
+  background: #0b2a44;
+  box-shadow: 0 0 1.6em rgb(112 238 254 / 0.16);
+}
+.tt-no-ic {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.3em;
+  height: 2.3em;
+  border-radius: 50%;
+  background: #0a2b47;
+  color: var(--p-nav-ic-ativo);
+}
+.tt-no .tt-ic {
+  width: 1.25em;
+  height: 1.25em;
+}
+.tt-no-texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.tt-no-texto strong {
+  font-size: 0.95em;
+}
+.tt-no-texto span {
+  overflow: hidden;
+  color: var(--p-funil-leg);
+  font-size: 0.75em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Conector com ponta de seta e pacotes que viajam por ele. */
+.tt-conector {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  height: 2px;
+}
+.tt-conector-linha {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #2c4a66, var(--p-nav-ic-ativo));
+  transform-origin: left;
+}
+/* A ponta é um span (a timeline anima o span; a rotação fica no ::before). */
+.tt-conector-seta {
+  position: absolute;
+  top: 50%;
+  right: -0.1em;
+  width: 0.5em;
+  height: 0.5em;
+  margin-top: -0.25em;
+}
+.tt-conector-seta::before {
+  position: absolute;
+  inset: 0;
+  border-top: 2px solid var(--p-nav-ic-ativo);
+  border-right: 2px solid var(--p-nav-ic-ativo);
+  transform: rotate(45deg);
+  content: '';
+}
+.tt-pacote {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+.tt-pacote::before {
+  position: absolute;
+  top: 50%;
+  left: -0.3em;
+  width: 0.6em;
+  height: 0.6em;
+  margin-top: -0.3em;
+  border-radius: 50%;
+  background: #c8fbff;
+  box-shadow: 0 0 0.7em var(--p-nav-ic-ativo);
+  content: '';
+}
+
+/* Chave: origens à esquerda, um traço vertical que as une e um conector até o destino. */
+.tt-converge {
+  display: grid;
+  grid-template-columns: auto 2px auto auto;
+  grid-template-rows: repeat(var(--n), 4em);
+  row-gap: 0.6em;
+  align-items: center;
+}
+.tt-converge-origem {
+  display: flex;
+  grid-column: 1;
+  align-items: center;
+}
+.tt-toco {
+  width: 1.25em;
+  height: 2px;
+  background: #2c4a66;
+  transform-origin: left;
+}
+.tt-vertical {
+  grid-row: 1 / -1;
+  grid-column: 2;
+  align-self: stretch;
+  margin: 2em 0;
+  background: #2c4a66;
+  transform-origin: top;
+}
+.tt-converge > .tt-conector {
+  grid-row: 1 / -1;
+  grid-column: 3;
+}
+.tt-converge-destino {
+  grid-row: 1 / -1;
+  grid-column: 4;
+  margin-left: 0.6em;
+}
+
+.tt-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  min-width: 7.5em;
+  padding: 0.7em 0.9em;
+  border: 1px solid var(--p-card-borda);
+  border-radius: 0.6em;
+  background: #0d2236;
+}
+.tt-kpi-rot {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  color: var(--p-kpi-rot);
+  font-size: 0.75em;
+}
+.tt-kpi-rot .tt-ic {
+  width: 1.3em;
+  height: 1.3em;
+  color: var(--p-nav-ic-ativo);
+}
+.tt-kpi-valor {
+  font-size: 1.3em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.tt-simbolo {
+  color: var(--p-funil-leg);
+  font-size: 1.6em;
+}
+
+.tt-codigo {
+  margin: 0;
+  color: var(--p-text-sec);
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 0.78em;
+  line-height: 1.6;
+}
+.tt-codigo-linha {
+  display: block;
+  padding: 0 0.4em;
+  border-left: 2px solid transparent;
+}
+.tt-codigo-linha[data-realce] {
+  position: relative;
+  isolation: isolate;
+  border-left-color: var(--p-nav-ic-ativo);
+  color: var(--text-primary);
+}
+/* Marca-texto que varre a linha realçada (css-marker-patterns). */
+.tt-marca {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: rgb(112 238 254 / 0.12);
+  transform-origin: left;
+}
+
+.tt-barra-linha {
+  display: grid;
+  grid-template-columns: 5.5em minmax(0, 1fr) 2.5em;
+  gap: 0.6em;
+  align-items: center;
+  width: 100%;
+  font-size: 0.8em;
+}
+.tt-janela .tt-coluna:has(.tt-barra-linha) {
+  align-items: stretch;
+}
+.tt-barra-rot {
+  color: var(--p-text-sec);
+}
+.tt-barra-trilho {
+  height: 0.6em;
+  overflow: hidden;
+  border-radius: 0.3em;
+  background: #0a1a2a;
+}
+.tt-barra-cheia {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #2a8cff, var(--p-positivo));
+  transform-origin: left;
+}
+.tt-barra-valor {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Transform não vale em inline: tudo o que a timeline move é pelo menos inline-block. */
+.tt-campo-caixa > span,
+.tt-simbolo,
+.tt-conta {
+  display: inline-block;
+}
+.tt-conta {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tt-tocar {
+    display: none;
+  }
+  .tt-cursor {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------ transições do botão */
+@media (prefers-reduced-motion: no-preference) {
+  .tt-abrir {
+    transition: border-color 200ms var(--cfg-entra);
+  }
+  .tt-abrir-play {
+    transition: transform 240ms var(--cfg-entra);
+  }
+  .tt-abrir:hover .tt-abrir-play {
+    transform: scale(1.08);
+  }
+  .tt-balao:popover-open {
+    animation: tt-balao 220ms var(--cfg-entra);
+  }
+}
+@keyframes tt-balao {
+  from {
+    opacity: 0;
+    transform: translateY(-0.375rem);
+  }
+}
+.tt-balao[data-lado='cima']:popover-open {
+  animation-name: tt-balao-cima;
+}
+@keyframes tt-balao-cima {
+  from {
+    opacity: 0;
+    transform: translateY(0.375rem);
+  }
+}

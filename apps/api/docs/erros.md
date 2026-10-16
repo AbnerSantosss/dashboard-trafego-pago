@@ -33,10 +33,15 @@ Toda resposta de erro, de qualquer rota, tem o mesmo formato:
 | 401 | `timestamp_fora_da_janela` | `X-Timestamp` fora da janela de 5 min |
 | 403 | `acesso_negado` | Sem membership na empresa pedida, ou papel abaixo do exigido (admin > analista > leitor) |
 | 404 | `nao_encontrado` | Rota, empresa, fonte ou recurso inexistente |
+| 404 | `custo_nao_encontrado` | Gasto manual inexistente (o gasto lido do Meta não sai por essa rota) |
+| 404 | `meta_conta_nao_encontrada` | Conta do Meta Ads inexistente nesta empresa |
+| 404 | `lead_nao_encontrado` | Ficha do lead sem nenhum evento nem toque com esse id de usuário nesta empresa |
 | 405 | `metodo_nao_permitido` | Método não suportado |
 | 409 | `conflito` | Violação de unicidade ou estado incompatível |
+| 409 | `meta_conta_existente` | A conta do Meta Ads já está conectada nesta empresa |
 | 413 | `corpo_grande` | Corpo acima de 1 MB (`bodyLimit`) |
 | 415 | `tipo_conteudo_invalido` | `Content-Type` não suportado |
+| 422 | `meta_recusou` | O Meta recusou o token ou a conta (token expirado, sem `ads_read`, conta sem acesso); a mensagem traz o motivo traduzido |
 | 429 | `limite_excedido` | Limite de taxa (`@fastify/rate-limit`): 300 req/min por IP; no webhook, 600 req/min por fonte (`WEBHOOK_LIMITE_POR_MINUTO`) |
 | 500 | `erro_interno` | Qualquer erro não previsto. Mensagem genérica; stack só no log |
 | 503 | `servico_indisponivel` | Dependência fora (banco no `GET /ready`, fila) |

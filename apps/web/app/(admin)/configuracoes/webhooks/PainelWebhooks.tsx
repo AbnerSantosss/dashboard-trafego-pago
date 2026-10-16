@@ -2,6 +2,7 @@
 import type { FonteResumo } from '@trafego/contratos';
 import { useActionState, useState } from 'react';
 import { acaoWebhook } from '../acoes';
+import { BotaoConfirmar } from '../Confirmar';
 import { AVISO_SEGREDO, ESTADO_INICIAL } from '../validacao';
 
 type Fonte = FonteResumo & { url: string };
@@ -23,7 +24,7 @@ function SegredoUmaVez({ segredo, slug }: { segredo: string; slug: string | unde
       <div className="cfg-segredo-linha">
         <code className="cfg-segredo-valor">{segredo}</code>
         <button type="button" className="cfg-botao" onClick={copiar}>
-          {copiado ? 'Copiado' : 'Copiar'}
+          <span aria-live="polite">{copiado ? 'Copiado' : 'Copiar'}</span>
         </button>
       </div>
       <p className="cfg-aviso">{AVISO_SEGREDO}</p>
@@ -73,23 +74,36 @@ export function PainelWebhooks({ fontes }: { fontes: Fonte[] }) {
           )}
           {fontes.map((f) => (
             <tr key={f.id}>
-              <td>{f.nome}</td>
-              <td>
+              <td data-rotulo="Nome">{f.nome}</td>
+              <td data-rotulo="Slug">
                 <code>{f.slug}</code>
               </td>
-              <td>
+              <td data-rotulo="Endereço de recebimento">
                 <code className="cfg-url">{f.url}</code>
               </td>
-              <td>{f.ativo ? 'Sim' : 'Não'}</td>
-              <td>{f.segredoUtilizavel ? 'Sim' : 'Não'}</td>
+              <td data-rotulo="Ativo">{f.ativo ? 'Sim' : 'Não'}</td>
+              <td data-rotulo="Segredo utilizável">
+                {f.segredoUtilizavel ? (
+                  'Sim'
+                ) : (
+                  <>
+                    Não <span className="cfg-dica">(gere um segredo novo)</span>
+                  </>
+                )}
+              </td>
               <td>
                 <div className="cfg-linha-acoes">
                   <form action={enviar}>
                     <input type="hidden" name="intencao" value="rotacionar" />
                     <input type="hidden" name="id" value={f.id} />
-                    <button type="submit" className="cfg-botao" disabled={pendente}>
-                      Rotacionar segredo
-                    </button>
+                    <BotaoConfirmar
+                      rotulo={f.segredoUtilizavel ? 'Rotacionar segredo' : 'Gerar segredo'}
+                      rotuloAcessivel={`Gerar novo segredo da fonte ${f.nome}`}
+                      titulo={`Gerar um segredo novo para ${f.nome}?`}
+                      texto="O segredo atual para de valer na hora: a plataforma precisa receber o novo, senão os eventos dela passam a ser recusados."
+                      confirmar="Gerar segredo novo"
+                      desabilitado={pendente}
+                    />
                   </form>
                   <form action={enviar}>
                     <input type="hidden" name="intencao" value="alternar" />
@@ -140,7 +154,7 @@ export function PainelWebhooks({ fontes }: { fontes: Fonte[] }) {
           className="cfg-botao cfg-botao-primario cfg-nova"
           onClick={() => setCriando(true)}
         >
-          + Nova fonte
+          Nova fonte
         </button>
       )}
     </div>

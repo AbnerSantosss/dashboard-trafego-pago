@@ -1,6 +1,7 @@
 'use client';
 import type { ConvitePublico } from '@trafego/contratos';
 import { useActionState, useState } from 'react';
+import { Icone } from '@/componentes/Nos';
 import { ESTADO_INICIAL, type EstadoAcao } from '../(admin)/configuracoes/validacao';
 import { aceitarConvite, entrar, recuperar, redefinir } from './acoes';
 
@@ -36,44 +37,109 @@ function Campo(props: {
   );
 }
 
+/** Campo do login: rótulo em cima, ícone à esquerda e, opcionalmente, um botão à direita. */
+function CampoIcone(props: {
+  rotulo: string;
+  nome: string;
+  tipo: string;
+  auto: string;
+  icone: string;
+  dica: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <label className="cfg-campo lg-campo">
+      <span className="cfg-rotulo">{props.rotulo}</span>
+      <span className="lg-caixa">
+        <Icone nome={props.icone} className="lg-ic" />
+        <input
+          className="cfg-input lg-input"
+          name={props.nome}
+          type={props.tipo}
+          autoComplete={props.auto}
+          placeholder={props.dica}
+          required
+        />
+        {props.children}
+      </span>
+    </label>
+  );
+}
+
 export function FormLogin() {
   const [modo, setModo] = useState<'entrar' | 'recuperar'>('entrar');
+  const [verSenha, setVerSenha] = useState(false);
   const [estado, enviar, pendente] = useActionState(entrar, ESTADO_INICIAL);
   const [estadoRec, enviarRec, pendenteRec] = useActionState(recuperar, ESTADO_INICIAL);
 
   if (modo === 'recuperar') {
     return (
-      <form action={enviarRec} className="cfg-form">
+      <form action={enviarRec} className="cfg-form lg-form">
         <p className="cfg-dica">
           Informe seu e-mail. Enviamos um link para criar a senha (vale também para o primeiro
           acesso).
         </p>
-        <Campo rotulo="E-mail" nome="email" tipo="email" auto="email" />
+        <CampoIcone
+          rotulo="E-mail"
+          nome="email"
+          tipo="email"
+          auto="email"
+          icone="email"
+          dica="Digite seu e-mail"
+        />
         <Mensagem estado={estadoRec} />
-        <div className="cfg-acoes">
-          <button type="submit" className="cfg-botao cfg-botao-primario" disabled={pendenteRec}>
-            Enviar link
-          </button>
-          <button type="button" className="cfg-botao" onClick={() => setModo('entrar')}>
-            Voltar
-          </button>
-        </div>
+        <button type="submit" className="lg-entrar" disabled={pendenteRec} aria-busy={pendenteRec}>
+          {pendenteRec ? 'Enviando…' : 'Enviar link'}
+        </button>
+        <button type="button" className="lg-link lg-voltar" onClick={() => setModo('entrar')}>
+          Voltar para o login
+        </button>
       </form>
     );
   }
   return (
-    <form action={enviar} className="cfg-form">
-      <Campo rotulo="E-mail" nome="email" tipo="email" auto="email" />
-      <Campo rotulo="Senha" nome="senha" tipo="password" auto="current-password" />
-      <Mensagem estado={estado} />
-      <div className="cfg-acoes">
-        <button type="submit" className="cfg-botao cfg-botao-primario" disabled={pendente}>
-          Entrar
+    <form action={enviar} className="cfg-form lg-form">
+      <CampoIcone
+        rotulo="E-mail"
+        nome="email"
+        tipo="email"
+        auto="email"
+        icone="email"
+        dica="Digite seu e-mail"
+      />
+      <CampoIcone
+        rotulo="Senha"
+        nome="senha"
+        tipo={verSenha ? 'text' : 'password'}
+        auto="current-password"
+        icone="cadeado"
+        dica="Digite sua senha"
+      >
+        <button
+          type="button"
+          className="lg-olho"
+          onClick={() => setVerSenha((v) => !v)}
+          aria-pressed={verSenha}
+          title={verSenha ? 'Ocultar senha' : 'Mostrar senha'}
+        >
+          <Icone nome={verSenha ? 'olho' : 'olho-fechado'} className="lg-ic" />
+          <span className="so-leitor">{verSenha ? 'Ocultar senha' : 'Mostrar senha'}</span>
         </button>
-        <button type="button" className="cfg-botao" onClick={() => setModo('recuperar')}>
-          Esqueci minha senha
+      </CampoIcone>
+      <div className="lg-linha">
+        <label className="lg-lembrar">
+          <input type="checkbox" name="lembrar" defaultChecked />
+          Lembrar de mim
+        </label>
+        <button type="button" className="lg-link" onClick={() => setModo('recuperar')}>
+          Esqueceu a senha?
         </button>
       </div>
+      <Mensagem estado={estado} />
+      <button type="submit" className="lg-entrar" disabled={pendente} aria-busy={pendente}>
+        {pendente ? 'Entrando…' : 'Entrar'}
+        {!pendente && <Icone nome="seguir" className="lg-seta" />}
+      </button>
     </form>
   );
 }
@@ -92,8 +158,13 @@ export function FormRedefinir({ token }: { token: string }) {
       <Campo rotulo="Repita a senha" nome="confirmacao" tipo="password" auto="new-password" />
       <Mensagem estado={estado} />
       <div className="cfg-acoes">
-        <button type="submit" className="cfg-botao cfg-botao-primario" disabled={pendente}>
-          Salvar e entrar
+        <button
+          type="submit"
+          className="cfg-botao cfg-botao-primario"
+          disabled={pendente}
+          aria-busy={pendente}
+        >
+          {pendente ? 'Salvando…' : 'Salvar e entrar'}
         </button>
       </div>
     </form>
@@ -126,8 +197,13 @@ export function FormConvite({ token, convite }: { token: string; convite: Convit
       )}
       <Mensagem estado={estado} />
       <div className="cfg-acoes">
-        <button type="submit" className="cfg-botao cfg-botao-primario" disabled={pendente}>
-          Aceitar convite
+        <button
+          type="submit"
+          className="cfg-botao cfg-botao-primario"
+          disabled={pendente}
+          aria-busy={pendente}
+        >
+          {pendente ? 'Aceitando…' : 'Aceitar convite'}
         </button>
       </div>
     </form>

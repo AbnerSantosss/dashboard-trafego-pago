@@ -1,0 +1,681 @@
+/*
+ * Painel lateral do funil (lista da etapa e ficha do usuário). Medidas em px da tela de 1315×710:
+ * a tela inteira é ampliada por `zoom`, então o painel cresce junto. Cobre a tabela, não o funil.
+ * Movimento: só transform e opacity, curva de entrada dos Hyperframes, só sob no-preference.
+ */
+.gaveta-funil {
+  --gf-entra: cubic-bezier(0.165, 0.84, 0.44, 1);
+  --gf-sai: cubic-bezier(0.55, 0, 0.675, 0.19);
+  --gf-borda: #284660;
+  --gf-linha: #1a3449;
+  --gf-fraco: #8fa3b8;
+  --gf-hover: #0b2840;
+  position: absolute;
+  z-index: 30;
+  top: 4px;
+  right: 3px;
+  width: 460px;
+  height: 706px;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #08203a 0%, #061a2c 140px, #05172a 100%);
+  border-left: 1px solid var(--gf-borda);
+  box-shadow:
+    -24px 0 48px rgb(0 0 0 / 0.45),
+    inset 1px 0 0 rgb(112 238 254 / 0.06);
+  font: 13px/1.4 var(--p-fonte);
+  color: var(--p-td);
+}
+/* Reset sem especificidade: as classes abaixo (.gf-chip, .gf-item) ganham dele. */
+:where(.gaveta-funil button) {
+  margin: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+}
+.gaveta-funil :focus-visible {
+  outline: 2px solid var(--p-nav-ic-ativo);
+  outline-offset: -2px;
+}
+
+/* Cabeçalho */
+.gf-cabeca {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 18px 16px 14px 20px;
+  border-bottom: 1px solid var(--gf-linha);
+}
+.gf-cabeca-texto {
+  flex: 1;
+  min-width: 0;
+}
+.gf-kicker {
+  margin: 0 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--p-funil-leg);
+}
+.gaveta-funil h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text-primary, #fff);
+  overflow-wrap: anywhere;
+}
+.gaveta-funil h2:focus {
+  outline: none;
+}
+.gf-titulo-icone {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  color: var(--p-nav-ic-ativo);
+}
+.gf-total {
+  margin: 6px 0 0;
+  color: var(--p-text-sec);
+}
+.gf-total strong {
+  color: var(--p-filtro-val);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.gf-botao-icone {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--p-text-sec);
+  text-decoration: none;
+  cursor: pointer;
+}
+.gf-botao-icone:hover {
+  background: var(--gf-hover);
+  color: var(--p-filtro-val);
+}
+.gf-icone {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+}
+.gf-icone svg,
+.gf-titulo-icone svg,
+.gf-chip-icone svg,
+.gf-secao-icone svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Corpo com rolagem */
+.gf-corpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 16px 20px 20px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gf-borda) transparent;
+}
+
+/* Filtro por canal */
+.gf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.gf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--gf-borda);
+  border-radius: 999px;
+  color: var(--p-text-sec);
+  font-size: 12px;
+  cursor: pointer;
+}
+.gf-chip:hover {
+  background: var(--gf-hover);
+}
+.gf-chip[aria-pressed='true'] {
+  border-color: rgb(112 238 254 / 0.55);
+  background: rgb(112 238 254 / 0.08);
+  color: var(--p-filtro-val);
+}
+.gf-chip-icone {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+}
+.gf-chip-n {
+  color: var(--gf-fraco);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Linhas */
+.gf-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gf-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-align: left;
+  color: inherit;
+}
+button.gf-item {
+  cursor: pointer;
+}
+button.gf-item:hover {
+  background: var(--gf-hover);
+}
+.gf-lista li + li .gf-item {
+  box-shadow: inset 0 1px 0 var(--gf-linha);
+}
+.gf-lista li + li .gf-item:hover {
+  box-shadow: none;
+}
+.gf-item-mudo {
+  opacity: 0.75;
+}
+.gf-canal {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+.gf-canal .gf-icone {
+  width: 17px;
+  height: 17px;
+}
+.gf-canal-grande {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+}
+.gf-canal-grande .gf-icone {
+  width: 22px;
+  height: 22px;
+}
+.gf-item-meio {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.gf-item-titulo {
+  color: var(--p-filtro-val);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gf-item-sub {
+  color: var(--gf-fraco);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gf-item-meio .gf-item-sub {
+  white-space: nowrap;
+}
+.gf-item-fim {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.gf-item-valor {
+  color: var(--p-positivo);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.gf-rodape,
+.gf-nada {
+  margin: 12px 0 0;
+  color: var(--gf-fraco);
+  font-size: 12px;
+}
+.gf-rodape p {
+  margin: 0 0 8px;
+}
+/* Mesmo destino do Expandir do cabeçalho, escrito por extenso no fim da lista. */
+.gf-ver-todos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 36px;
+  border: 1px solid var(--gf-borda);
+  border-radius: 8px;
+  color: var(--p-filtro-val);
+  font-size: 13px;
+  text-decoration: none;
+}
+.gf-ver-todos:hover {
+  border-color: rgb(112 238 254 / 0.55);
+  background: rgb(112 238 254 / 0.08);
+}
+.gf-ver-todos-icone {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+}
+.gf-ver-todos-icone svg {
+  width: 100%;
+  height: 100%;
+}
+.gf-vazio {
+  padding: 28px 8px;
+  color: var(--p-text-sec);
+  font-size: 14px;
+  line-height: 1.55;
+  max-width: 44ch;
+}
+
+/* Estados */
+.gf-erro {
+  margin: 4px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--p-erro-borda);
+  border-radius: 8px;
+  background: var(--p-erro-bg);
+  color: var(--p-erro-txt);
+}
+.gf-carregando {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gf-esqueleto {
+  height: 44px;
+  border-radius: 8px;
+  background: var(--gf-linha);
+  opacity: 0.6;
+}
+
+/* Ficha */
+.gf-origem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.gf-origem p {
+  margin: 0;
+}
+.gf-origem-rotulo {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--p-funil-leg);
+}
+.gf-origem-canal {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--p-filtro-val);
+}
+.gf-resumo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  margin: 0 0 18px;
+  border: 1px solid var(--gf-linha);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--gf-linha);
+}
+.gf-resumo > div {
+  padding: 10px 12px;
+  background: #0e2235;
+}
+.gf-resumo dt {
+  font-size: 11px;
+  color: var(--gf-fraco);
+}
+.gf-resumo dd {
+  display: flex;
+  flex-direction: column;
+  margin: 2px 0 0;
+  color: var(--p-filtro-val);
+  font-variant-numeric: tabular-nums;
+}
+.gf-resumo dd strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+.gf-secao {
+  margin-top: 18px;
+}
+.gf-secao h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--p-th);
+}
+.gf-secao-icone {
+  display: inline-flex;
+  width: 15px;
+  height: 15px;
+  color: var(--p-nav-ic-ativo);
+}
+.gf-pares {
+  margin: 0;
+}
+.gf-pares > div {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: 10px;
+  padding: 5px 0;
+  border-top: 1px solid var(--gf-linha);
+}
+.gf-pares > div:first-child {
+  border-top: 0;
+}
+.gf-pares dt {
+  color: var(--gf-fraco);
+  font:
+    12px/1.45 ui-monospace,
+    'Cascadia Mono',
+    Consolas,
+    monospace;
+  overflow-wrap: anywhere;
+}
+.gf-pares dd {
+  margin: 0;
+  color: var(--p-td);
+  overflow-wrap: anywhere;
+}
+.gf-pares code,
+.gf-url {
+  font:
+    12px/1.45 ui-monospace,
+    'Cascadia Mono',
+    Consolas,
+    monospace;
+  color: var(--p-cal);
+}
+
+/* Linha do tempo */
+.gf-tempo {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gf-tempo li {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding: 6px 0 6px 2px;
+}
+.gf-tempo li::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 20px;
+  bottom: -6px;
+  width: 1px;
+  background: var(--gf-borda);
+}
+.gf-tempo li:last-child::before {
+  display: none;
+}
+.gf-tempo-ponto {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--p-conector);
+  box-shadow: 0 0 0 3px #061a2c;
+}
+.gf-tempo li[data-tipo='ftd'] .gf-tempo-ponto {
+  background: var(--p-positivo);
+  box-shadow:
+    0 0 0 3px #061a2c,
+    0 0 10px rgb(54 219 197 / 0.7);
+}
+.gf-tempo li[data-tipo='deposito'] .gf-tempo-ponto {
+  background: var(--p-spark);
+}
+.gf-tempo li[data-tipo='cadastro'] .gf-tempo-ponto {
+  background: var(--p-nav-ic-ativo);
+}
+
+/* Webhooks */
+.gf-webhook {
+  margin-top: 8px;
+  border: 1px solid var(--gf-linha);
+  border-radius: 8px;
+  background: rgb(4 18 32 / 0.6);
+}
+.gf-webhook summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 12px;
+  cursor: pointer;
+  list-style: none;
+}
+.gf-webhook summary::-webkit-details-marker {
+  display: none;
+}
+.gf-webhook summary:hover {
+  background: var(--gf-hover);
+}
+.gf-webhook-titulo {
+  color: var(--p-filtro-val);
+  font:
+    600 12px/1.4 ui-monospace,
+    'Cascadia Mono',
+    Consolas,
+    monospace;
+}
+.gf-webhook[open] summary {
+  border-bottom: 1px solid var(--gf-linha);
+}
+.gf-webhook .gf-pares {
+  padding: 6px 12px 8px;
+}
+
+/* Movimento */
+@media (prefers-reduced-motion: no-preference) {
+  .gaveta-funil {
+    animation: gf-entra 260ms var(--gf-entra) both;
+  }
+  .gaveta-funil[data-saindo] {
+    animation: gf-sai 180ms var(--gf-sai) both;
+  }
+  .gf-corpo[data-vista='ficha'] {
+    animation: gf-troca-ficha 240ms var(--gf-entra) both;
+  }
+  .gf-corpo[data-vista='lista'] .gf-lista li {
+    animation: gf-linha 320ms var(--gf-entra) both;
+    animation-delay: calc(var(--i, 0) * 22ms + 60ms);
+  }
+  .gf-esqueleto {
+    animation: gf-pulsa 1100ms ease-in-out infinite alternate;
+  }
+  .gf-botao-icone,
+  .gf-chip,
+  button.gf-item,
+  .gf-webhook summary {
+    transition: background-color 160ms var(--gf-entra);
+  }
+}
+@keyframes gf-entra {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+@keyframes gf-sai {
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+@keyframes gf-troca-ficha {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+@keyframes gf-linha {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes gf-pulsa {
+  to {
+    opacity: 0.25;
+  }
+}
+
+/*
+ * Consolidado de um KPI por canal (GavetaKpi): mesma gaveta, com total no topo, uma frase do que a
+ * métrica mede e uma barra por canal (só scaleX; entra crescendo sob no-preference).
+ */
+/* Começa abaixo dos cards de KPI, para trocar de métrica com o painel aberto. */
+.gaveta-kpi {
+  top: 280px;
+  height: 430px;
+  border-top: 1px solid var(--gf-borda);
+  border-top-left-radius: 8px;
+}
+.gk-total {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 6px 0 0;
+}
+.gk-total strong {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--p-filtro-val);
+  font-variant-numeric: tabular-nums;
+}
+.gk-delta {
+  font-size: 12px;
+  color: var(--p-positivo);
+  font-variant-numeric: tabular-nums;
+}
+.gk-delta[data-tom='negativo'] {
+  color: var(--negative);
+}
+.gk-delta[data-tom='neutro'] {
+  color: var(--p-kpi-rot);
+}
+.gk-explica {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--gf-linha);
+  border-radius: 8px;
+  background: #0e2235;
+  color: var(--p-text-sec);
+  font-size: 12.5px;
+}
+.gaveta-kpi .gf-item {
+  min-height: 62px;
+}
+.gaveta-kpi .gf-item-meio {
+  gap: 3px;
+}
+.gk-barra {
+  display: block;
+  height: 4px;
+  margin-top: 3px;
+  border-radius: 2px;
+  background: var(--gf-linha);
+  overflow: hidden;
+}
+.gk-barra-cheia {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  transform: scaleX(var(--f, 0));
+  transform-origin: left center;
+}
+.gk-ver {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--gf-fraco);
+}
+.gk-ver-icone {
+  display: inline-flex;
+  width: 12px;
+  height: 12px;
+  transform: rotate(-90deg);
+}
+.gk-ver-icone svg {
+  width: 100%;
+  height: 100%;
+}
+button.gf-item:hover .gk-ver {
+  color: var(--p-nav-ic-ativo);
+}
+.gk-acoes {
+  margin-top: 14px;
+}
+.gk-acao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 36px;
+  border: 1px solid var(--gf-borda);
+  border-radius: 8px;
+  color: var(--p-filtro-val);
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.gk-acao:hover {
+  border-color: rgb(112 238 254 / 0.55);
+  background: rgb(112 238 254 / 0.08);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .gk-barra-cheia {
+    animation: gk-barra 520ms var(--gf-entra) both;
+    animation-delay: calc(var(--i, 0) * 40ms + 140ms);
+  }
+  .gk-acao {
+    transition: background-color 160ms var(--gf-entra);
+  }
+}
+@keyframes gk-barra {
+  from {
+    transform: scaleX(0);
+  }
+}

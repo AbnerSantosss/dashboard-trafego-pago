@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
-import { buscarMembership, emitirToken, listarEmpresas } from '../auth/plugin.js';
+import { buscarMembership, emitirToken, listarEmpresas, type ClaimsToken } from '../auth/plugin.js';
 import { presentation, ROLES, tenants, users } from '../db/client.js';
 import { ErroApi, schemaRespostaErro } from '../erros.js';
 
@@ -87,7 +87,19 @@ export const rotasAuth: FastifyPluginAsyncZod = async (app) => {
       const usuario = request.usuario!;
       const empresa = await buscarMembership(app.db, usuario.id, request.body.empresa);
       if (!empresa) throw ErroApi.de('acesso_negado', 'Você não tem acesso a esta empresa.');
-      const token = emitirToken(app, { sub: usuario.id, email: usuario.email, tenant: empresa.id });
+      // Mantém a versão da senha e o vencimento do token atual (12 h ou "lembrar de mim").
+      const atual = request.user as ClaimsToken & { exp?: number };
+      const restante = atual.exp ? atual.exp - Math.floor(Date.now() / 1000) : undefined;
+      const token = emitirToken(
+        app,
+        {
+          sub: usuario.id,
+          email: usuario.email,
+          tenant: empresa.id,
+          ...(atual.sv ? { sv: atual.sv } : {}),
+        },
+        restante && restante > 60 ? { expiresIn: restante } : {},
+      );
       return { token, empresa };
     },
   );

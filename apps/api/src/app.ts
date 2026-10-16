@@ -18,6 +18,9 @@ import { rotasApresentacao } from './admin/apresentacao.js';
 import { rotasFontes } from './admin/fontes.js';
 import { rotasAtribuicao, type OpcoesAtribuicao } from './atribuicao/rotas.js';
 import { criarEnviadorEmail, type EnviadorEmail } from './conta/email.js';
+import { criarClienteMeta, type ClienteMeta } from './custos/meta.js';
+import { rotasCustos } from './custos/rotas.js';
+import { rotasLeads } from './leads/rotas.js';
 import { rotasConta } from './conta/rotas.js';
 import { rotasUsuarios } from './conta/usuarios.js';
 import { registrarTratamentoDeErros } from './erros.js';
@@ -65,6 +68,8 @@ export interface OpcoesApp {
   email?: EnviadorEmail;
   /** Tag de atribuição do GTM (testes zeram o atraso da agregação). */
   atribuicao?: OpcoesAtribuicao;
+  /** Cliente da Graph API do Meta (testes injetam um falso). Default: `fetch` real, META_GRAPH_VERSAO. */
+  meta?: { cliente?: ClienteMeta; agora?: () => Date };
   /** Requisições por minuto por IP (default 300). */
   limiteTaxa?: number;
   /** Ingestão de webhooks. Sem `fila`, usa uma fila em memória (testes; avisa fora de test). */
@@ -169,6 +174,7 @@ export async function buildApp(opcoes: OpcoesApp = {}) {
   // Login sem senha só fora de produção (temporário até o Auth.js, Fase 5).
   if (env.NODE_ENV !== 'production') await app.register(rotasSessaoDev);
   await app.register(rotasMetricas);
+  await app.register(rotasLeads);
 
   // Conta (login por senha, perfil, convites) e usuários da empresa.
   const email = opcoes.email ?? criarEnviadorEmail(process.env, app.log);
@@ -201,6 +207,17 @@ export async function buildApp(opcoes: OpcoesApp = {}) {
   // Administração por empresa (Fase 5 enxuta): apresentação e fontes de webhook.
   await app.register(rotasApresentacao);
   await app.register(rotasFontes, { chaveCifra, mapaSegredos });
+
+  // Gasto em anúncios: lançamento manual e contas do Meta Ads (token cifrado com a mesma chave).
+  await app.register(rotasCustos, {
+    chaveCifra,
+    cliente:
+      opcoes.meta?.cliente ??
+      criarClienteMeta(
+        process.env.META_GRAPH_VERSAO ? { versao: process.env.META_GRAPH_VERSAO } : {},
+      ),
+    ...(opcoes.meta?.agora ? { agora: opcoes.meta.agora } : {}),
+  });
 
   return app;
 }

@@ -2,6 +2,7 @@
 import type { Papel, UsuariosResposta } from '@trafego/contratos';
 import { useActionState, useState } from 'react';
 import { acaoUsuarios } from '../acoes';
+import { BotaoConfirmar } from '../Confirmar';
 import { ESTADO_INICIAL } from '../validacao';
 
 const PAPEIS: { valor: Papel; rotulo: string }[] = [
@@ -11,6 +12,46 @@ const PAPEIS: { valor: Papel; rotulo: string }[] = [
 ];
 
 const data = (iso: string) => new Date(iso).toLocaleDateString('pt-BR');
+
+/** Papel de um membro: a troca só vale ao clicar em Aplicar (antes trocava ao escolher). */
+function TrocarPapel(props: {
+  id: string;
+  email: string;
+  papel: Papel;
+  pendente: boolean;
+  enviar: (dados: FormData) => void;
+}) {
+  const [escolhido, setEscolhido] = useState(props.papel);
+  return (
+    <form action={props.enviar} className="cfg-linha-acoes">
+      <input type="hidden" name="intencao" value="papel" />
+      <input type="hidden" name="id" value={props.id} />
+      <select
+        name="papel"
+        value={escolhido}
+        className="cfg-input"
+        aria-label={`Papel de ${props.email}`}
+        onChange={(e) => setEscolhido(e.currentTarget.value as Papel)}
+      >
+        {PAPEIS.map((p) => (
+          <option key={p.valor} value={p.valor}>
+            {p.rotulo}
+          </option>
+        ))}
+      </select>
+      {escolhido !== props.papel && (
+        <>
+          <button type="submit" className="cfg-botao cfg-botao-primario" disabled={props.pendente}>
+            Aplicar
+          </button>
+          <button type="button" className="cfg-botao" onClick={() => setEscolhido(props.papel)}>
+            Desfazer
+          </button>
+        </>
+      )}
+    </form>
+  );
+}
 
 function CopiarLink({ link }: { link: string }) {
   const [copiado, setCopiado] = useState(false);
@@ -27,7 +68,7 @@ function CopiarLink({ link }: { link: string }) {
           )
         }
       >
-        {copiado ? 'Copiado' : 'Copiar link'}
+        <span aria-live="polite">{copiado ? 'Copiado' : 'Copiar link'}</span>
       </button>
     </div>
   );
@@ -60,8 +101,13 @@ export function PainelUsuarios({ membros, convites, euId }: UsuariosResposta & {
             ))}
           </select>
         </label>
-        <button type="submit" className="cfg-botao cfg-botao-primario" disabled={pendente}>
-          Enviar convite
+        <button
+          type="submit"
+          className="cfg-botao cfg-botao-primario"
+          disabled={pendente}
+          aria-busy={pendente}
+        >
+          {pendente ? 'Enviando…' : 'Enviar convite'}
         </button>
       </form>
 
@@ -88,35 +134,25 @@ export function PainelUsuarios({ membros, convites, euId }: UsuariosResposta & {
         <tbody>
           {membros.map((m) => (
             <tr key={m.id}>
-              <td>
+              <td data-rotulo="Nome">
                 {`${m.nome} ${m.sobrenome}`.trim()}
                 {!m.temSenha && <span className="cfg-etiqueta">sem senha</span>}
               </td>
-              <td>{m.email}</td>
-              <td>
+              <td data-rotulo="E-mail">{m.email}</td>
+              <td data-rotulo="Papel">
                 {m.id === euId ? (
                   PAPEIS.find((p) => p.valor === m.papel)?.rotulo
                 ) : (
-                  <form action={enviar}>
-                    <input type="hidden" name="intencao" value="papel" />
-                    <input type="hidden" name="id" value={m.id} />
-                    <select
-                      name="papel"
-                      defaultValue={m.papel}
-                      className="cfg-input"
-                      aria-label={`Papel de ${m.email}`}
-                      onChange={(e) => e.currentTarget.form?.requestSubmit()}
-                    >
-                      {PAPEIS.map((p) => (
-                        <option key={p.valor} value={p.valor}>
-                          {p.rotulo}
-                        </option>
-                      ))}
-                    </select>
-                  </form>
+                  <TrocarPapel
+                    id={m.id}
+                    email={m.email}
+                    papel={m.papel}
+                    pendente={pendente}
+                    enviar={enviar}
+                  />
                 )}
               </td>
-              <td>{data(m.desde)}</td>
+              <td data-rotulo="Desde">{data(m.desde)}</td>
               <td>
                 {m.id === euId ? (
                   <span className="cfg-dica">você</span>
@@ -124,9 +160,14 @@ export function PainelUsuarios({ membros, convites, euId }: UsuariosResposta & {
                   <form action={enviar}>
                     <input type="hidden" name="intencao" value="remover" />
                     <input type="hidden" name="id" value={m.id} />
-                    <button type="submit" className="cfg-botao" disabled={pendente}>
-                      Remover
-                    </button>
+                    <BotaoConfirmar
+                      rotulo="Remover"
+                      rotuloAcessivel={`Remover ${m.email}`}
+                      titulo={`Remover ${m.email}?`}
+                      texto="A pessoa perde o acesso ao painel na hora. Para voltar, precisa de um convite novo."
+                      confirmar="Remover acesso"
+                      desabilitado={pendente}
+                    />
                   </form>
                 )}
               </td>
@@ -157,16 +198,21 @@ export function PainelUsuarios({ membros, convites, euId }: UsuariosResposta & {
           )}
           {convites.map((c) => (
             <tr key={c.id}>
-              <td>{c.email}</td>
-              <td>{PAPEIS.find((p) => p.valor === c.papel)?.rotulo}</td>
-              <td>{data(c.expiraEm)}</td>
+              <td data-rotulo="E-mail">{c.email}</td>
+              <td data-rotulo="Papel">{PAPEIS.find((p) => p.valor === c.papel)?.rotulo}</td>
+              <td data-rotulo="Vence em">{data(c.expiraEm)}</td>
               <td>
                 <form action={enviar}>
                   <input type="hidden" name="intencao" value="cancelar" />
                   <input type="hidden" name="id" value={c.id} />
-                  <button type="submit" className="cfg-botao" disabled={pendente}>
-                    Cancelar
-                  </button>
+                  <BotaoConfirmar
+                    rotulo="Cancelar"
+                    rotuloAcessivel={`Cancelar convite de ${c.email}`}
+                    titulo={`Cancelar o convite de ${c.email}?`}
+                    texto="O link enviado deixa de funcionar. Dá para convidar de novo depois."
+                    confirmar="Cancelar convite"
+                    desabilitado={pendente}
+                  />
                 </form>
               </td>
             </tr>

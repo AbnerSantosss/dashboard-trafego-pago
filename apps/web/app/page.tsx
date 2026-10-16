@@ -1,5 +1,5 @@
 import { Painel } from '@/componentes/Painel';
-import { Sidebar } from '@/componentes/Sidebar';
+import { lerContaSidebar, PularParaConteudo, Sidebar } from '@/componentes/Sidebar';
 import { api } from '@/lib/api';
 import { lerFiltros, paraQueryApi } from '@/lib/regras';
 
@@ -10,12 +10,17 @@ type Busca = Promise<Record<string, string | string[] | undefined>>;
 /** Visão Geral: busca no servidor (sem cache) e entrega os dados crus ao painel cliente. */
 export default async function VisaoGeral({ searchParams }: { searchParams: Busca }) {
   const filtros = lerFiltros(await searchParams);
-  const r = await api().visaoGeral(paraQueryApi(filtros));
+  const [r, conta] = await Promise.all([
+    api().visaoGeral(paraQueryApi(filtros)),
+    lerContaSidebar(),
+  ]);
   const dados = r.ok ? r.dados : null;
   return (
     <div className="tela">
+      <PularParaConteudo />
       <Sidebar
         ativo="visao-geral"
+        conta={conta}
         {...(dados?.apresentacao.logoUrl ? { logoUrl: dados.apresentacao.logoUrl } : {})}
         {...(dados?.apresentacao.nomeExibicao
           ? { nomeEmpresa: dados.apresentacao.nomeExibicao }

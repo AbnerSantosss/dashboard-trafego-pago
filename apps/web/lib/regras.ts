@@ -29,6 +29,98 @@ export function formatarKpi(id: KpiId, n: number): string {
   }
 }
 
+/** Etapa cuja lista de pessoas explica cada KPI; investimento não tem pessoas por trás. */
+export const ETAPA_DO_KPI: Record<KpiId, 'ftd' | 'depositos' | null> = {
+  investimento: null,
+  ftds: 'ftd',
+  cpa: 'ftd',
+  depositos: 'depositos',
+  roas: 'depositos',
+};
+
+/** O que cada KPI mede, dito no topo do consolidado por canal. */
+export const EXPLICA_KPI: Record<KpiId, string> = {
+  investimento: 'Soma dos gastos de cada canal no período, lançados à mão ou importados.',
+  ftds: 'Primeiros depósitos (FTD) atribuídos a cada canal de origem.',
+  cpa: 'Investimento do canal dividido pelos FTDs dele. Quanto menor, melhor.',
+  depositos: 'Tudo o que foi depositado no período, separado pelo canal de origem.',
+  roas: 'Depósitos do canal divididos pelo investimento dele. Acima de 1x, o canal se paga.',
+};
+
+export interface LinhaConsolidado {
+  canal: string;
+  valor: number | null;
+  texto: string;
+  /** 0 a 1: fatia do total (somas) ou proporção do maior valor (CPA e ROAS). */
+  fracao: number;
+  detalhe: string;
+  /** Há pessoas para listar neste canal (FTDs ou depósitos). */
+  temPessoas: boolean;
+}
+
+function valorDaLinha(id: KpiId, l: LinhaCanalMetrica): number | null {
+  switch (id) {
+    case 'investimento':
+      return l.investimento;
+    case 'ftds':
+      return l.ftdsQtd;
+    case 'cpa':
+      return l.cpa;
+    case 'depositos':
+      return l.depositos;
+    case 'roas':
+      return l.roas;
+  }
+}
+
+/**
+ * Consolidado de um KPI por canal, do melhor para o pior (CPA do menor para o maior); canais sem
+ * valor vão para o fim. Somas mostram a fatia do total; CPA e ROAS, a proporção do maior.
+ */
+export function consolidarKpi(id: KpiId, linhas: LinhaCanalMetrica[]): LinhaConsolidado[] {
+  const soma = id !== 'cpa' && id !== 'roas';
+  const valores = linhas.map((l) => valorDaLinha(id, l));
+  const validos = valores.filter((v): v is number => v !== null);
+  const base = soma ? validos.reduce((a, v) => a + v, 0) : Math.max(0, ...validos);
+  const etapa = ETAPA_DO_KPI[id];
+  const res = linhas.map((l, i): LinhaConsolidado => {
+    const valor = valores[i]!;
+    const fracao = valor === null || base <= 0 ? 0 : Math.min(1, Math.max(0, valor / base));
+    let detalhe: string;
+    if (id === 'cpa') {
+      detalhe =
+        valor === null
+          ? 'Sem FTD no período'
+          : `${formatarMoeda(l.investimento ?? 0)} ÷ ${formatarInteiro(l.ftdsQtd)} FTDs`;
+    } else if (id === 'roas') {
+      detalhe =
+        valor === null
+          ? 'Sem investimento no período'
+          : `${formatarMoeda(l.depositos)} ÷ ${formatarMoeda(l.investimento ?? 0)}`;
+    } else if (valor === null) {
+      detalhe = 'Sem gasto lançado';
+    } else {
+      detalhe = `${formatarPercentual(fracao * 100)} do total`;
+      if (id === 'ftds') detalhe += ` · ${formatarMoeda(l.ftdsValor)} no 1º depósito`;
+    }
+    return {
+      canal: l.canal,
+      valor,
+      texto: valor === null ? NULO : formatarKpi(id, valor),
+      fracao,
+      detalhe,
+      temPessoas: etapa === 'ftd' ? l.ftdsQtd > 0 : etapa === 'depositos' ? l.depositos > 0 : false,
+    };
+  });
+  const sinal = id === 'cpa' ? 1 : -1;
+  return res.sort((a, b) => {
+    if (a.valor === null && b.valor === null) return 0;
+    if (a.valor === null) return 1;
+    if (b.valor === null) return -1;
+    return sinal * (a.valor - b.valor);
+  });
+}
+
 /** Métricas em que cair é bom (CPA: custo menor por FTD). */
 const MENOR_E_MELHOR: ReadonlySet<KpiId> = new Set<KpiId>(['cpa']);
 
@@ -218,6 +310,60 @@ export function formatarDataHora(iso: string, fuso: string): string {
   }).formatToParts(new Date(iso));
   const v = (t: string) => partes.find((p) => p.type === t)?.value ?? '';
   return `${v('day')}/${v('month')}/${v('year')} ${v('hour')}:${v('minute')}`;
+}
+
+/** Atalhos do filtro de período (o quarto caminho é a data personalizada, De/Até). */
+export type AtalhoPeriodo = 'hoje' | 'ontem' | '7dias';
+export const ATALHOS_PERIODO: { id: AtalhoPeriodo; rotulo: string }[] = [
+  { id: 'hoje', rotulo: 'Hoje' },
+  { id: 'ontem', rotulo: 'Ontem' },
+  { id: '7dias', rotulo: 'Últimos 7 dias' },
+];
+
+/** Dia civil (AAAA-MM-DD) de um instante no fuso da empresa. */
+export function diaNoFuso(agora: Date, fuso: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: fuso,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(agora);
+}
+
+function somarDias(iso: string, dias: number): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Período de um atalho, contado a partir do dia de hoje no fuso da empresa (inclusivo). */
+export function periodoDoAtalho(
+  atalho: AtalhoPeriodo,
+  agora: Date,
+  fuso: string,
+): { de: string; ate: string } {
+  const hoje = diaNoFuso(agora, fuso);
+  if (atalho === 'hoje') return { de: hoje, ate: hoje };
+  if (atalho === 'ontem') {
+    const ontem = somarDias(hoje, -1);
+    return { de: ontem, ate: ontem };
+  }
+  return { de: somarDias(hoje, -6), ate: hoje };
+}
+
+/** Qual atalho corresponde ao período aberto, ou null (data personalizada). */
+export function atalhoAtivo(
+  de: string,
+  ate: string,
+  agora: Date,
+  fuso: string,
+): AtalhoPeriodo | null {
+  return (
+    ATALHOS_PERIODO.find((a) => {
+      const p = periodoDoAtalho(a.id, agora, fuso);
+      return p.de === de && p.ate === ate;
+    })?.id ?? null
+  );
 }
 
 /** "Dados atualizados em": data e hora do último webhook ou, sem ele, só a data final do período. */

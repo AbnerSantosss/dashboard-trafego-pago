@@ -1,10 +1,9 @@
 'use client';
-import { useId, useRef } from 'react';
-import { gsap } from 'gsap';
+import { useId, type CSSProperties } from 'react';
 import { area, curveMonotoneX, line } from 'd3-shape';
 import { scaleLinear } from 'd3-scale';
 import type { SparklineProps } from './tipos';
-import { deveAnimar, useEfeitoIsomorfico } from './movimento';
+import { CSS_MOVIMENTO, ESTILO_MOVIMENTO } from './movimento';
 
 /** Margem vertical (px) para o traço de 1,6 px não ser cortado (protótipo: y de 1 a 22 em 24). */
 const MARGEM_TOPO = 1;
@@ -47,7 +46,8 @@ export interface SparklineExtraProps {
 
 /**
  * Sparkline do KPI: curva monotônica, área translúcida em degradê vertical (32% → 0)
- * e traço de 1,6 px desenhado da esquerda para a direita (stroke-dashoffset com pathLength=1).
+ * e traço de 1,6 px revelado da esquerda para a direita (clip-path, CSS_MOVIMENTO). A animação é
+ * só CSS: começa no primeiro paint, não depende de JS e some com prefers-reduced-motion.
  */
 export function Sparkline({
   pontos,
@@ -60,70 +60,45 @@ export function Sparkline({
   className,
 }: SparklineProps & SparklineExtraProps) {
   const id = `spark-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
-  const refLinha = useRef<SVGPathElement>(null);
-  const refArea = useRef<SVGPathElement>(null);
   const { linha, area: dArea } = calcularSparkline(pontos, largura, altura);
-
-  useEfeitoIsomorfico(() => {
-    const l = refLinha.current;
-    if (!l || !deveAnimar(semAnimacao)) return;
-    const tl = gsap.timeline({ delay: atrasoMs / 1000 });
-    tl.fromTo(
-      l,
-      { strokeDasharray: 1, strokeDashoffset: 1 },
-      {
-        strokeDashoffset: 0,
-        duration: 0.8,
-        ease: 'power2.inOut',
-        clearProps: 'strokeDasharray,strokeDashoffset',
-      },
-    );
-    if (refArea.current) {
-      tl.fromTo(
-        refArea.current,
-        { opacity: 0 },
-        { opacity: 1, duration: 0.5, clearProps: 'opacity' },
-        0.3,
-      );
-    }
-    return () => {
-      tl.progress(1).kill();
-    };
-  }, [linha, semAnimacao, atrasoMs]);
 
   const corDegrade = corArea ?? cor;
   return (
-    <svg
-      className={className}
-      width={largura}
-      height={altura}
-      viewBox={`0 0 ${largura} ${altura}`}
-      overflow="visible"
-      aria-hidden="true"
-      data-componente="sparkline"
-    >
-      {dArea && (
-        <>
-          <defs>
-            <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor={corDegrade} stopOpacity={0.32} />
-              <stop offset="1" stopColor={corDegrade} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <path ref={refArea} d={dArea} fill={`url(#${id})`} data-parte="area" />
-        </>
-      )}
-      <path
-        ref={refLinha}
-        d={linha}
-        pathLength={1}
-        fill="none"
-        stroke={cor}
-        strokeWidth={1.6}
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        data-parte="linha"
-      />
-    </svg>
+    <>
+      <style {...ESTILO_MOVIMENTO}>{CSS_MOVIMENTO}</style>
+      <svg
+        className={className}
+        width={largura}
+        height={altura}
+        viewBox={`0 0 ${largura} ${altura}`}
+        overflow="visible"
+        aria-hidden="true"
+        data-componente="sparkline"
+        data-sem-animacao={semAnimacao || undefined}
+        style={{ '--atraso': `${atrasoMs}ms` } as CSSProperties}
+      >
+        {dArea && (
+          <>
+            <defs>
+              <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor={corDegrade} stopOpacity={0.32} />
+                <stop offset="1" stopColor={corDegrade} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <path d={dArea} fill={`url(#${id})`} data-parte="area" />
+          </>
+        )}
+        <path
+          d={linha}
+          pathLength={1}
+          fill="none"
+          stroke={cor}
+          strokeWidth={1.6}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          data-parte="linha"
+        />
+      </svg>
+    </>
   );
 }

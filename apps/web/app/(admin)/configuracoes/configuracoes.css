@@ -1,79 +1,341 @@
-/* Configurações (Fase 5): layout próprio sobre os tokens da tela; fora da área comparada pixel a pixel. */
-.cfg-principal {
-  left: 181px;
-  top: 0;
-  width: 1134px;
-  height: 710px;
-  overflow: auto;
-  padding: 28px 36px;
-  background: var(--p-bg-main);
+/*
+ * Configurações e telas de conta. Fora da área comparada pixel a pixel, então seguem as regras da
+ * wiki de UX: rem, layout fluido a partir de 320 px, breakpoints em em, alvos de 40 px (48 px no
+ * celular), campos com 16 px ou mais e no máximo quatro tamanhos de texto.
+ * Movimento (doutrina Hyperframes): entradas com power3.out em 400 ms, nada de bounce, nada que
+ * pulse, nada animando width/height; com movimento reduzido tudo vai direto ao estado final.
+ */
+.cfg-tela,
+.conta-fundo {
+  /* Escala de texto: título, subtítulo, corpo e micro. */
+  --cfg-fs-titulo: 1.5rem;
+  --cfg-fs-sub: 1.125rem;
+  --cfg-fs-corpo: 1rem;
+  --cfg-fs-micro: 0.8125rem;
+  --cfg-alvo: 3rem;
+  --cfg-raio: 0.5rem;
+  /* Borda de campo com 3:1 sobre o fundo do campo (WCAG 1.4.11); a do painel é decorativa. */
+  --cfg-campo-borda: #4f6f8f;
+  --cfg-entra: cubic-bezier(0.165, 0.84, 0.44, 1);
+  --cfg-sai: cubic-bezier(0.55, 0, 0.675, 0.19);
+  color-scheme: dark;
+  scrollbar-color: var(--p-campo-borda) transparent;
+  line-height: 1.5;
+}
+/*
+ * Camadas com contraste. Os --p-* medidos na imagem quase não se distinguem (fundo #041625, card
+ * #071b29, campo #0a2134); aqui, fora da área comparada, cada camada ganha um degrau claro: fundo
+ * da página, seção mais clara com borda visível e campo rebaixado, mais escuro que a seção. A
+ * sidebar fica fora deste escopo e continua idêntica à do painel.
+ */
+.cfg-principal,
+.conta-fundo {
+  --p-card-bg: #0f2234;
+  --p-card-borda: #284660;
+  --p-grade: #1b3449;
+  --p-campo-bg: #020d18;
+  --p-campo-borda: #2f4b66;
+  --p-bg-button: #14293d;
+  --p-filtro-bg: #1a3550;
+  --cfg-cabeca-tabela: #152c42;
+  --cfg-sombra: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 10px 24px rgb(0 0 0 / 0.28);
+}
+@media (min-width: 48em) {
+  .cfg-tela,
+  .conta-fundo {
+    --cfg-fs-corpo: 0.9375rem;
+    --cfg-alvo: 2.5rem;
+  }
+}
+.cfg-tela ::selection,
+.conta-fundo ::selection {
+  background: var(--p-nav-ativo);
   color: var(--text-primary);
-  font-size: 14px;
 }
+.cfg-tela :focus-visible,
+.conta-fundo :focus-visible {
+  outline: 2px solid var(--p-nav-ic-ativo);
+  outline-offset: 2px;
+}
+.cfg-tela code,
+.conta-fundo code {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.95em;
+}
+
+/* Casca: coluna da sidebar fixa ao rolar + conteúdo fluido. */
+.cfg-tela {
+  display: grid;
+  grid-template-columns: 181px minmax(0, 1fr);
+  min-height: 100vh;
+  /* Fundo das engrenagens (configuracoes.webp). Até 900 px ele mora aqui, no topo da tela; acima
+     disso vai para o body, atrás da moldura com zoom (ver o bloco de desktop). O véu segura o
+     contraste do título e das abas, que ficam direto sobre a imagem. */
+  background:
+    linear-gradient(rgb(4 22 37 / 0.2), rgb(4 22 37 / 0.2)),
+    url('/fundos/configuracoes-960.webp') right top / 100% auto no-repeat,
+    var(--p-bg-main);
+  color: var(--text-primary);
+}
+.cfg-lateral {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden auto;
+  border-right: 1px solid var(--p-divisor);
+  background: var(--bg-sidebar);
+  scrollbar-width: none;
+}
+.cfg-lateral .sidebar {
+  position: relative;
+}
+.cfg-barra {
+  display: none;
+}
+.cfg-principal {
+  min-width: 0;
+  padding: 1.75rem clamp(1rem, 3vw, 2.5rem) 3rem;
+  font-size: var(--cfg-fs-corpo);
+}
+.cfg-conteudo {
+  max-width: 90rem;
+}
+/*
+ * Desktop: a mesma moldura e a mesma escala do painel (D32/D33). A largura de desenho é 1315 px e a
+ * tela inteira cresce junto, então a sidebar fica no mesmo lugar e no mesmo tamanho ao trocar de
+ * página. Diferente do painel, a escala nunca fica abaixo de 1 (o texto não desce de 15 px) e a
+ * altura rola. O que fica fora da moldura continua a sidebar e o fundo, como no painel.
+ */
+@media (min-width: 900px) {
+  body:has(.cfg-tela) {
+    --cfg-escala: max(1, min(tan(atan2(100vw, 1315px)), tan(atan2(100vh, 710px))));
+    --cfg-borda: calc(
+      max(0px, (100% - 1315px * var(--cfg-escala)) / 2) + 180px * var(--cfg-escala)
+    );
+    background:
+      linear-gradient(
+        to right,
+        var(--bg-sidebar) var(--cfg-borda),
+        var(--p-divisor) var(--cfg-borda),
+        var(--p-divisor) calc(var(--cfg-borda) + 1px),
+        transparent calc(var(--cfg-borda) + 1px)
+      ),
+      /* Véu mais forte na faixa dos formulários (esquerda), leve à direita onde estão as engrenagens. */
+        linear-gradient(
+          to right,
+          rgb(4 22 37 / 0.5) var(--cfg-borda),
+          rgb(4 22 37 / 0.35) 45%,
+          rgb(4 22 37 / 0.08) 70%
+        ),
+      /* A imagem cobre só a área de conteúdo (à direita da sidebar), para as ondas da esquerda não
+         ficarem escondidas; em telas altas cresce até cobrir a altura (proporção 1595×986). */
+        url('/fundos/configuracoes.webp') right top /
+        max(calc(100% - var(--cfg-borda) - 1px), 161.8vh) auto no-repeat fixed,
+      var(--p-bg-main);
+  }
+  .cfg-tela {
+    max-width: 1315px;
+    background: transparent;
+    min-height: calc(100vh / var(--cfg-escala));
+    margin-inline: auto;
+    zoom: var(--cfg-escala);
+  }
+  .cfg-lateral {
+    height: calc(100vh / var(--cfg-escala));
+  }
+  .cfg-principal {
+    padding: 2rem 3rem 3rem;
+  }
+}
+@media (max-width: 47.99em) {
+  .cfg-tela {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cfg-lateral {
+    display: none;
+  }
+  .cfg-barra {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.5rem;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--p-divisor);
+    background: var(--bg-sidebar);
+  }
+  .cfg-barra-logo {
+    width: auto;
+    max-width: 8rem;
+    height: 2rem;
+    object-fit: contain;
+  }
+  .cfg-barra-nome {
+    overflow: hidden;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .cfg-barra-voltar {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    min-height: var(--cfg-alvo);
+    padding: 0 0.25rem;
+    color: var(--p-nav-ic-ativo);
+    font-size: var(--cfg-fs-micro);
+    text-decoration: none;
+  }
+  .cfg-principal {
+    padding-top: 1.25rem;
+  }
+}
+
 .cfg-titulo {
-  margin: 0 0 18px;
-  font-size: 22px;
+  margin: 0 0 1rem;
+  font-size: var(--cfg-fs-titulo);
   font-weight: 600;
+  line-height: 1.2;
+  text-wrap: balance;
 }
+
+/* Abas: rolam na horizontal quando não cabem; a régua da aba ativa se desenha da esquerda. */
 .cfg-abas {
   display: flex;
-  gap: 6px;
-  margin-bottom: 22px;
+  gap: 0.25rem;
+  margin: 0 -1rem 1.75rem;
+  padding: 0 1rem;
+  overflow-x: auto;
   border-bottom: 1px solid var(--p-card-borda);
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+@media (min-width: 48em) {
+  .cfg-abas {
+    margin-inline: 0;
+    padding: 0;
+  }
 }
 .cfg-aba {
-  padding: 8px 14px;
-  border-bottom: 2px solid transparent;
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-height: var(--cfg-alvo);
+  padding: 0 0.875rem;
+  border-radius: 0.375rem 0.375rem 0 0;
   color: var(--p-text-sec);
+  white-space: nowrap;
   text-decoration: none;
+  transition:
+    color 200ms var(--cfg-entra),
+    background-color 200ms var(--cfg-entra);
 }
-.cfg-aba[aria-current='page'] {
-  border-bottom-color: var(--p-nav-ic-ativo);
+.cfg-aba:hover {
+  background: rgb(255 255 255 / 0.03);
   color: var(--text-primary);
 }
+.cfg-aba[aria-current] {
+  color: var(--text-primary);
+}
+.cfg-aba[aria-current]::after {
+  position: absolute;
+  right: 0.5rem;
+  bottom: -1px;
+  left: 0.5rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--p-nav-ic-ativo);
+  content: '';
+  transform-origin: left;
+  animation: cfg-regua 400ms var(--cfg-entra);
+}
+@keyframes cfg-regua {
+  from {
+    transform: scaleX(0);
+  }
+}
+/* Cada aba é uma cena (template.tsx remonta a cada navegação): entra subindo, sem saída. */
+.cfg-cena {
+  animation: cfg-surge 400ms var(--cfg-entra) backwards;
+}
+@keyframes cfg-surge {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+/* Formulários */
 .cfg-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  max-width: 520px;
+  gap: 1.125rem;
+  max-width: 32.5rem;
 }
 .cfg-form-linha {
-  flex-direction: row;
+  display: flex;
+  flex-flow: row wrap;
+  gap: 1rem;
   align-items: flex-end;
   max-width: none;
-  margin-top: 18px;
+  margin-top: 1.125rem;
 }
 .cfg-campo {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0.375rem;
+  min-width: 0;
 }
 .cfg-rotulo {
   color: var(--p-filtro-rot);
-  font-size: 12.5px;
+  font-size: var(--cfg-fs-micro);
 }
 .cfg-input {
-  height: 34px;
-  padding: 0 10px;
-  border: 1px solid var(--p-campo-borda);
-  border-radius: 6px;
+  min-height: var(--cfg-alvo);
+  padding: 0 0.75rem;
+  border: 1px solid var(--cfg-campo-borda);
+  border-radius: 0.375rem;
   background: var(--p-campo-bg);
   color: var(--p-filtro-val);
   font: inherit;
+  /* 16 px no mínimo: abaixo disso o Safari do iPhone dá zoom ao focar. */
+  font-size: max(1rem, 16px);
+  transition: border-color 200ms var(--cfg-entra);
+}
+.cfg-input:hover {
+  border-color: var(--p-filtro-rot);
+}
+.cfg-input[aria-invalid='true'] {
+  border-color: var(--p-erro-txt);
+}
+.cfg-input:disabled {
+  opacity: 0.6;
+}
+select.cfg-input {
+  padding-right: 2rem;
 }
 .cfg-input-arquivo {
+  min-height: var(--cfg-alvo);
   color: var(--p-text-sec);
   font: inherit;
+}
+.cfg-input-largo {
+  width: min(100%, 20rem);
 }
 .cfg-previa {
   display: flex;
   align-items: center;
   width: fit-content;
-  min-width: 172px;
-  height: 56px;
-  padding: 10px 12px;
+  min-width: 10.75rem;
+  height: 3.5rem;
+  padding: 0.625rem 0.75rem;
   border: 1px solid var(--p-card-borda);
-  border-radius: 8px;
+  border-radius: var(--cfg-raio);
   background: var(--bg-sidebar);
 }
 /* Mesma regra da sidebar: altura 36 px, largura proporcional até 148 px. */
@@ -86,33 +348,60 @@
 .cfg-previa-texto {
   max-width: 148px;
   overflow: hidden;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 .cfg-dica {
+  margin: 0;
   color: var(--p-funil-leg);
-  font-size: 12px;
+  font-size: var(--cfg-fs-micro);
+  text-wrap: pretty;
 }
 .cfg-acoes,
 .cfg-linha-acoes {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  align-items: center;
 }
+
+/* Botões */
 .cfg-botao {
-  height: 32px;
-  padding: 0 14px;
-  border: 1px solid var(--p-borda-button);
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: var(--cfg-alvo);
+  padding: 0 1rem;
+  border: 1px solid var(--cfg-campo-borda);
+  border-radius: 0.375rem;
   background: var(--p-bg-button);
   color: var(--p-text-sec);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--cfg-fs-micro);
+  font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
+  transition:
+    background-color 200ms var(--cfg-entra),
+    border-color 200ms var(--cfg-entra),
+    color 200ms var(--cfg-entra);
+}
+.cfg-botao:hover:not(:disabled) {
+  border-color: var(--p-filtro-rot);
+  background: var(--p-filtro-bg);
+  color: var(--text-primary);
+}
+.cfg-botao:active:not(:disabled) {
+  transform: translateY(1px);
 }
 .cfg-botao:disabled {
   opacity: 0.6;
+  cursor: not-allowed;
+}
+.cfg-botao[aria-busy='true'] {
   cursor: progress;
 }
 .cfg-botao-primario {
@@ -120,16 +409,34 @@
   background: var(--p-limpar-bg);
   color: var(--p-limpar-txt);
 }
-.cfg-nova {
-  margin-top: 18px;
+.cfg-botao-primario:hover:not(:disabled) {
+  border-color: var(--p-limpar-txt);
+  background: var(--p-limpar-bg);
+  color: var(--p-positivo);
 }
+.cfg-botao-perigo {
+  border-color: var(--p-erro-borda);
+  background: var(--p-erro-bg);
+  color: var(--p-erro-txt);
+}
+.cfg-botao-perigo:hover:not(:disabled) {
+  border-color: var(--p-erro-txt);
+  background: var(--p-erro-bg);
+  color: var(--text-primary);
+}
+.cfg-nova {
+  margin-top: 1.125rem;
+}
+
+/* Faixas de estado */
 .cfg-sucesso,
 .cfg-erro,
 .cfg-faixa-erro {
-  margin: 0 0 14px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 13px;
+  margin: 0 0 0.875rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.375rem;
+  font-size: var(--cfg-fs-micro);
+  text-wrap: pretty;
 }
 .cfg-sucesso {
   border: 1px solid var(--p-limpar-borda);
@@ -138,68 +445,118 @@
 }
 .cfg-erro,
 .cfg-faixa-erro {
-  border: 1px solid #5a2433;
-  background: #2a1220;
-  color: #ffb3c1;
+  border: 1px solid var(--p-erro-borda);
+  background: var(--p-erro-bg);
+  color: var(--p-erro-txt);
 }
 .cfg-campo .cfg-erro {
   margin: 0;
 }
+.cfg-aviso {
+  margin: 0.5rem 0 0;
+  color: var(--p-aviso);
+  font-size: var(--cfg-fs-micro);
+}
+
+/* Tabelas: viram cartões no celular (cada célula mostra o rótulo da coluna em data-rotulo). */
 .cfg-tabela {
   width: 100%;
   border: 1px solid var(--p-card-borda);
   border-collapse: collapse;
   background: var(--p-card-bg);
+  box-shadow: var(--cfg-sombra, none);
+  font-variant-numeric: tabular-nums;
 }
 .cfg-tabela th,
 .cfg-tabela td {
-  padding: 9px 12px;
+  padding: 0.625rem 0.75rem;
   border-bottom: 1px solid var(--p-grade);
   text-align: left;
   vertical-align: middle;
 }
+.cfg-tabela thead th {
+  background: var(--cfg-cabeca-tabela, transparent);
+}
 .cfg-tabela th {
   color: var(--p-th);
-  font-size: 12.5px;
+  font-size: var(--cfg-fs-micro);
   font-weight: 600;
 }
 .cfg-tabela td {
   color: var(--p-td);
 }
+.cfg-tabela tbody tr {
+  transition: background-color 200ms var(--cfg-entra);
+}
+.cfg-tabela tbody tr:hover {
+  background: rgb(255 255 255 / 0.02);
+}
+@media (max-width: 47.99em) {
+  .cfg-tabela:not(.inst-tabela) thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .cfg-tabela:not(.inst-tabela),
+  .cfg-tabela:not(.inst-tabela) tbody,
+  .cfg-tabela:not(.inst-tabela) tr,
+  .cfg-tabela:not(.inst-tabela) td {
+    display: block;
+  }
+  .cfg-tabela:not(.inst-tabela) {
+    border: 0;
+    background: none;
+  }
+  .cfg-tabela:not(.inst-tabela) tr {
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0;
+    border: 1px solid var(--p-card-borda);
+    border-radius: var(--cfg-raio);
+    background: var(--p-card-bg);
+  }
+  .cfg-tabela:not(.inst-tabela) td {
+    padding: 0.375rem 0.875rem;
+    border: 0;
+  }
+  .cfg-tabela td[data-rotulo]::before {
+    display: block;
+    color: var(--p-filtro-rot);
+    font-size: var(--cfg-fs-micro);
+    content: attr(data-rotulo);
+  }
+}
 .cfg-url {
   color: var(--p-cal);
-  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 .cfg-vazio {
   color: var(--p-funil-leg);
 }
 .cfg-segredo {
-  margin: 0 0 18px;
-  padding: 12px 14px;
+  margin: 0 0 1.125rem;
+  padding: 0.875rem 1rem;
   border: 1px solid var(--p-nav-ic-ativo);
-  border-radius: 8px;
+  border-radius: var(--cfg-raio);
   background: var(--p-filtro-bg);
 }
 .cfg-segredo-titulo {
-  margin: 0 0 8px;
+  margin: 0 0 0.5rem;
   color: var(--p-text-sec);
 }
 .cfg-segredo-linha {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 0.625rem;
   align-items: center;
 }
 .cfg-segredo-valor {
-  padding: 6px 8px;
-  border-radius: 4px;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.25rem;
   background: var(--p-campo-bg);
   color: var(--p-filtro-val);
-  word-break: break-all;
-}
-.cfg-aviso {
-  margin: 8px 0 0;
-  color: #ffd27a;
-  font-size: 12.5px;
+  overflow-wrap: anywhere;
 }
 
 /* Perfil, Usuários e Tag GTM */
@@ -208,66 +565,793 @@
 }
 .cfg-perfil {
   display: flex;
-  gap: 48px;
+  flex-wrap: wrap;
+  gap: 2rem 3rem;
   align-items: flex-start;
 }
 .cfg-bloco {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75rem;
 }
 .cfg-subtitulo {
-  margin: 26px 0 10px;
-  font-size: 15px;
+  margin: 1.75rem 0 0.75rem;
+  font-size: var(--cfg-fs-sub);
   font-weight: 600;
+  line-height: 1.3;
 }
 .cfg-bloco .cfg-subtitulo {
   margin-top: 0;
 }
 .cfg-lista,
 .cfg-passos {
+  max-width: 65ch;
   margin: 0;
-  padding-left: 18px;
+  padding-left: 1.25rem;
   line-height: 1.7;
 }
 .cfg-grupo {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
   margin: 0;
   padding: 0;
   border: 0;
 }
 .cfg-grupo legend {
-  margin-bottom: 8px;
-}
-.cfg-input-largo {
-  width: 300px;
+  margin-bottom: 0.5rem;
 }
 .cfg-etiqueta {
-  margin-left: 8px;
-  padding: 1px 6px;
+  margin-left: 0.5rem;
+  padding: 0.0625rem 0.375rem;
   border: 1px solid var(--p-campo-borda);
-  border-radius: 4px;
+  border-radius: 0.25rem;
   color: var(--p-text-sec);
-  font-size: 11.5px;
+  font-size: var(--cfg-fs-micro);
 }
 .cfg-tag {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  max-width: 900px;
+  gap: 0.875rem;
+  max-width: 56rem;
+}
+.cfg-tag > p {
+  max-width: 70ch;
 }
 .cfg-codigo {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--p-campo-borda);
-  border-radius: 6px;
+  padding: 0.75rem;
+  border: 1px solid var(--cfg-campo-borda);
+  border-radius: 0.375rem;
   background: var(--p-campo-bg);
   color: var(--p-filtro-val);
   font:
-    12px/1.5 ui-monospace,
+    var(--cfg-fs-micro) / 1.6 ui-monospace,
     Consolas,
     monospace;
   resize: vertical;
+}
+
+/* Diálogo de confirmação das ações que não têm volta. */
+.cfg-dialogo {
+  width: min(28rem, 100% - 2rem);
+  padding: 0;
+  border: 1px solid var(--p-card-borda);
+  border-radius: 0.75rem;
+  background: var(--p-card-bg);
+  color: var(--text-primary);
+  font-size: var(--cfg-fs-corpo);
+}
+.cfg-dialogo-corpo {
+  padding: 1.5rem;
+}
+.cfg-dialogo[open] {
+  animation: cfg-surge 300ms var(--cfg-entra);
+}
+.cfg-dialogo::backdrop {
+  background: rgb(1 8 15 / 0.7);
+}
+.cfg-dialogo-titulo {
+  margin: 0 0 0.5rem;
+  font-size: var(--cfg-fs-sub);
+  font-weight: 600;
+}
+.cfg-dialogo p {
+  margin: 0 0 1.25rem;
+  color: var(--p-text-sec);
+  text-wrap: pretty;
+}
+.cfg-dialogo .cfg-acoes {
+  justify-content: flex-end;
+}
+
+/* ------------------------------------------------------------------ */
+/* Configurações → Instalação                                          */
+/* ------------------------------------------------------------------ */
+.inst {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 72rem;
+}
+.inst-topo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 2.5rem;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.inst-topo-texto {
+  flex: 1 1 22rem;
+}
+.inst-titulo {
+  margin: 0 0 0.375rem;
+  font-size: var(--cfg-fs-sub);
+  font-weight: 600;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+.inst-intro {
+  max-width: 60ch;
+  margin: 0;
+  color: var(--p-text-sec);
+  text-wrap: pretty;
+}
+.inst-progresso {
+  display: flex;
+  flex: 0 1 12rem;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.inst-progresso-num {
+  font-size: var(--cfg-fs-titulo);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.inst-progresso-total {
+  color: var(--p-funil-leg);
+  font-size: var(--cfg-fs-corpo);
+  font-weight: 400;
+}
+.inst-barra {
+  display: block;
+  height: 0.375rem;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: var(--p-campo-bg);
+}
+/* A largura vem do servidor como scaleX: anima só transform. */
+.inst-barra-cheia {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--p-positivo);
+  transform-origin: left;
+  animation: cfg-enche 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 150ms both;
+}
+@keyframes cfg-enche {
+  from {
+    transform: scaleX(0);
+  }
+}
+.inst-pronto {
+  margin: 0;
+}
+
+.inst-passos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.inst-passo {
+  border: 1px solid var(--p-card-borda);
+  border-radius: var(--cfg-raio);
+  background: var(--p-card-bg);
+  box-shadow: var(--cfg-sombra, none);
+  transition: border-color 200ms var(--cfg-entra);
+  /* Entrada em cascata: 60 ms entre passos, o grupo inteiro em menos de 500 ms. */
+  animation: cfg-surge 400ms var(--cfg-entra) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+.inst-passo:has(.inst-resumo:hover) {
+  border-color: var(--p-campo-borda);
+}
+.inst-passo[data-estado='atencao'] {
+  border-color: var(--p-erro-borda);
+}
+.inst-resumo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 0.875rem;
+  align-items: center;
+  min-height: 4rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--cfg-raio);
+  cursor: pointer;
+  list-style: none;
+}
+.inst-resumo::-webkit-details-marker {
+  display: none;
+}
+.inst-marcador {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--cfg-campo-borda);
+  border-radius: 50%;
+  color: var(--p-text-sec);
+  font-size: var(--cfg-fs-micro);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.inst-passo[data-estado='feito'] .inst-marcador {
+  border-color: transparent;
+  color: var(--p-positivo);
+}
+.inst-marcador-ic,
+.inst-estado-ic,
+.inst-link-ic,
+.inst-copiar-ic,
+.inst-seta {
+  display: inline-flex;
+  flex: none;
+}
+.inst-marcador-ic svg {
+  width: 2rem;
+  height: 2rem;
+}
+.inst-resumo-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+.inst-passo-titulo {
+  font-weight: 600;
+}
+.inst-situacao {
+  color: var(--p-funil-leg);
+  font-size: var(--cfg-fs-micro);
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+.inst-estado {
+  display: inline-flex;
+  gap: 0.375rem;
+  align-items: center;
+  color: var(--p-text-sec);
+  font-size: var(--cfg-fs-micro);
+  white-space: nowrap;
+}
+.inst-estado-ic svg,
+.inst-link-ic svg,
+.inst-copiar-ic svg {
+  width: 1rem;
+  height: 1rem;
+}
+.inst-passo[data-estado='feito'] .inst-estado {
+  color: var(--p-positivo);
+}
+.inst-passo[data-estado='atencao'] .inst-estado {
+  color: var(--p-erro-txt);
+}
+.inst-passo[data-estado='manual'] .inst-estado {
+  color: var(--p-aviso);
+}
+.inst-seta {
+  color: var(--p-funil-leg);
+  transition: transform 300ms var(--cfg-entra);
+}
+.inst-seta svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+details[open] > .inst-resumo .inst-seta {
+  transform: rotate(180deg);
+}
+/* Abrir: fade + y curto, sem animar altura. */
+details[open] > .inst-corpo {
+  animation: cfg-surge 400ms var(--cfg-entra);
+}
+.inst-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 0.25rem 1rem 1.25rem calc(1rem + 2rem + 0.875rem);
+  color: var(--p-text-sec);
+}
+.inst-corpo p {
+  max-width: 68ch;
+  margin: 0;
+  text-wrap: pretty;
+}
+.inst-corpo strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.inst-corpo :not(pre) > code {
+  padding: 0.0625rem 0.3125rem;
+  border-radius: 0.25rem;
+  background: var(--p-campo-bg);
+  color: var(--p-filtro-val);
+  overflow-wrap: anywhere;
+}
+@media (max-width: 47.99em) {
+  .inst-resumo {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.75rem;
+  }
+  .inst-estado {
+    grid-row: 2;
+    grid-column: 2;
+  }
+  .inst-seta {
+    grid-row: 1;
+    grid-column: 3;
+  }
+  .inst-corpo {
+    padding-left: 1rem;
+  }
+}
+.inst-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  max-width: 68ch;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+.inst-lista li::marker {
+  color: var(--p-funil-leg);
+}
+.inst-link {
+  display: inline-flex;
+  gap: 0.25rem;
+  align-items: center;
+  color: var(--p-nav-ic-ativo);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color 200ms var(--cfg-entra);
+}
+.inst-link:hover {
+  text-decoration-color: currentColor;
+}
+.inst-teste {
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--p-card-borda);
+  border-radius: 0.375rem;
+  background: var(--p-filtro-bg);
+}
+.inst-fontes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.inst-fonte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+.inst-fonte-nome {
+  color: var(--text-primary);
+  font-size: var(--cfg-fs-micro);
+  font-weight: 600;
+}
+
+/* Valor copiável: endereço numa linha ou bloco de código. */
+.inst-copiavel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+.inst-valor {
+  display: flex;
+  flex: 1 1 16rem;
+  align-items: center;
+  min-width: 0;
+  min-height: var(--cfg-alvo);
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--p-campo-borda);
+  border-radius: 0.375rem;
+  background: var(--p-campo-bg);
+  color: var(--p-cal);
+  overflow-wrap: anywhere;
+}
+.inst-copiavel-bloco {
+  position: relative;
+  display: block;
+}
+.inst-codigo {
+  max-height: 22rem;
+  margin: 0;
+  padding: 0.875rem 7.5rem 0.875rem 1rem;
+  overflow: auto;
+  border: 1px solid var(--p-campo-borda);
+  border-radius: 0.375rem;
+  background: var(--p-campo-bg);
+  color: var(--p-filtro-val);
+  font:
+    var(--cfg-fs-micro) / 1.6 ui-monospace,
+    Consolas,
+    monospace;
+  tab-size: 2;
+}
+.inst-codigo code {
+  font-size: inherit;
+}
+.inst-copiavel-bloco .inst-copiar {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+@media (max-width: 47.99em) {
+  .inst-copiavel-bloco .inst-copiar {
+    position: static;
+    margin-top: 0.5rem;
+  }
+  .inst-codigo {
+    padding-right: 1rem;
+  }
+}
+.inst-subtitulo {
+  margin: 0.5rem 0 0;
+  color: var(--text-primary);
+  font-size: var(--cfg-fs-corpo);
+  font-weight: 600;
+}
+.inst-tabela td:first-child {
+  white-space: nowrap;
+}
+@media (max-width: 47.99em) {
+  .inst-tabela thead {
+    display: none;
+  }
+  .inst-tabela,
+  .inst-tabela tbody,
+  .inst-tabela tr,
+  .inst-tabela td {
+    display: block;
+  }
+  .inst-tabela td:first-child {
+    padding-bottom: 0;
+    border: 0;
+  }
+}
+.inst-nota {
+  color: var(--p-funil-leg);
+  font-size: var(--cfg-fs-micro);
+}
+.inst-entregas {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--p-card-borda);
+  border-radius: 0.375rem;
+  list-style: none;
+}
+.inst-entrega {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  align-items: baseline;
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--p-grade);
+  font-size: var(--cfg-fs-micro);
+}
+.inst-entrega:last-child {
+  border-bottom: 0;
+}
+.inst-entrega-fonte {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.inst-entrega[data-estado='processado'] > span:nth-child(2) {
+  color: var(--p-positivo);
+}
+.inst-entrega[data-estado='erro'] > span:nth-child(2) {
+  color: var(--p-erro-txt);
+}
+.inst-entrega-erro {
+  flex-basis: 100%;
+  color: var(--p-funil-leg);
+}
+.inst-papeis {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.375rem 1.25rem;
+  margin: 0;
+}
+.inst-papeis dt {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.inst-papeis dd {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cfg-tela *,
+  .cfg-tela *::after,
+  .conta-fundo *,
+  .conta-fundo *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* Gastos e Meta Ads */
+.cfg-periodos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0.875rem 0 0;
+}
+.cfg-periodo {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--p-card-borda);
+  border-radius: 999px;
+  color: var(--p-text-sec);
+  font-size: var(--cfg-fs-micro);
+  text-decoration: none;
+  transition:
+    color 200ms var(--cfg-entra),
+    border-color 200ms var(--cfg-entra);
+}
+.cfg-periodo:hover,
+.cfg-periodo[aria-current='page'] {
+  border-color: var(--p-nav-ic-ativo);
+  color: var(--text-primary);
+}
+.cfg-total {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.875rem;
+  align-items: baseline;
+  margin: 0.875rem 0 1.125rem;
+  color: var(--p-text-sec);
+  font-size: var(--cfg-fs-micro);
+  font-variant-numeric: tabular-nums;
+}
+.cfg-total strong {
+  color: var(--text-primary);
+  font-size: var(--cfg-fs-titulo);
+  font-weight: 600;
+}
+.cfg-total .cfg-dica {
+  flex-basis: 100%;
+}
+.cfg-gastos .cfg-form,
+.cfg-meta .cfg-tabela {
+  margin-bottom: 1.125rem;
+}
+.cfg-meta > .cfg-dica {
+  margin-bottom: 1.125rem;
+}
+.cfg-tabela .cfg-num {
+  text-align: right;
+  white-space: nowrap;
+}
+.cfg-bloco-linha {
+  display: block;
+  margin-top: 0.125rem;
+}
+.cfg-input-valor {
+  max-width: 9rem;
+}
+.cfg-texto-erro {
+  color: var(--p-erro-txt);
+}
+.cfg-tabela td .cfg-form {
+  margin: 0.75rem 0 0;
+}
+.cfg-ajuda {
+  margin-top: 1.5rem;
+  color: var(--p-td);
+}
+.cfg-ajuda summary {
+  min-height: var(--cfg-alvo);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+@media (max-width: 47.99em) {
+  .cfg-tabela .cfg-num {
+    text-align: left;
+  }
+  .cfg-input-valor {
+    max-width: none;
+  }
+}
+
+/* Instalação: submenu em botões e o passo a passo de cada ligação (Tag, Webhooks, Meta Ads). */
+.cfg-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1.5rem;
+}
+.cfg-sub-botao {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--cfg-alvo);
+  padding: 0 1rem;
+  border: 1px solid var(--p-card-borda);
+  border-radius: var(--cfg-raio);
+  background: var(--p-card-bg);
+  color: var(--p-text-sec);
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    color 200ms var(--cfg-entra),
+    border-color 200ms var(--cfg-entra),
+    background-color 200ms var(--cfg-entra);
+}
+.cfg-sub-botao:hover {
+  border-color: var(--p-campo-borda);
+  color: var(--text-primary);
+}
+.cfg-sub-botao[aria-current='page'] {
+  border-color: var(--p-nav-ic-ativo);
+  background: var(--p-nav-ativo);
+  color: var(--text-primary);
+}
+.cfg-guia {
+  margin: 0 0 1.75rem;
+  padding: 1.25rem 1.25rem 0.5rem;
+  border: 1px solid var(--p-card-borda);
+  border-radius: var(--cfg-raio);
+  background: var(--p-card-bg);
+  box-shadow: var(--cfg-sombra, none);
+}
+.cfg-guia-titulo {
+  margin: 0 0 1rem;
+  font-size: var(--cfg-fs-sub);
+  font-weight: 600;
+}
+.cfg-guia-lista {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: guia;
+}
+.cfg-guia-passo {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0 0.875rem;
+  padding-bottom: 1.125rem;
+  counter-increment: guia;
+  animation: cfg-surge 400ms var(--cfg-entra) backwards;
+  animation-delay: calc(var(--i, 0) * 50ms);
+}
+/* Número em círculo e a linha que liga um passo ao seguinte. */
+.cfg-guia-passo::before {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--cfg-campo-borda);
+  border-radius: 50%;
+  background: var(--p-bg-main);
+  color: var(--text-primary);
+  font-size: var(--cfg-fs-micro);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  content: counter(guia);
+}
+.cfg-guia-passo:not(:last-child)::after {
+  position: absolute;
+  top: 2.25rem;
+  bottom: 0.25rem;
+  left: calc(1rem - 0.5px);
+  width: 1px;
+  background: var(--p-card-borda);
+  content: '';
+}
+.cfg-guia-passo-titulo {
+  display: block;
+  margin: 0.25rem 0 0.25rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.cfg-guia-passo-texto {
+  max-width: 70ch;
+  margin: 0;
+  color: var(--p-text-sec);
+  text-wrap: pretty;
+}
+.cfg-guia-passo-texto p {
+  margin: 0;
+}
+.cfg-guia-passo-texto code {
+  color: var(--text-primary);
+}
+.cfg-guia-codigo {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  overflow-x: auto;
+  border: 1px solid var(--p-card-borda);
+  border-radius: var(--cfg-raio);
+  background: var(--p-campo-bg);
+  white-space: pre;
+}
+
+/* Tutorial animado: botão acima do passo a passo (Tag, Webhooks, Meta Ads) e na Instalação. */
+.cfg-tutorial {
+  margin: 0 0 1.25rem;
+}
+.inst-topo .tt-abrir {
+  margin-top: 1rem;
+}
+
+/* Gastos: explicação explícita de como o gasto vira Investimento, com o tutorial ao lado. */
+.cg-explica {
+  margin: 0 0 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--p-card-borda);
+  border-radius: var(--cfg-raio);
+  background: var(--p-card-bg);
+  box-shadow: var(--cfg-sombra, none);
+}
+.cg-explica-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.cg-explica-titulo {
+  margin: 0 0 0.25rem;
+  font-size: var(--cfg-fs-sub);
+  font-weight: 600;
+}
+.cg-pontos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: cg;
+}
+.cg-pontos li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--p-grade);
+  border-radius: var(--cfg-raio);
+  background: var(--p-campo-bg);
+  counter-increment: cg;
+}
+.cg-pontos li > strong::before {
+  margin-right: 0.5rem;
+  color: var(--p-nav-ic-ativo);
+  font-variant-numeric: tabular-nums;
+  content: counter(cg) '.';
+}
+.cg-pontos li > span {
+  color: var(--p-text-sec);
+  font-size: var(--cfg-fs-micro);
+  text-wrap: pretty;
 }

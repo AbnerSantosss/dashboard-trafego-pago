@@ -17,6 +17,18 @@ import type {
   ApresentacaoResposta,
   ConviteCriado,
   ConvitePublico,
+  CustoCriar,
+  CustoResumo,
+  CustosResposta,
+  EventosEtapaQuery,
+  EventosEtapaResposta,
+  FichaLead,
+  MetaContaAtualizar,
+  MetaContaCriada,
+  MetaContaCriar,
+  MetaContaResumo,
+  MetaContasResposta,
+  MetaSincronizacao,
   MePatch,
   MeResposta,
   Papel,
@@ -32,6 +44,7 @@ import type {
   VisaoGeralResposta,
 } from '@trafego/contratos';
 import { decodeJwt, SignJWT } from 'jose';
+import type { Entrega } from './instalacao';
 import { adminMock, visaoGeralMock } from './mock';
 import { lerSessaoDoCookie, type SessaoCookie } from './sessao';
 
@@ -198,6 +211,17 @@ export function criarClienteApi(
       const busca = s.toString();
       return get<VisaoGeralResposta>(`/metricas/visao-geral${busca ? `?${busca}` : ''}`);
     },
+    // --- Lista por etapa do funil e ficha do lead (contrato em packages/contratos/src/leads.ts) ---
+    async eventosEtapa(q: EventosEtapaQuery): Promise<Resultado<EventosEtapaResposta>> {
+      if (config.mock) return semMock();
+      const s = new URLSearchParams();
+      for (const [k, v] of Object.entries(q)) if (v !== undefined && v !== '') s.set(k, String(v));
+      return get<EventosEtapaResposta>(`/empresas/atual/eventos?${s.toString()}`);
+    },
+    async lead(leadKey: string): Promise<Resultado<FichaLead>> {
+      if (config.mock) return semMock();
+      return get<FichaLead>(`/empresas/atual/leads/${id(leadKey)}`);
+    },
     // --- Administração (contrato em packages/contratos/src/admin.ts) ---
     async apresentacao(): Promise<Resultado<ApresentacaoResposta>> {
       if (config.mock) return adminMock.apresentacao();
@@ -227,9 +251,20 @@ export function criarClienteApi(
         {},
       );
     },
+    /** Últimas entregas de uma fonte (analista ou acima); `empresa` é o slug da empresa ativa. */
+    async entregas(
+      empresa: string,
+      fonte: string,
+      limite = 20,
+    ): Promise<Resultado<{ entregas: Entrega[] }>> {
+      if (config.mock) return { ok: true, dados: { entregas: [] } };
+      return get<{ entregas: Entrega[] }>(
+        `/webhooks/${id(empresa)}/${id(fonte)}/entregas?limite=${limite}`,
+      );
+    },
     // --- Conta e usuários (contrato em packages/contratos/src/conta.ts) ---
-    entrar: (email: string, senha: string) =>
-      publico<Sessao>('POST', '/auth/login', { email, senha }),
+    entrar: (email: string, senha: string, lembrar = false) =>
+      publico<Sessao>('POST', '/auth/login', { email, senha, lembrar }),
     recuperar: (email: string) => publico<null>('POST', '/auth/recuperar', { email }),
     redefinir: (token: string, senha: string) =>
       publico<Sessao>('POST', '/auth/redefinir', { token, senha }),
@@ -240,9 +275,10 @@ export function criarClienteApi(
       if (config.mock) return semMock();
       return get<MeResposta>('/me');
     },
-    async atualizarMe(p: MePatch): Promise<Resultado<{ usuario: UsuarioConta }>> {
+    /** Com troca de senha, vem `token` novo: a API invalida o anterior. */
+    async atualizarMe(p: MePatch): Promise<Resultado<{ usuario: UsuarioConta; token?: string }>> {
       if (config.mock) return semMock();
-      return chamar<{ usuario: UsuarioConta }>('PATCH', '/me', p);
+      return chamar<{ usuario: UsuarioConta; token?: string }>('PATCH', '/me', p);
     },
     async usuarios(): Promise<Resultado<UsuariosResposta>> {
       if (config.mock) return semMock();
@@ -258,6 +294,34 @@ export function criarClienteApi(
       chamar<null>('PATCH', `/empresas/atual/usuarios/${id(usuarioId)}`, { papel }),
     removerMembro: (usuarioId: string) =>
       chamar<null>('DELETE', `/empresas/atual/usuarios/${id(usuarioId)}`),
+    // --- Gasto em anúncios (contrato em packages/contratos/src/custos.ts) ---
+    async custos(de?: string, ate?: string): Promise<Resultado<CustosResposta>> {
+      if (config.mock) return semMock();
+      const s = new URLSearchParams();
+      if (de) s.set('de', de);
+      if (ate) s.set('ate', ate);
+      const busca = s.toString();
+      return get<CustosResposta>(`/empresas/atual/custos${busca ? `?${busca}` : ''}`);
+    },
+    lancarCusto: (p: CustoCriar) => chamar<CustoResumo>('POST', '/empresas/atual/custos', p),
+    removerCusto: (custoId: string) =>
+      chamar<null>('DELETE', `/empresas/atual/custos/${id(custoId)}`),
+    async metaContas(): Promise<Resultado<MetaContasResposta>> {
+      if (config.mock) return semMock();
+      return get<MetaContasResposta>('/empresas/atual/meta/contas');
+    },
+    conectarMeta: (p: MetaContaCriar) =>
+      chamar<MetaContaCriada>('POST', '/empresas/atual/meta/contas', p),
+    atualizarMeta: (contaId: string, p: MetaContaAtualizar) =>
+      chamar<MetaContaResumo>('PATCH', `/empresas/atual/meta/contas/${id(contaId)}`, p),
+    sincronizarMeta: (contaId: string, dias?: number) =>
+      chamar<MetaSincronizacao>(
+        'POST',
+        `/empresas/atual/meta/contas/${id(contaId)}/sincronizar`,
+        dias ? { dias } : {},
+      ),
+    removerMeta: (contaId: string) =>
+      chamar<null>('DELETE', `/empresas/atual/meta/contas/${id(contaId)}`),
   };
 }
 

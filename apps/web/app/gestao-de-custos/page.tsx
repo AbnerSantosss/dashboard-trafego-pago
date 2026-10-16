@@ -1,7 +1,6 @@
-import { EmConstrucao } from '@/componentes/EmConstrucao';
+import { redirect } from 'next/navigation';
 
-export const metadata = { title: 'Gestão de Custos' };
-
+// Gestão de Custos vive em Configurações → Gastos (lançamento manual e leitura do Meta Ads).
 export default function GestaoCustos() {
-  return <EmConstrucao ativo="gestao-custos" titulo="Gestão de Custos" />;
+  redirect('/configuracoes/gastos');
 }

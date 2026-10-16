@@ -23,7 +23,11 @@ function conferirSenha(senha: string, confirmacao: string): string | null {
 }
 
 export async function entrar(_a: EstadoAcao, fd: FormData): Promise<EstadoAcao> {
-  const r = await api().entrar(texto(fd, 'email').trim(), texto(fd, 'senha'));
+  const r = await api().entrar(
+    texto(fd, 'email').trim(),
+    texto(fd, 'senha'),
+    fd.get('lembrar') === 'on',
+  );
   if (!r.ok) {
     return {
       ok: false,

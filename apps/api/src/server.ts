@@ -1,7 +1,9 @@
 import { existsSync } from 'node:fs';
 import type { PgBoss } from 'pg-boss';
 import { buildApp } from './app.js';
-import { carregarEnv, ErroEnv } from './env.js';
+import { criarClienteMeta } from './custos/meta.js';
+import { sincronizarTodas } from './custos/sincronizar.js';
+import { carregarEnv, chaveCifraWebhook, ErroEnv } from './env.js';
 import { processarWebhookEvent } from './rules/processar.js';
 import { reprocessarFonte } from './rules/reprocessar.js';
 import { lerConfigWebhooks } from './webhooks/config.js';
@@ -51,8 +53,33 @@ async function iniciar(): Promise<void> {
     app.log.warn('DATABASE_ADMIN_URL ausente: webhooks são gravados mas não processados');
   }
 
+  // Gasto do Meta Ads: relê os últimos dias de todas as contas ativas, de hora em hora.
+  const opcoesMeta = {
+    cliente: criarClienteMeta(
+      process.env.META_GRAPH_VERSAO ? { versao: process.env.META_GRAPH_VERSAO } : {},
+    ),
+    chaveCifra: chaveCifraWebhook(env),
+    log: app.log,
+  };
+  let sincronizando = false;
+  const rodadaMeta = async () => {
+    if (sincronizando) return;
+    sincronizando = true;
+    try {
+      await sincronizarTodas(app.db, opcoesMeta);
+    } catch (erro) {
+      app.log.error({ err: erro }, 'falha na rodada de sincronização do Meta');
+    } finally {
+      sincronizando = false;
+    }
+  };
+  const primeiraRodada = setTimeout(() => void rodadaMeta(), 30_000);
+  const relogioMeta = setInterval(() => void rodadaMeta(), 60 * 60 * 1000);
+
   const encerrar = async (sinal: string) => {
     app.log.info({ sinal }, 'encerrando');
+    clearTimeout(primeiraRodada);
+    clearInterval(relogioMeta);
     if (boss) await boss.stop({ graceful: true, timeout: 10_000 });
     await app.close();
     process.exit(0);

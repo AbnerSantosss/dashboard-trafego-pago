@@ -4,26 +4,234 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: var(--p-bg-main);
+  min-height: 100dvh;
+  padding: 1.5rem 1rem;
+  /* Retrato (831×941): cobre a tela ancorado no topo, onde estão as ondas. O véu escurece a base
+     para o cartão não brigar com o brilho. */
+  background:
+    linear-gradient(180deg, rgb(4 22 37 / 0.15), rgb(4 22 37 / 0.55)),
+    var(--conta-imagem, none) center top / cover no-repeat,
+    var(--p-bg-main);
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: var(--cfg-fs-corpo);
+}
+.conta-fundo[data-fundo='1'] {
+  --conta-imagem: url('/fundos/conta-ondas-1.webp');
+}
+.conta-fundo[data-fundo='2'] {
+  --conta-imagem: url('/fundos/conta-ondas-2.webp');
+}
+/* Cartão de vidro (referência: login "Bem-vindo de volta"): fundo escuro translúcido com desfoque,
+   borda fina azul-violeta e brilho externo suave. Vale para login, nova senha e convite. */
+.conta-fundo {
+  --lg-violeta: #6a3df5;
+  --lg-azul: #3d6bff;
+  --lg-link: #8f9dff;
+  --lg-borda: rgb(150 160 255 / 0.18);
+  --lg-campo: rgb(6 10 30 / 0.55);
 }
 .conta-cartao {
-  width: 420px;
-  padding: 32px 36px;
-  border: 1px solid var(--p-card-borda);
-  border-radius: 12px;
-  background: var(--p-card-bg);
+  width: min(29rem, 100%);
+  padding: clamp(1.75rem, 5vw, 2.5rem) clamp(1.25rem, 5vw, 2.5rem) clamp(1.75rem, 5vw, 2.25rem);
+  border: 1px solid rgb(140 130 255 / 0.32);
+  border-radius: 1.25rem;
+  background: linear-gradient(180deg, rgb(14 16 44 / 0.78), rgb(8 10 30 / 0.82));
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.03) inset,
+    0 0 40px rgb(90 80 255 / 0.18),
+    0 24px 60px rgb(0 0 0 / 0.45);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  animation: cfg-surge 400ms var(--cfg-entra);
+}
+.conta-logo {
+  display: block;
+  width: auto;
+  height: 3.25rem;
+  margin: 0 auto 1.5rem;
+}
+.lg-form .cfg-rotulo {
+  font-size: 0.9375rem;
 }
 .conta-cartao .cfg-form {
   max-width: none;
 }
+.conta-cartao .cfg-acoes .cfg-botao {
+  flex: 1 1 auto;
+}
+.conta-cartao .cfg-input {
+  min-height: 2.875rem;
+  border-color: var(--lg-borda);
+  border-radius: 0.625rem;
+  background: var(--lg-campo);
+}
+.conta-cartao .cfg-input:hover {
+  border-color: rgb(150 160 255 / 0.32);
+}
+.conta-cartao .cfg-input:focus-visible {
+  border-color: var(--lg-azul);
+  outline: 2px solid rgb(61 107 255 / 0.35);
+  outline-offset: 1px;
+}
 .conta-titulo {
-  margin: 0 0 6px;
-  font-size: 22px;
+  margin: 0 0 0.375rem;
+  font-size: 1.625rem;
   font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-wrap: balance;
 }
 .conta-sub {
-  margin: 0 0 22px;
+  margin: 0 0 1.75rem;
   color: var(--p-text-sec);
+  text-align: center;
+  text-wrap: pretty;
+}
+
+/* Login: campos com ícone, olho na senha, "Lembrar de mim" e botão em gradiente. */
+.lg-form {
+  gap: 1.125rem;
+}
+.lg-caixa {
+  position: relative;
+  display: block;
+}
+.lg-caixa > .lg-ic {
+  position: absolute;
+  top: 50%;
+  left: 0.875rem;
+  color: var(--p-text-sec);
+  pointer-events: none;
+  translate: 0 -50%;
+}
+.lg-ic {
+  display: grid;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.lg-ic svg {
+  width: 100%;
+  height: 100%;
+}
+.conta-cartao .lg-input {
+  width: 100%;
+  min-height: 3.25rem;
+  padding-left: 2.75rem;
+}
+.lg-caixa:has(.lg-olho) .lg-input {
+  padding-right: 3rem;
+}
+.lg-olho {
+  position: absolute;
+  top: 50%;
+  right: 0.375rem;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.5rem;
+  background: none;
+  color: var(--p-text-sec);
+  cursor: pointer;
+  translate: 0 -50%;
+}
+.lg-olho:hover,
+.lg-olho:focus-visible {
+  background: rgb(255 255 255 / 0.06);
+  color: var(--text-primary);
+}
+.lg-linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+.lg-lembrar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  cursor: pointer;
+}
+.lg-lembrar input {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+  accent-color: var(--lg-azul);
+  cursor: pointer;
+}
+.lg-link {
+  padding: 0.25rem 0;
+  border: 0;
+  background: none;
+  color: var(--lg-link);
+  font: inherit;
+  cursor: pointer;
+}
+.lg-link:hover,
+.lg-link:focus-visible {
+  color: #b9c2ff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.lg-voltar {
+  align-self: center;
+}
+.lg-entrar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  width: 100%;
+  min-height: 3.375rem;
+  margin-top: 0.25rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: linear-gradient(90deg, var(--lg-violeta), var(--lg-azul));
+  box-shadow:
+    0 8px 24px rgb(80 70 255 / 0.35),
+    0 1px 0 rgb(255 255 255 / 0.2) inset;
+  color: #fff;
+  font: inherit;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    filter 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+.lg-entrar:hover {
+  filter: brightness(1.1);
+  box-shadow:
+    0 10px 30px rgb(80 70 255 / 0.5),
+    0 1px 0 rgb(255 255 255 / 0.2) inset;
+}
+.lg-entrar:active {
+  transform: translateY(1px);
+}
+.lg-entrar:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+.lg-entrar[disabled] {
+  cursor: progress;
+  filter: saturate(0.7) brightness(0.9);
+}
+.lg-seta {
+  display: grid;
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: translate 150ms ease;
+}
+.lg-entrar:hover .lg-seta {
+  translate: 3px 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lg-entrar,
+  .lg-seta {
+    transition: none;
+  }
 }

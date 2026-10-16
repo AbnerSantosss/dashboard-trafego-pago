@@ -11,6 +11,7 @@
 import { sql } from 'drizzle-orm';
 import {
   boolean,
+  check,
   date,
   foreignKey,
   index,
@@ -360,6 +361,75 @@ export const attributionTouches = pgTable(
   ],
 ).enableRLS();
 
+/**
+ * Conta de anúncios do Meta ligada à empresa. O gasto diário por campanha é lido da Marketing API
+ * (insights) e gravado em `custos` com `origem = 'meta'`. O token de acesso fica cifrado
+ * (AES-256-GCM, mesma chave de `sources.secret_enc`) e nunca volta para o navegador.
+ */
+export const metaContas = pgTable(
+  'meta_contas',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: tenantId(),
+    /** ID da conta no formato `act_<número>`. */
+    contaId: text('conta_id').notNull(),
+    nome: text('nome').notNull().default(''),
+    /** Moeda da conta no Meta; o painel não converte, só avisa se for diferente da empresa. */
+    moeda: text('moeda'),
+    /** Canal do painel em que o gasto entra (padrão `Meta`). */
+    canal: text('canal').notNull().default('Meta'),
+    tokenEnc: text('token_enc').notNull(),
+    ativo: boolean('ativo').notNull().default(true),
+    ultimaSync: timestamp('ultima_sync', { withTimezone: true }),
+    /** Última falha da sincronização, sem o token. Null depois de uma sincronização bem-sucedida. */
+    ultimoErro: text('ultimo_erro'),
+    createdAt: criadoEm(),
+    updatedAt: atualizadoEm(),
+  },
+  (t) => [
+    unique('meta_contas_tenant_conta_unico').on(t.tenantId, t.contaId),
+    unique('meta_contas_tenant_id_unico').on(t.tenantId, t.id),
+    politicaTenant('meta_contas'),
+  ],
+).enableRLS();
+
+/**
+ * Gasto em anúncios por dia (fuso da empresa), canal e campanha. Entra no `investimento` de
+ * `metrics_daily` junto com os eventos `gasto` dos webhooks (ver `rules/agregar.ts`).
+ * `origem = 'manual'`: lançado na aba Gastos. `origem = 'meta'`: substituído a cada sincronização.
+ */
+export const custos = pgTable(
+  'custos',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: tenantId(),
+    dia: date('dia').notNull(),
+    canal: text('canal').notNull(),
+    /** `''` = sem campanha. */
+    campanha: text('campanha').notNull().default(''),
+    valor: dinheiro('valor').notNull(),
+    origem: text('origem').notNull(),
+    metaContaId: uuid('meta_conta_id'),
+    /** ID da campanha no Meta; `''` nos lançamentos manuais. */
+    refExterna: text('ref_externa').notNull().default(''),
+    descricao: text('descricao'),
+    criadoPor: uuid('criado_por').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: criadoEm(),
+  },
+  (t) => [
+    index('custos_tenant_dia_idx').on(t.tenantId, t.dia),
+    index('custos_meta_conta_idx').on(t.tenantId, t.metaContaId, t.dia),
+    foreignKey({
+      name: 'custos_meta_conta_fk',
+      columns: [t.tenantId, t.metaContaId],
+      foreignColumns: [metaContas.tenantId, metaContas.id],
+    }).onDelete('cascade'),
+    check('custos_origem_valida', sql`${t.origem} in ('manual', 'meta')`),
+    check('custos_valor_nao_negativo', sql`${t.valor} >= 0`),
+    politicaTenant('custos'),
+  ],
+).enableRLS();
+
 // ---------------------------------------------------------------------------
 // Tipos inferidos
 // ---------------------------------------------------------------------------
@@ -384,6 +454,9 @@ export type ToqueAtribuicao = typeof attributionTouches.$inferSelect;
 export type NovaRegra = typeof rules.$inferInsert;
 export type Apresentacao = typeof presentation.$inferSelect;
 export type NovaApresentacao = typeof presentation.$inferInsert;
+export type MetaConta = typeof metaContas.$inferSelect;
+export type Custo = typeof custos.$inferSelect;
+export type NovoCusto = typeof custos.$inferInsert;
 export type Role = (typeof ROLES)[number];
 export type TipoEvento = (typeof TIPOS_EVENTO)[number];
 export type StatusWebhook = (typeof STATUS_WEBHOOK)[number];

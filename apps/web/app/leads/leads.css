@@ -1,0 +1,342 @@
+/*
+ * Tela expandida de leads (/leads). Moldura e escala das Configurações (configuracoes.css); chips,
+ * ícone do canal e ficha vêm da gaveta do funil (gaveta-funil.css). A partir de 900 px a ficha fica
+ * numa coluna ao lado da tabela; abaixo disso cobre a tela pela direita, com véu.
+ * Movimento: só transform e opacity, curva de entrada dos Hyperframes, só sob no-preference.
+ */
+.lp {
+  /* Os chips e o ícone do canal leem estas variáveis, que na gaveta vêm de .gaveta-funil. */
+  --gf-borda: #284660;
+  --gf-linha: #1a3449;
+  --gf-fraco: #8fa3b8;
+  --gf-hover: #0b2840;
+  --gf-entra: cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+.lp-principal {
+  max-width: none;
+}
+.lp-voltar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  margin-bottom: 0.25rem;
+  color: var(--p-text-sec);
+  font-size: var(--cfg-fs-micro);
+  text-decoration: none;
+}
+.lp-voltar:hover {
+  color: var(--text-primary);
+}
+.lp-abas {
+  margin-bottom: 1.25rem;
+}
+
+/* Filtros */
+.lp-filtros {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  align-items: end;
+  gap: 0.875rem 1rem;
+  margin-bottom: 1.5rem;
+}
+.lp-busca {
+  grid-column: span 2;
+}
+.lp-busca-linha {
+  position: relative;
+  display: flex;
+  gap: 0.5rem;
+}
+.lp-busca-linha .cfg-input {
+  flex: 1;
+  min-width: 0;
+  padding-left: 2.25rem;
+}
+.lp-busca-icone {
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  display: inline-flex;
+  width: 1rem;
+  height: 1rem;
+  color: var(--p-filtro-rot);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.lp-busca-icone svg {
+  width: 100%;
+  height: 100%;
+}
+.lp-limpar {
+  justify-self: start;
+}
+.lp input[type='date']::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+  cursor: pointer;
+}
+
+/* Lista e ficha */
+.lp-corpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+.lp-lista {
+  min-width: 0;
+}
+.lp[data-pendente] .lp-lista {
+  opacity: 0.55;
+}
+.lp-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin-bottom: 0.875rem;
+}
+.lp-total {
+  margin: 0;
+  color: var(--p-text-sec);
+}
+.lp-total strong {
+  color: var(--p-filtro-val);
+  font-size: var(--cfg-fs-sub);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.lp-periodo {
+  color: var(--p-funil-leg);
+  font-size: var(--cfg-fs-micro);
+}
+.lp-chips {
+  margin: 0;
+}
+:where(.lp-chips button, .lp-usuario) {
+  margin: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+}
+.lp-chips .gf-chip {
+  height: 2rem;
+  font-size: var(--cfg-fs-micro);
+}
+.lp-chips .gf-canal {
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 0.375rem;
+  background: none !important;
+}
+.lp-chips .gf-canal .gf-icone {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.lp-rolagem {
+  overflow-x: auto;
+  border-radius: var(--cfg-raio);
+}
+.lp-tabela {
+  font-size: var(--cfg-fs-micro);
+}
+.lp-tabela th,
+.lp-tabela td {
+  white-space: nowrap;
+}
+.lp-tabela tbody th {
+  font-weight: 400;
+  color: var(--p-td);
+}
+.lp-tabela tbody tr {
+  cursor: pointer;
+}
+.lp-tabela tbody tr:has(.lp-anonimo) {
+  cursor: default;
+}
+.lp-tabela tbody tr:hover {
+  background: rgb(112 238 254 / 0.04);
+}
+.lp-tabela tbody tr[data-ativo] {
+  background: rgb(112 238 254 / 0.08);
+  box-shadow: inset 2px 0 0 var(--p-nav-ic-ativo);
+}
+.lp-usuario {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  color: var(--p-filtro-val);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.lp-usuario:hover {
+  color: var(--p-nav-ic-ativo);
+}
+.lp-anonimo {
+  color: var(--p-funil-leg);
+}
+.lp-tipo {
+  margin-left: 0.5rem;
+  padding: 0.0625rem 0.4375rem;
+  border: 1px solid var(--gf-borda);
+  border-radius: 999px;
+  color: var(--gf-fraco);
+  font-size: 0.6875rem;
+}
+.lp-tipo[data-tipo='ftd'] {
+  border-color: rgb(112 238 254 / 0.4);
+  color: var(--p-nav-ic-ativo);
+}
+.lp-canal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.lp-canal .gf-canal {
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 0.375rem;
+}
+.lp-canal .gf-canal .gf-icone {
+  width: 0.9375rem;
+  height: 0.9375rem;
+}
+.lp-campanha,
+.lp-utm {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lp-utm,
+.lp-origem,
+.lp-data {
+  color: var(--p-text-sec);
+}
+.lp-num {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  color: var(--p-filtro-val);
+}
+.lp-vazio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px dashed var(--p-card-borda);
+  border-radius: var(--cfg-raio);
+  color: var(--p-text-sec);
+}
+.lp-vazio p {
+  flex: 1 1 18rem;
+  margin: 0;
+  text-wrap: pretty;
+}
+.lp-paginas {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.lp-paginas p {
+  margin: 0 0.5rem 0 0;
+  color: var(--p-text-sec);
+  font-size: var(--cfg-fs-micro);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ficha: herda o visual da gaveta, mas mora no fluxo da página. */
+.gaveta-funil.lp-ficha {
+  z-index: 40;
+  font-size: 0.8125rem;
+}
+.lp-veu {
+  display: none;
+}
+@media (min-width: 900px) {
+  .lp-corpo[data-ficha] {
+    grid-template-columns: minmax(0, 1fr) 25rem;
+  }
+  /* Com a ficha aberta, UTM e origem saem da tabela (continuam na ficha). */
+  .lp-corpo[data-ficha] .lp-opcional {
+    display: none;
+  }
+  .gaveta-funil.lp-ficha {
+    position: sticky;
+    top: 1rem;
+    right: auto;
+    width: auto;
+    height: calc(100vh / var(--cfg-escala, 1) - 2rem);
+    border: 1px solid var(--gf-borda);
+    border-radius: var(--cfg-raio);
+    box-shadow: 0 16px 40px rgb(0 0 0 / 0.35);
+    overflow: hidden;
+  }
+}
+@media (max-width: 899.98px) {
+  .gaveta-funil.lp-ficha {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(100%, 28rem);
+    height: 100vh;
+    height: 100dvh;
+  }
+  .lp-veu {
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    display: block;
+    background: rgb(2 10 20 / 0.6);
+  }
+  .lp-busca {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 47.99em) {
+  .lp-filtros {
+    grid-template-columns: 1fr 1fr;
+  }
+  .lp-paginas {
+    justify-content: space-between;
+  }
+  .lp-tabela tbody th {
+    display: block;
+    padding: 0.25rem 0.875rem;
+    border: 0;
+  }
+  .lp-tabela th,
+  .lp-tabela td {
+    white-space: normal;
+  }
+  .lp-num {
+    text-align: left !important;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lp-lista {
+    transition: opacity 200ms var(--gf-entra);
+  }
+  .lp-tabela tbody tr {
+    animation: lp-linha 280ms var(--gf-entra) both;
+  }
+  .lp-veu {
+    animation: lp-surge 220ms var(--gf-entra) both;
+  }
+}
+@keyframes lp-linha {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes lp-surge {
+  from {
+    opacity: 0;
+  }
+}

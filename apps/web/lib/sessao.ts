@@ -4,8 +4,23 @@
  */
 export const COOKIE_SESSAO = 'sessao';
 export const COOKIE_EMPRESA = 'empresa';
-/** Mesma validade do JWT emitido pela API (12 h). */
+/**
+ * Marca de que este navegador já entrou alguma vez: o login diz "Bem-vindo de volta" em vez de
+ * "Faça seu login". Só um "1", sem dado pessoal; sobrevive ao Sair.
+ */
+export const COOKIE_JA_ENTROU = 'ja_entrou';
+/** Validade padrão do JWT emitido pela API (12 h); com "lembrar de mim" ele vale 30 dias. */
 export const VALIDADE_SESSAO_S = 12 * 60 * 60;
+
+/** Segundos até o `exp` do JWT (sem conferir a assinatura: só define a vida do cookie). */
+export function segundosAteVencer(token: string, agoraMs = Date.now()): number {
+  try {
+    const corpo = JSON.parse(Buffer.from(token.split('.')[1] ?? '', 'base64url').toString('utf8'));
+    return typeof corpo.exp === 'number' ? corpo.exp - Math.floor(agoraMs / 1000) : 0;
+  } catch {
+    return 0;
+  }
+}
 
 export interface SessaoCookie {
   token?: string;
@@ -25,20 +40,36 @@ export async function lerSessaoDoCookie(): Promise<SessaoCookie> {
   }
 }
 
-/** Grava a sessão (só em server action ou route handler). */
+/**
+ * Grava a sessão (só em server action ou route handler). Token de "lembrar de mim" (vence em mais
+ * de 12 h) vira cookie persistente até o vencimento; o normal é cookie de sessão, que some ao
+ * fechar o navegador (e o JWT vence em 12 h de todo jeito).
+ */
 export async function gravarSessao(token: string, empresa: string | undefined): Promise<void> {
   const { cookies } = await import('next/headers');
   const c = await cookies();
+  const restante = segundosAteVencer(token);
   const base = {
     httpOnly: true,
     sameSite: 'lax' as const,
     secure: process.env.NODE_ENV === 'production',
     path: '/',
-    maxAge: VALIDADE_SESSAO_S,
+    ...(restante > VALIDADE_SESSAO_S + 60 ? { maxAge: restante } : {}),
   };
   c.set(COOKIE_SESSAO, token, base);
   if (empresa) c.set(COOKIE_EMPRESA, empresa, base);
   else c.delete(COOKIE_EMPRESA);
+  c.set(COOKIE_JA_ENTROU, '1', { ...base, maxAge: 400 * 24 * 60 * 60 });
+}
+
+/** O navegador já entrou alguma vez (ver `COOKIE_JA_ENTROU`). */
+export async function jaEntrouAntes(): Promise<boolean> {
+  try {
+    const { cookies } = await import('next/headers');
+    return (await cookies()).get(COOKIE_JA_ENTROU)?.value === '1';
+  } catch {
+    return false;
+  }
 }
 
 export async function apagarSessao(): Promise<void> {
