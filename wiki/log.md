@@ -225,3 +225,8 @@ tags: [log, historico]
   - Configurações e Leads sem a ampliação do zoom, com texto menor, folha translúcida atrás do formulário e Perfil em duas colunas;
   - corrigido o vão no topo das abas (`.cfg-sem-margem` perdia na cascata).
 - Entregue: código no disco, sem commit. Nada rola em 1536×826, 1366×657, 1920×945 e 1280×720, exceto as listas longas (Gastos, Leads, Instalação). Web com 71 testes; diff 5,193%.
+
+## [2026-10-16] update | Commit e push do D38
+- Pedido: "faz o commit e o push".
+- Feito: `cf22150` (código) e `dc325ae` (wiki) enviados para `main`. Conferido antes que não sobe chave nem senha real.
+- Entregue: CI verde nos dois jobs (check e visual), run 38905350545.
