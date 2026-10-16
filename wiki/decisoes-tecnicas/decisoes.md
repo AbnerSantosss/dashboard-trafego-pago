@@ -274,3 +274,20 @@ Formato: contexto, decisão, motivo, consequências. Correção vale mais que ac
   - aos 90 s, `pronto`, sem `will-change` e com transform na identidade;
   - `fundo-ondas.test.ts` (3 testes: determinismo, quantidades, pontos dentro da área) e um caso novo em `em-construcao.test.tsx`. Web: 71 testes; tsc, eslint e prettier ok;
   - diff como no CI: **5,198%** (sem mudança).
+
+## D38: telas sem o pequeno scroll, sidebar sem Ajuda e formulários de Configurações menores e em folha (2026-10-16)
+- Contexto: o usuário pediu "precisa de ajuste de UX na tela principal o usuario tem que dar um pequeno scroul e nas telas de confiugração tb e o botão de configurações tem que ficar abaixo de relatoios  e o perfil o usuario mais abaixo de onde estar, remova o botão de ajuda" e, depois, "o formulario de dados pessoais e de outras parte estão com texto mutio grande e precisam de um leve background".
+- Causa do "pequeno scroll":
+  - no painel `/` não havia rolagem de página. Os cards terminam em y 721 e a moldura tinha 710 px (o recorte da `ref-1.png`), então ficavam cortados embaixo;
+  - em Configurações, o `zoom` da moldura (até cerca de 1,33 em telas grandes) ampliava também o conteúdo, e o texto e os campos passavam da altura da janela.
+- Decisão:
+  - **Moldura de 735 px fora da captura** (`tela.css`): `--tela-alt` vale 735 px e só volta a 710 px em `@media (width: 1315px) and (height: 710px)`, que é a janela do diff. `.tela`, `.principal`, `.sidebar`, `.divisor`, o fundo e a gaveta do funil usam a variável; a escala (`--tela-escala`) divide por ela. Os cards fecham com cerca de 14 px de margem e a captura do CI não muda. O `FundoOndas` ganhou `preserveAspectRatio="xMidYMax slice"` para cobrir 735 px com o viewBox de 710.
+  - **Sidebar** (`lib/tela.ts`, `Sidebar.tsx`): sai a Ajuda; Configurações entra logo abaixo de Relatórios (`NAV_Y.configuracoes = 237.5`, passo de 44 px, slot `nav.configuracoes`, calibração extra `Configurações#1` fora do `calibracao.ts` gerado); o rodapé da conta usa `bottom: 16px` e fica colado ao fim da moldura, seja ela de 710 ou de 735 px. A página `/ajuda` (só um "em construção" com link para Configurações) foi apagada, porque o botão era o único caminho até ela. A fixture da referência continua com o item Ajuda, porque descreve a imagem.
+  - **Configurações sem ampliação** (`configuracoes.css`): `.cfg-principal` desfaz o zoom (`zoom: calc(1 / var(--cfg-escala))`) e o conteúdo fica no tamanho natural; a sidebar continua na escala do painel, agora sem o `max(1, …)`, o que também acabou com a rolagem interna dela. Tokens de desktop menores: título 1,375rem, subtítulo 1rem, corpo 0,875rem, alvo 2,5rem; campos com 0,875rem com mouse em tela larga. Leads usa a mesma moldura e herda o contra-zoom (a ficha passou a `calc(100vh - 2rem)`).
+  - **Folha translúcida**: `.cfg-cena` virou uma folha `rgb(5 19 33 / 0.68)` com borda azul fraca, raio de 0,75rem e sombra, na largura do conteúdo (mínimo de 26rem). No celular, ocupa a largura toda com 1rem de respiro.
+  - **Perfil em duas colunas** a partir de 64em (`.cfg-form-perfil`): dados pessoais à esquerda, troca de senha à direita e Salvar embaixo, em colunas de 18rem, para o bloco Acesso caber ao lado já em 1366 px.
+  - **Cascata**: `.cfg-sem-margem` foi para depois de `.cfg-subtitulo`. Antes perdia e deixava um vão de 28 px no topo da folha em Usuários, Gastos, Apresentação, Meta Ads e Tag.
+- Verificação:
+  - rolagem medida no Playwright em 1536×826, 1366×657, 1920×945 e 1280×720: o painel, Perfil, Usuários, Apresentação e Relatórios cabem na janela. Continuam rolando só as listas longas, por conteúdo: Gastos (271 lançamentos no banco local), Leads (862 FTDs) e o passo a passo de Instalação;
+  - web: 71 testes; tsc, eslint e prettier ok (o `pnpm format` local acusa só `.claude/settings.local.json` e `.impeccable/`, fora do git);
+  - diff como no CI: **5,193%** (antes 5,198%).

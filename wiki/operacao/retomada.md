@@ -9,6 +9,7 @@ tags: [retomada, estado-atual, proximos-passos, ci, operacao]
 Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou, o que está pendente e em que ordem. Atualize ao fim de cada sessão de trabalho relevante.
 
 ## Onde paramos (2026-10-16, fim do dia)
+- **D38, sem commit**: painel e Configurações sem o pequeno scroll (moldura de 735 px fora da janela do diff; conteúdo de Configurações e Leads sem a ampliação do zoom), sidebar com Configurações abaixo de Relatórios, conta no fim e sem Ajuda (página `/ajuda` apagada), formulários menores numa folha translúcida e Perfil em duas colunas. Web: 71 testes; diff 5,193%. No commit, a remoção de `apps/web/app/ajuda/page.tsx` já está no índice (`git rm`).
 - **D34 a D37 commitados e no GitHub**: `64c95a4` (código) e `752c4dc` (wiki), CI verde nos dois jobs (run 38895390480). Fora do commit, de propósito: `apps/web/tsconfig.tsbuildinfo` e `.impeccable/` (locais). As notas "sem commit" abaixo ficam como histórico.
 - **D37, sem commit**: fundo de ondas em SVG em Relatórios e Ajuda (GSAP sob demanda, para em cerca de 86 s), medido a 61 quadros por segundo. Arquivos novos: `apps/web/componentes/FundoOndas.tsx`, `apps/web/componentes/fundo-ondas.ts` e `apps/web/testes/fundo-ondas.test.ts`. Web: 71 testes; diff 5,198%. Configurações → Gastos (destino de Gestão de Custos) mantém as engrenagens, por decisão do usuário.
 - **D36, sem commit**: login em vidro com título pela primeira visita (`ja_entrou`), senha em Argon2id, JWT com `sv` e "lembrar de mim" (30 dias), avatar da sidebar levando ao Perfil. Arquivos novos: `apps/api/src/conta/senha.test.ts` e os SVGs `email`, `cadeado`, `olho`, `olho-fechado`, `seguir` de `packages/design/icons/`. Exige Node ≥ 24.7 (o CI usa 24). Os testes `seed.test` e `metricas.test` falham só localmente por causa dos dados de `db:ficticio`; rode `pnpm --filter @trafego/api db:ficticio --remover` antes da suíte completa.
@@ -62,7 +63,7 @@ O workflow `.github/workflows/ci.yml` tem dois jobs, e os dois estão **verdes**
    - Antes, varrer segredos (o repositório é público) e conferir que `.env.local` e `registro/` seguem ignorados.
    - Arquivos novos a incluir: `Confirmar.tsx`, a pasta `instalacao/`, `lib/instalacao.ts` e os testes `em-construcao`, `instalacao` e `painel-acessibilidade`.
 4. **Pequenos ajustes deixados pelos agentes** (sem pressa):
-   - **Link fora da região principal**: em `/ajuda`, o link "Configurações da empresa" fica fora do `<main id="conteudo">`; mover para dentro sem mudar o layout.
+   - ~~**Link fora da região principal** em `/ajuda`~~: resolvido em 2026-10-16, a página saiu (D38).
    - **`pnpm format` falhando localmente**: falha só por `.claude/settings.local.json` e `.impeccable/hook.cache.json`, ambos ignorados pelo git. A saída é acrescentá-los ao `.prettierignore`.
    - **`icons/index.ts` gerado**: `packages/design/icons/index.ts` é gerado. Ou o `gerar-icones.mjs` passa a rodar o prettier no fim, ou o arquivo entra no `.prettierignore`.
    - **Lint de acessibilidade**: o lint não tem `jsx-a11y` nem `@next/eslint-plugin-next`. Adicionar exige dependência nova, que só entra com aval do usuário.

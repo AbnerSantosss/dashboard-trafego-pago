@@ -216,3 +216,12 @@ tags: [log, historico]
 - Pedido: "faz o commit e o push se nao tiver repor pode criar um" (o repositório já existia).
 - Feito: `64c95a4` (código) e `752c4dc` (wiki) enviados para `main`. Conferido antes que não sobe chave nem senha real.
 - Entregue: CI verde nos dois jobs (check e visual), run 38895390480.
+
+## [2026-10-16] update | Telas sem o pequeno scroll, sidebar sem Ajuda e formulários em folha
+- Pedido: "precisa de ajuste de UX na tela principal o usuario tem que dar um pequeno scroul e nas telas de confiugração tb e o botão de configurações tem que ficar abaixo de relatoios  e o perfil o usuario mais abaixo de onde estar, remova o botão de ajuda" e "o formulario de dados pessoais e de outras parte estão com texto mutio grande e precisam de um leve background".
+- Feito (D38 em [[decisoes-tecnicas/decisoes]]):
+  - moldura do painel com 735 px fora da janela do diff, então os cards fecham inteiros;
+  - sidebar: Configurações logo abaixo de Relatórios, conta no fim da coluna, Ajuda removida (botão e página `/ajuda`);
+  - Configurações e Leads sem a ampliação do zoom, com texto menor, folha translúcida atrás do formulário e Perfil em duas colunas;
+  - corrigido o vão no topo das abas (`.cfg-sem-margem` perdia na cascata).
+- Entregue: código no disco, sem commit. Nada rola em 1536×826, 1366×657, 1920×945 e 1280×720, exceto as listas longas (Gastos, Leads, Instalação). Web com 71 testes; diff 5,193%.
