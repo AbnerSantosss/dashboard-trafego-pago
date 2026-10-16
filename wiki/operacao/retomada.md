@@ -9,6 +9,14 @@ tags: [retomada, estado-atual, proximos-passos, ci, operacao]
 Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou, o que está pendente e em que ordem. Atualize ao fim de cada sessão de trabalho relevante.
 
 ## Onde paramos (2026-10-16, fim do dia)
+- **Deploy (P7.2) aprovado pelo usuário ("faça vc") e em andamento** (D39 em [[decisoes-tecnicas/decisoes]], passo a passo em [[operacao/runbooks]], seção Produção):
+  - arquivos novos: `Dockerfile`, `.dockerignore`, `docker-compose.prod.yml`, `deploy/producao.env.example`, `apps/api/src/db/producao.ts`, `segredos-do-servidor.ts` e os testes de ambos;
+  - os segredos são gerados no próprio servidor (serviço `segredos`): ninguém cola senha no Portainer. O backup leva os volumes `pgdata` **e** `segredos`;
+  - mudanças: `/health` sem log por requisição, rate-limit pelo `cf-connecting-ip` (API) com repasse no web (`lib/api.ts`), aviso de tabela vazia abaixo do Total;
+  - stack completa validada localmente (projeto `trafego-prod-teste`, já derrubado com o volume);
+  - ordem: commit e push; criar a stack no Portainer pelo Git; duas rotas no túnel `servidor-abner` (`localhost:3480` e `localhost:3481`); abrir o link de senha do log da API para o usuário digitar a senha;
+  - hostnames sugeridos: `pasio.proxserverabner.site` e `pasio-api.proxserverabner.site` (`painel` já está em uso). O e-mail do admin vai só na variável `ADMIN_EMAIL` da stack;
+  - conferir no servidor se o Portainer CE faz o build no "Pull and redeploy".
 - **D38 no GitHub**: `cf22150` (código) e `dc325ae` (wiki), CI verde nos dois jobs (run 38905350545). painel e Configurações sem o pequeno scroll (moldura de 735 px fora da janela do diff; conteúdo de Configurações e Leads sem a ampliação do zoom), sidebar com Configurações abaixo de Relatórios, conta no fim e sem Ajuda (página `/ajuda` apagada), formulários menores numa folha translúcida e Perfil em duas colunas. Web: 71 testes; diff 5,193%.
 - **D34 a D37 commitados e no GitHub**: `64c95a4` (código) e `752c4dc` (wiki), CI verde nos dois jobs (run 38895390480). Fora do commit, de propósito: `apps/web/tsconfig.tsbuildinfo` e `.impeccable/` (locais). As notas "sem commit" abaixo ficam como histórico.
 - **D37, sem commit**: fundo de ondas em SVG em Relatórios e Ajuda (GSAP sob demanda, para em cerca de 86 s), medido a 61 quadros por segundo. Arquivos novos: `apps/web/componentes/FundoOndas.tsx`, `apps/web/componentes/fundo-ondas.ts` e `apps/web/testes/fundo-ondas.test.ts`. Web: 71 testes; diff 5,198%. Configurações → Gastos (destino de Gestão de Custos) mantém as engrenagens, por decisão do usuário.
@@ -82,7 +90,7 @@ O workflow `.github/workflows/ci.yml` tem dois jobs, e os dois estão **verdes**
 6. **Testar o login real**: em Configurações → Usuários, convidar um e-mail de verdade, aceitar o convite pelo link e entrar. O admin do seed (`admin@pasio.local`) não recebe e-mail; em dev, sem cookie, o painel continua como admin demo (`sessao-dev`).
 7. **Fase 7 — Entrega** (ver `PLANO-DE-ACAO.md`). A aba Instalação é o roteiro de colocar uma empresa no ar.
    - P7.1 wiki essencial (como rodar, cadastrar empresa e webhook, runbook de deploy).
-   - P7.2 deploy: `docker-compose.prod.yml` no Portainer com web, api, postgres e cloudflared; túnel Cloudflare; segredos só nas variáveis do Portainer. Definir `WEBHOOK_URL_PUBLICA` (sem ela a tag GTM só funciona na máquina local) e `WEBHOOK_CHAVE_CIFRA`. **Deploy só com confirmação explícita do usuário.**
+   - P7.2 deploy: arquivos prontos (D39). A stack do Portainer tem web, api e postgres; o cloudflared é o do host. Segredos só nas variáveis da stack; `WEBHOOK_URL_PUBLICA` é a origem pública da API (sem ela a tag GTM só funciona na máquina local). **Deploy só com confirmação explícita do usuário.**
    - P7.3 entrega final e **Gate G4**: o usuário aprova a fidelidade na tela real.
 8. ~~Pendência visual da Fase 5: a tabela de fontes cortava a coluna de ações em larguras estreitas.~~ Resolvida em 2026-10-16: abaixo de 48em, as tabelas das Configurações viram cartões (D23).
 

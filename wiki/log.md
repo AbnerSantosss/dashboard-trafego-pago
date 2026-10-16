@@ -230,3 +230,13 @@ tags: [log, historico]
 - Pedido: "faz o commit e o push".
 - Feito: `cf22150` (código) e `dc325ae` (wiki) enviados para `main`. Conferido antes que não sobe chave nem senha real.
 - Entregue: CI verde nos dois jobs (check e visual), run 38905350545.
+
+## [2026-10-16] update | Deploy preparado: stack do Portainer e túnel Cloudflare (P7.2)
+- Pedido: "porteiner e clauferhttps://portainer.proxserverabner.site/#!/homehttps://dash.cloudflare.com/…/tunnels/…/overview" e o e-mail do admin de produção (fica só na variável `ADMIN_EMAIL` da stack, fora do repositório e da wiki). Depois do plano: "faça vc".
+- Feito (D39 em [[decisoes-tecnicas/decisoes]], runbook em [[operacao/runbooks]]):
+  - levantamento: Portainer CE 2.39.1 (ambiente `local`), túnel `servidor-abner` com cloudflared no host, portas 3480 e 3481 livres, hostname `painel` já em uso;
+  - `Dockerfile` (alvos `api` e `web`, Node 24), `.dockerignore`, `docker-compose.prod.yml` (segredos, db, api, web só em 127.0.0.1) e `deploy/producao.env.example`;
+  - segredos gerados no próprio servidor (serviço `segredos` e `apps/api/src/segredos-do-servidor.ts`): ninguém digita nem vê senha ou chave, e as variáveis da stack ficam só com endereços e o e-mail do admin. O volume `segredos` entra no backup junto com o `pgdata`;
+  - preparo de produção `apps/api/src/db/producao.ts`: migrações, `app_user` com senha, empresa PASIO sem dados de exemplo e admin com link de senha no log;
+  - rate-limit pelo `cf-connecting-ip` (a Tag do GTM e o login não ficam com um limite único para o site inteiro), `/health` sem log por requisição e aviso de tabela vazia abaixo do Total.
+- Entregue: stack de produção validada localmente, primeiro com segredos de teste e depois só com `WEB_URL` e `ADMIN_EMAIL` (login, senha pelo link, painel, cookie seguro, `sessao-dev` 404, segredos mantidos ao recriar). API com 193 testes e web com 72.
