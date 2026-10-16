@@ -99,3 +99,9 @@ tags: [log, historico]
 - Feito: [[operacao/retomada]] (onde paramos, estado do CI, próximos passos em ordem, como subir local, armadilhas) e [[operacao/ambiente-e-seguranca]] (repositório público e sem proteção na `main`, segredos, alvos que pedem confirmação, rotina). Índice com seção "Comece por aqui"; `CLAUDE.md` aponta para a retomada.
 - Achado: no primeiro run do CI novo (`5216d62`) o job check passou e o job visual falhou com `ERR_CONNECTION_REFUSED` em `localhost:3000` (o servidor web não chegou vivo ao passo do comparador no runner Windows). É o primeiro item da retomada.
 - Entregue: wiki atualizada e commitada.
+
+## [2026-10-16] fix | Conserto do job visual do CI (commit local, envio pelo usuário)
+- Pedido: entender a falha do CI e "registre isso na wiki, vou fazer por fora no Claude Code".
+- Feito: em sessão separada, o job visual passou a subir o web e rodar `pnpm qa:visual` no mesmo passo (commit `817bc01`). Enviado para `origin/main`; o run do CI estava em andamento e o resultado fica para o usuário conferir por fora.
+- Conversa sobre escopo: o usuário questionou por que um painel de webhooks virou um projeto grande. Explicado: plano inicial pesado (multiempresa, RLS, fila, regras, diff de pixels, CI) e pedidos novos (usuários, convites, login, tag GTM). Sugestão registrada em [[operacao/retomada]]: priorizar o deploy e parar de acrescentar funcionalidades.
+- Entregue: retomada e log atualizados, commit da wiki local sem push.
