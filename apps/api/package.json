@@ -21,17 +21,19 @@
     "@fastify/sensible": "^6.0.7",
     "@fastify/swagger": "^9.9.2",
     "@fastify/swagger-ui": "^6.1.2",
+    "@trafego/contratos": "workspace:*",
     "@trafego/fixtures": "workspace:*",
     "@trafego/rules": "workspace:*",
     "drizzle-orm": "^0.45.4",
     "fastify": "^5.0.0",
     "fastify-type-provider-zod": "^7.0.0",
+    "nodemailer": "^7.0.13",
     "pg-boss": "^12.38.0",
     "postgres": "^3.4.9",
-    "zod": "^4.6.7",
-    "@trafego/contratos": "workspace:*"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@types/nodemailer": "^8.0.2",
     "drizzle-kit": "^0.31.11",
     "pino-pretty": "^13.2.0",
     "tsx": "^4.19.0",

@@ -88,6 +88,9 @@ export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: text('email').notNull().unique('users_email_unico'),
   nome: text('nome').notNull(),
+  sobrenome: text('sobrenome').notNull().default(''),
+  /** scrypt `s1$<sal>$<hash>` (base64url). Null = ainda não definiu senha (convite ou seed). */
+  senhaHash: text('senha_hash'),
   createdAt: criadoEm(),
   updatedAt: atualizadoEm(),
 });
@@ -299,6 +302,64 @@ export const presentation = pgTable(
   (t) => [unique('presentation_tenant_unico').on(t.tenantId), politicaTenant('presentation')],
 ).enableRLS();
 
+/** Convite de acesso a uma empresa. O token vai por e-mail; aqui só fica o sha256 dele. */
+export const invites = pgTable(
+  'invites',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: tenantId(),
+    email: text('email').notNull(),
+    role: roleEnum('role').notNull().default('leitor'),
+    tokenHash: text('token_hash').notNull(),
+    expiraEm: timestamp('expira_em', { withTimezone: true }).notNull(),
+    aceitoEm: timestamp('aceito_em', { withTimezone: true }),
+    criadoPor: uuid('criado_por').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: criadoEm(),
+  },
+  (t) => [
+    uniqueIndex('invites_token_hash_unico').on(t.tokenHash),
+    index('invites_tenant_email_idx').on(t.tenantId, t.email),
+    politicaTenant('invites'),
+  ],
+).enableRLS();
+
+/**
+ * Toque de atribuição enviado pela tag do GTM (`POST /t/:empresa/clk`): click ids e UTMs do
+ * navegador, ligados ao jogador (`lead_key`) quando o site já sabe quem é.
+ */
+export const attributionTouches = pgTable(
+  'attribution_touches',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: tenantId(),
+    tipo: text('tipo').notNull().default('page_view'),
+    leadKey: text('lead_key'),
+    visitorId: text('visitor_id'),
+    gclid: text('gclid'),
+    gbraid: text('gbraid'),
+    wbraid: text('wbraid'),
+    fbclid: text('fbclid'),
+    fbp: text('fbp'),
+    ttclid: text('ttclid'),
+    ttp: text('ttp'),
+    kwaiClickId: text('kwai_click_id'),
+    tblci: text('tblci'),
+    utmSource: text('utm_source'),
+    utmMedium: text('utm_medium'),
+    utmCampaign: text('utm_campaign'),
+    utmContent: text('utm_content'),
+    utmTerm: text('utm_term'),
+    url: text('url'),
+    referrer: text('referrer'),
+    recebidoEm: timestamp('recebido_em', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('attribution_touches_lead_idx').on(t.tenantId, t.leadKey, t.recebidoEm),
+    index('attribution_touches_visitor_idx').on(t.tenantId, t.visitorId),
+    politicaTenant('attribution_touches'),
+  ],
+).enableRLS();
+
 // ---------------------------------------------------------------------------
 // Tipos inferidos
 // ---------------------------------------------------------------------------
@@ -318,6 +379,8 @@ export type NovoEvento = typeof events.$inferInsert;
 export type MetricaDiaria = typeof metricsDaily.$inferSelect;
 export type NovaMetricaDiaria = typeof metricsDaily.$inferInsert;
 export type Regra = typeof rules.$inferSelect;
+export type Convite = typeof invites.$inferSelect;
+export type ToqueAtribuicao = typeof attributionTouches.$inferSelect;
 export type NovaRegra = typeof rules.$inferInsert;
 export type Apresentacao = typeof presentation.$inferSelect;
 export type NovaApresentacao = typeof presentation.$inferInsert;

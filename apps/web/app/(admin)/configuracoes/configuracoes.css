@@ -201,3 +201,73 @@
   color: #ffd27a;
   font-size: 12.5px;
 }
+
+/* Perfil, Usuários e Tag GTM */
+.cfg-sem-margem {
+  margin-top: 0;
+}
+.cfg-perfil {
+  display: flex;
+  gap: 48px;
+  align-items: flex-start;
+}
+.cfg-bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cfg-subtitulo {
+  margin: 26px 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.cfg-bloco .cfg-subtitulo {
+  margin-top: 0;
+}
+.cfg-lista,
+.cfg-passos {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.7;
+}
+.cfg-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.cfg-grupo legend {
+  margin-bottom: 8px;
+}
+.cfg-input-largo {
+  width: 300px;
+}
+.cfg-etiqueta {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border: 1px solid var(--p-campo-borda);
+  border-radius: 4px;
+  color: var(--p-text-sec);
+  font-size: 11.5px;
+}
+.cfg-tag {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 900px;
+}
+.cfg-codigo {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--p-campo-borda);
+  border-radius: 6px;
+  background: var(--p-campo-bg);
+  color: var(--p-filtro-val);
+  font:
+    12px/1.5 ui-monospace,
+    Consolas,
+    monospace;
+  resize: vertical;
+}

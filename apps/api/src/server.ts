@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import type { PgBoss } from 'pg-boss';
 import { buildApp } from './app.js';
 import { carregarEnv, ErroEnv } from './env.js';
@@ -8,6 +9,8 @@ import { criarBoss, filaPgBoss } from './webhooks/fila.js';
 import { criarWorker } from './webhooks/worker.js';
 
 async function iniciar(): Promise<void> {
+  // Segredos locais (SMTP etc.) ficam em apps/api/.env.local, fora do git. Em produção, variáveis do Portainer.
+  if (existsSync('.env.local')) process.loadEnvFile('.env.local');
   let env;
   try {
     env = carregarEnv(process.env);

@@ -1,6 +1,6 @@
 ---
 tipo: especificacao
-atualizado: 2026-10-15
+atualizado: 2026-10-16
 tags: [multiempresa, tenant, configuracao, apresentacao, logo, pasio]
 ---
 
@@ -50,3 +50,12 @@ Telas em `apps/web/app/(admin)/configuracoes/` (abas Apresentação e Webhooks, 
 - `GET`/`POST /empresas/atual/fontes`, `PATCH /empresas/atual/fontes/:id` (nome, ativo), `POST /empresas/atual/fontes/:id/segredo` (rotação). O segredo aparece uma vez na resposta e na tela, com botão copiar.
 - Ficaram fora (D15): regras, KPIs/colunas/canais/paleta, usuários e convites. Papéis continuam via seed/SQL.
 - Armadilha: trocar `WEBHOOK_CHAVE_CIFRA` exige rotacionar todas as fontes (D18).
+
+## Perfil, usuários e tag GTM (2026-10-16)
+Abas atuais em `/configuracoes`: Perfil, Usuários, Tag GTM, Webhooks, Apresentação.
+- **Perfil**: nome, sobrenome, troca de senha (exige a atual) e lista de empresas e papéis; botão Sair.
+- **Usuários** (só admin): convidar por e-mail com papel (leitor só acompanha, analista, admin); mudar papel, remover membro, cancelar convite. Ninguém muda o próprio acesso. O convite mostra o link para copiar além do e-mail.
+- **Tag GTM**: código para HTML personalizado com acionador All Pages; envia para `POST /t/{empresa}/clk`. Ver D21.
+- **Webhooks**: a plataforma manda cadastro, FTD e depósito (redepósito também é `deposito`) com o mesmo `user_id` do dataLayer.
+- Contas: telas `/login`, `/redefinir` e `/convite` em `apps/web/app/(conta)/`; cookie de sessão e middleware em D20.
+- Armadilha: o admin do seed (`admin@pasio.local`) não recebe e-mail; para testar o login real, convide um e-mail de verdade.

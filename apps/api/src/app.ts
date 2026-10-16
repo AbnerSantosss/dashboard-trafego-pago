@@ -16,6 +16,10 @@ import {
 import { carregarEnv, chaveCifraWebhook, type Env } from './env.js';
 import { rotasApresentacao } from './admin/apresentacao.js';
 import { rotasFontes } from './admin/fontes.js';
+import { rotasAtribuicao, type OpcoesAtribuicao } from './atribuicao/rotas.js';
+import { criarEnviadorEmail, type EnviadorEmail } from './conta/email.js';
+import { rotasConta } from './conta/rotas.js';
+import { rotasUsuarios } from './conta/usuarios.js';
 import { registrarTratamentoDeErros } from './erros.js';
 import { rotasHealth } from './rotas/health.js';
 import { rotasAuth, rotasSessaoDev } from './rotas/auth.js';
@@ -57,6 +61,10 @@ export interface OpcoesApp {
   destinoLog?: { write(msg: string): void };
   /** Db já criado (testes). Se omitido, a API cria um a partir de DATABASE_URL e o fecha no onClose. */
   db?: Db;
+  /** Envio de e-mail (testes injetam um falso). Default: SMTP_* do ambiente. */
+  email?: EnviadorEmail;
+  /** Tag de atribuição do GTM (testes zeram o atraso da agregação). */
+  atribuicao?: OpcoesAtribuicao;
   /** Requisições por minuto por IP (default 300). */
   limiteTaxa?: number;
   /** Ingestão de webhooks. Sem `fila`, usa uma fila em memória (testes; avisa fora de test). */
@@ -161,6 +169,12 @@ export async function buildApp(opcoes: OpcoesApp = {}) {
   // Login sem senha só fora de produção (temporário até o Auth.js, Fase 5).
   if (env.NODE_ENV !== 'production') await app.register(rotasSessaoDev);
   await app.register(rotasMetricas);
+
+  // Conta (login por senha, perfil, convites) e usuários da empresa.
+  const email = opcoes.email ?? criarEnviadorEmail(process.env, app.log);
+  await app.register(rotasConta, { email, webUrl: env.WEB_URL, segredo: env.AUTH_SECRET });
+  await app.register(rotasUsuarios, { email, webUrl: env.WEB_URL });
+  await app.register(rotasAtribuicao, opcoes.atribuicao ?? {});
 
   const configWebhooks = lerConfigWebhooks(process.env);
   const opcoesWh = opcoes.webhooks ?? {};

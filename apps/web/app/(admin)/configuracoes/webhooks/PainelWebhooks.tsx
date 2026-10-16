@@ -44,6 +44,12 @@ export function PainelWebhooks({ fontes }: { fontes: Fonte[] }) {
       )}
       {estado.ok && estado.segredo && <SegredoUmaVez segredo={estado.segredo} slug={estado.slug} />}
 
+      <p className="cfg-dica">
+        A plataforma envia para o endereço da fonte os eventos de <strong>cadastro</strong>,{' '}
+        <strong>FTD</strong> e <strong>depósito</strong> (redepósito também é depósito), assinados
+        com o segredo. Mande o mesmo <code>user_id</code> que o site coloca no dataLayer: assim o
+        painel cruza o evento com a campanha captada pela aba Tag GTM.
+      </p>
       <table className="cfg-tabela">
         <thead>
           <tr>

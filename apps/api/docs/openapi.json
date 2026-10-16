@@ -176,12 +176,16 @@
                         },
                         "nome": {
                           "type": "string"
+                        },
+                        "sobrenome": {
+                          "type": "string"
                         }
                       },
                       "required": [
                         "id",
                         "email",
-                        "nome"
+                        "nome",
+                        "sobrenome"
                       ],
                       "additionalProperties": false
                     },
@@ -238,6 +242,248 @@
             }
           },
           "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Atualiza nome, sobrenome e/ou senha do próprio usuário",
+        "tags": [
+          "conta"
+        ],
+        "description": "Para trocar a senha, envie `senhaAtual` e `novaSenha`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nome": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "sobrenome": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "senhaAtual": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "novaSenha": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 200
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "usuario": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "sobrenome": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "email",
+                        "nome",
+                        "sobrenome"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "usuario"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "429": {
             "description": "Formato único de erro da API",
             "content": {
               "application/json": {
@@ -1437,6 +1683,2858 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Login por e-mail e senha",
+        "tags": [
+          "conta"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "maxLength": 320
+                  },
+                  "senha": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "email",
+                  "senha"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "JWT de 12 h com a claim tenant da primeira empresa"
+                    },
+                    "usuario": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "sobrenome": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "email",
+                        "nome",
+                        "sobrenome"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "empresas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "papel": {
+                            "type": "string",
+                            "enum": [
+                              "admin",
+                              "analista",
+                              "leitor"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "slug",
+                          "nome",
+                          "papel"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "token",
+                    "usuario",
+                    "empresas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/recuperar": {
+      "post": {
+        "summary": "Envia por e-mail um link para definir ou redefinir a senha",
+        "tags": [
+          "conta"
+        ],
+        "description": "Responde 204 sempre, exista ou não o e-mail (não revela cadastros).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "maxLength": 320
+                  }
+                },
+                "required": [
+                  "email"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/redefinir": {
+      "post": {
+        "summary": "Define a senha a partir do link enviado por e-mail",
+        "tags": [
+          "conta"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "senha": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "token",
+                  "senha"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "JWT de 12 h com a claim tenant da primeira empresa"
+                    },
+                    "usuario": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "sobrenome": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "email",
+                        "nome",
+                        "sobrenome"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "empresas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "papel": {
+                            "type": "string",
+                            "enum": [
+                              "admin",
+                              "analista",
+                              "leitor"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "slug",
+                          "nome",
+                          "papel"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "token",
+                    "usuario",
+                    "empresas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/convites/{token}": {
+      "get": {
+        "summary": "Dados do convite (público, pelo token do e-mail)",
+        "tags": [
+          "conta"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 10,
+              "maxLength": 200
+            },
+            "in": "path",
+            "name": "token",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "empresa": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "papel": {
+                      "type": "string",
+                      "enum": [
+                        "admin",
+                        "analista",
+                        "leitor"
+                      ]
+                    },
+                    "jaTemSenha": {
+                      "type": "boolean",
+                      "description": "O e-mail já tem conta com senha: o aceite pede essa senha"
+                    }
+                  },
+                  "required": [
+                    "empresa",
+                    "email",
+                    "papel",
+                    "jaTemSenha"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/convites/{token}/aceitar": {
+      "post": {
+        "summary": "Aceita o convite: cria a conta (ou confere a senha) e entra na empresa",
+        "tags": [
+          "conta"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nome": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "sobrenome": {
+                    "default": "",
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "senha": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "nome",
+                  "senha"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 10,
+              "maxLength": 200
+            },
+            "in": "path",
+            "name": "token",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "JWT de 12 h com a claim tenant da primeira empresa"
+                    },
+                    "usuario": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "sobrenome": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "email",
+                        "nome",
+                        "sobrenome"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "empresas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "papel": {
+                            "type": "string",
+                            "enum": [
+                              "admin",
+                              "analista",
+                              "leitor"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "slug",
+                          "nome",
+                          "papel"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "token",
+                    "usuario",
+                    "empresas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/empresas/atual/usuarios": {
+      "get": {
+        "summary": "Membros e convites pendentes da empresa ativa",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "header",
+            "name": "x-tenant",
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "membros": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                            "description": "id do usuário"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "sobrenome": {
+                            "type": "string"
+                          },
+                          "papel": {
+                            "type": "string",
+                            "enum": [
+                              "admin",
+                              "analista",
+                              "leitor"
+                            ]
+                          },
+                          "desde": {
+                            "type": "string"
+                          },
+                          "temSenha": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "email",
+                          "nome",
+                          "sobrenome",
+                          "papel",
+                          "desde",
+                          "temSenha"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "convites": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "papel": {
+                            "type": "string",
+                            "enum": [
+                              "admin",
+                              "analista",
+                              "leitor"
+                            ]
+                          },
+                          "expiraEm": {
+                            "type": "string"
+                          },
+                          "criadoEm": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "email",
+                          "papel",
+                          "expiraEm",
+                          "criadoEm"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "membros",
+                    "convites"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/empresas/atual/convites": {
+      "post": {
+        "summary": "Convida um e-mail para a empresa ativa",
+        "tags": [
+          "admin"
+        ],
+        "description": "Cria o convite (7 dias) e envia o link por e-mail. O link também volta na resposta, para o admin copiar se o e-mail não chegar. Um novo convite substitui o pendente.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "papel": {
+                    "default": "leitor",
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "analista",
+                      "leitor"
+                    ]
+                  }
+                },
+                "required": [
+                  "email"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "header",
+            "name": "x-tenant",
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "convite": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "papel": {
+                          "type": "string",
+                          "enum": [
+                            "admin",
+                            "analista",
+                            "leitor"
+                          ]
+                        },
+                        "expiraEm": {
+                          "type": "string"
+                        },
+                        "criadoEm": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "email",
+                        "papel",
+                        "expiraEm",
+                        "criadoEm"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "link": {
+                      "type": "string"
+                    },
+                    "emailEnviado": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "convite",
+                    "link",
+                    "emailEnviado"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/empresas/atual/convites/{id}": {
+      "delete": {
+        "summary": "Cancela um convite pendente",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "header",
+            "name": "x-tenant",
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/empresas/atual/usuarios/{id}": {
+      "patch": {
+        "summary": "Muda o papel de um membro",
+        "tags": [
+          "admin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "papel": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "analista",
+                      "leitor"
+                    ]
+                  }
+                },
+                "required": [
+                  "papel"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "header",
+            "name": "x-tenant",
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove um membro da empresa (a conta continua existindo)",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "header",
+            "name": "x-tenant",
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/t/{empresa}/clk": {
+      "post": {
+        "summary": "Recebe um toque da tag de atribuição do GTM (público)",
+        "tags": [
+          "atribuicao"
+        ],
+        "description": "Corpo JSON enviado como text/plain (sendBeacon). Campos: tipo, cv, user_id, visitor_id, click ids (gclid, gbraid, wbraid, fbclid, fbp, ttclid, ttp, clickid, tblci), utm_*, url, referrer. Responde 204.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tipo": {
+                    "default": "page_view",
+                    "type": "string",
+                    "enum": [
+                      "page_view",
+                      "lead",
+                      "evento"
+                    ]
+                  },
+                  "cv": {
+                    "type": "number"
+                  },
+                  "user_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "visitor_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "gclid": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "gbraid": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "wbraid": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "fbclid": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "fbp": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "ttclid": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "ttp": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "clickid": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "tblci": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "utm_source": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "utm_medium": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "utm_campaign": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "utm_content": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "utm_term": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "url": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "referrer": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "in": "path",
+            "name": "empresa",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "nullable": true,
+                  "enum": [
+                    null
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Formato único de erro da API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "erro": {
+                      "type": "object",
+                      "properties": {
+                        "codigo": {
+                          "type": "string",
+                          "example": "nao_encontrado"
+                        },
+                        "mensagem": {
+                          "type": "string"
+                        },
+                        "detalhes": {},
+                        "requestId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "codigo",
+                        "mensagem",
+                        "requestId"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "erro"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Formato único de erro da API"
+                }
+              }
+            }
+          }
+        }
+      },
+      "options": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "empresa",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
           }
         }
       }

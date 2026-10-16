@@ -27,6 +27,7 @@ import {
   type NovoEvento,
   type Tx,
 } from '../db/client.js';
+import { enriquecerComToques } from '../atribuicao/toques.js';
 import { agregarIncremental } from './agregar.js';
 
 export interface ResultadoProcessamento {
@@ -174,6 +175,14 @@ export async function processarLote(
       resultados.set(we.id, { status: 'erro', eventos: 0, motivo: e.message });
     }
   }
+
+  // Cruza com os toques da tag do GTM: eventos sem utm/campanha herdam a atribuição do lead.
+  await enriquecerComToques(
+    tx,
+    tenantId,
+    linhas,
+    (await ctxDe(brutos[0]!.sourceId)).conjunto?.canais,
+  );
 
   for (let i = 0; i < linhas.length; i += BLOCO_INSERT) {
     await tx.insert(events).values(linhas.slice(i, i + BLOCO_INSERT));

@@ -3,8 +3,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const ABAS = [
-  { href: '/configuracoes/apresentacao', rotulo: 'Apresentação' },
+  { href: '/configuracoes/perfil', rotulo: 'Perfil' },
+  { href: '/configuracoes/usuarios', rotulo: 'Usuários' },
+  { href: '/configuracoes/tag', rotulo: 'Tag GTM' },
   { href: '/configuracoes/webhooks', rotulo: 'Webhooks' },
+  { href: '/configuracoes/apresentacao', rotulo: 'Apresentação' },
 ];
 
 export function Abas() {

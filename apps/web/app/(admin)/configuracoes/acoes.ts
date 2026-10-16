@@ -4,7 +4,7 @@
  * API nem vê o token. O segredo de webhook volta apenas no estado desta resposta (não é logado,
  * não vai para URL nem para armazenamento persistente).
  */
-import type { ApresentacaoPatch } from '@trafego/contratos';
+import type { ApresentacaoPatch, MePatch, Papel } from '@trafego/contratos';
 import { revalidatePath } from 'next/cache';
 import { api } from '@/lib/api';
 import {
@@ -99,4 +99,85 @@ export async function acaoWebhook(_anterior: EstadoAcao, fd: FormData): Promise<
   }
 
   return { ok: false, mensagem: 'Ação desconhecida.' };
+}
+
+/** Perfil: nome e sobrenome; troca a senha só se `novaSenha` vier preenchida. */
+export async function salvarPerfil(_anterior: EstadoAcao, fd: FormData): Promise<EstadoAcao> {
+  const nome = texto(fd, 'nome').trim();
+  if (!nome) return { ok: false, mensagem: 'Informe o nome.' };
+  const corpo: MePatch = { nome, sobrenome: texto(fd, 'sobrenome').trim() };
+  const novaSenha = texto(fd, 'novaSenha');
+  if (novaSenha) {
+    if (novaSenha.length < 8)
+      return { ok: false, mensagem: 'A nova senha precisa de 8 caracteres.' };
+    if (novaSenha !== texto(fd, 'confirmacao'))
+      return { ok: false, mensagem: 'As duas senhas não são iguais.' };
+    corpo.novaSenha = novaSenha;
+    corpo.senhaAtual = texto(fd, 'senhaAtual');
+  }
+  const r = await api().atualizarMe(corpo);
+  if (!r.ok) {
+    return {
+      ok: false,
+      mensagem:
+        r.status === 403
+          ? 'A senha atual está incorreta.'
+          : `Não foi possível salvar. ${r.mensagem}`,
+    };
+  }
+  revalidatePath('/configuracoes/perfil');
+  return { ok: true, mensagem: novaSenha ? 'Perfil e senha salvos.' : 'Perfil salvo.' };
+}
+
+const PAPEIS: readonly Papel[] = ['admin', 'analista', 'leitor'];
+const papelDe = (v: string): Papel =>
+  (PAPEIS as readonly string[]).includes(v) ? (v as Papel) : 'leitor';
+
+/** Usuários (admin): `convidar` (email, papel), `cancelar` (id), `papel` (id, papel), `remover` (id). */
+export async function acaoUsuarios(_anterior: EstadoAcao, fd: FormData): Promise<EstadoAcao> {
+  const intencao = texto(fd, 'intencao');
+  const id = texto(fd, 'id');
+  const falha = (r: { mensagem: string; codigo?: string; status?: number }): EstadoAcao => ({
+    ok: false,
+    mensagem:
+      r.status === 409
+        ? 'Este e-mail já faz parte da empresa.'
+        : r.mensagem.includes('próprio acesso')
+          ? 'Você não pode mudar o próprio acesso.'
+          : mensagemErroApi(r),
+  });
+
+  if (intencao === 'convidar') {
+    const email = texto(fd, 'email').trim();
+    if (!email) return { ok: false, mensagem: 'Informe o e-mail.' };
+    const r = await api().convidar(email, papelDe(texto(fd, 'papel')));
+    if (!r.ok) return falha(r);
+    revalidatePath('/configuracoes/usuarios');
+    return {
+      ok: true,
+      mensagem: r.dados.emailEnviado
+        ? `Convite enviado para ${r.dados.convite.email}.`
+        : `Convite criado, mas o e-mail não foi enviado. Mande o link abaixo para ${r.dados.convite.email}.`,
+      link: r.dados.link,
+      emailEnviado: r.dados.emailEnviado,
+    };
+  }
+  if (!id) return { ok: false, mensagem: 'Item não informado.' };
+  const r =
+    intencao === 'cancelar'
+      ? await api().cancelarConvite(id)
+      : intencao === 'papel'
+        ? await api().mudarPapel(id, papelDe(texto(fd, 'papel')))
+        : intencao === 'remover'
+          ? await api().removerMembro(id)
+          : null;
+  if (!r) return { ok: false, mensagem: 'Ação desconhecida.' };
+  if (!r.ok) return falha(r);
+  revalidatePath('/configuracoes/usuarios');
+  const feito = {
+    cancelar: 'Convite cancelado.',
+    papel: 'Papel alterado.',
+    remover: 'Membro removido.',
+  };
+  return { ok: true, mensagem: feito[intencao as keyof typeof feito] };
 }

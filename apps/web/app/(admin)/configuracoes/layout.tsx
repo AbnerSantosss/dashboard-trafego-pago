@@ -15,13 +15,13 @@ export default async function LayoutConfiguracoes({ children }: { children: Reac
   return (
     <div className="tela">
       <Sidebar
-        ativo=""
+        ativo="configuracoes"
         {...(logo !== undefined ? { logoUrl: logo } : {})}
         {...(a?.nomeExibicao ? { nomeEmpresa: a.nomeExibicao } : {})}
       />
       <div className="divisor" />
       <main className="cfg-principal">
-        <h1 className="cfg-titulo">Configurações da empresa</h1>
+        <h1 className="cfg-titulo">Configurações</h1>
         <Abas />
         <section className="cfg-conteudo">{children}</section>
       </main>

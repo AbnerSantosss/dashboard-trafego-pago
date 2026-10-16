@@ -80,3 +80,16 @@ tags: [log, historico]
 - Verificação: `pnpm check` verde (API 141 testes, web 20, gráficos 10); telas conferidas no navegador ligadas à API real.
 - Pendência visual menor: na largura do painel do navegador a tabela de fontes corta a coluna de ações (sem rolagem horizontal); revisar na Fase 6 se incomodar.
 - Entregue: commit da Fase 5. Próximo: Fase 6 enxuta (CI com `pnpm check` + diff visual, e2e de isolamento, gate G3).
+
+## [2026-10-15] update | Fase 6 enxuta: CI e e2e de isolamento (G3)
+- Pedido: "Sim, siga para a Fase 6 enxuta."
+- Feito: `.github/workflows/ci.yml` (`pnpm check` + diff visual com mock da API, limite 5,5%, D19) e `apps/api/src/e2e/g3.test.ts`. Item Configurações na sidebar, acima da Ajuda, com ícone Tabler gerado por `gerar-icones.mjs`.
+- Entregue: arquivos no disco, ainda sem commit.
+
+## [2026-10-16] update | Configurações: perfil, usuários e convites, login, tag GTM e cruzamento com o webhook
+- Pedido: aba de Configurações com informações do usuário (nome e sobrenome), admin que convida outros usuários para acompanhar, tag automática para o GTM captar atribuição (UTMs e click ids) e cruzá-la com o webhook da plataforma (cadastro, FTD, depósito, redepósito). Depois: usar um Gmail como provedor de e-mail temporário.
+- Feito (API): migração 0005 (nome/sobrenome, senha, convites, toques de atribuição), rotas de conta (`/auth/login`, `/auth/recuperar`, `/auth/redefinir`, `GET/PATCH /me`), convites e membros (`/empresas/atual/usuarios|convites`, `/convites/:token`), coleta pública `POST /t/:empresa/clk` e herança do último toque no processamento (D20, D21). E-mail por SMTP lido de `apps/api/.env.local`, fora do git. 152 testes.
+- Feito (web): abas Perfil, Usuários e Tag GTM; telas `/login`, `/redefinir`, `/convite`; sessão em cookie e `middleware.ts`; contratos em `packages/contratos/src/conta.ts`; teste da tag rodando o script num navegador falso (23 testes no web). `.env.example` com `SMTP_*`, `WEBHOOK_URL_PUBLICA` e `WEB_EXIGIR_LOGIN`, sem valores.
+- Verificação: tsc, eslint e prettier limpos; telas conferidas no navegador com a API real; a tag respondeu 204. Convite não foi disparado no teste para não mandar e-mail real.
+- Armadilha: `TaskStop` no shell da API deixa o `tsx` órfão segurando a porta 3011; é preciso encerrar o processo node.
+- Entregue: código no disco, sem commit. Pendente: definir `WEBHOOK_URL_PUBLICA` em produção e trocar a senha de app do Gmail usada no teste.

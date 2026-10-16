@@ -36,6 +36,13 @@
       "when": 1792118269181,
       "tag": "0004_sources_secret_enc",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792120107404,
+      "tag": "0005_usuarios_convites_atribuicao",
+      "breakpoints": true
     }
   ]
 }

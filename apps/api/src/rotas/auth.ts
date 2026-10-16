@@ -13,7 +13,12 @@ const schemaEmpresa = z.object({
 });
 
 export const schemaMe = z.object({
-  usuario: z.object({ id: z.uuid(), email: z.string(), nome: z.string() }),
+  usuario: z.object({
+    id: z.uuid(),
+    email: z.string(),
+    nome: z.string(),
+    sobrenome: z.string(),
+  }),
   empresas: z.array(schemaEmpresa),
   empresaAtiva: z.uuid().nullable().describe('Claim tenant do token, se houver'),
 });
@@ -46,7 +51,7 @@ export const rotasAuth: FastifyPluginAsyncZod = async (app) => {
     async (request) => {
       const { id } = request.usuario!;
       const [linha] = await app.db
-        .select({ id: users.id, email: users.email, nome: users.nome })
+        .select({ id: users.id, email: users.email, nome: users.nome, sobrenome: users.sobrenome })
         .from(users)
         .where(eq(users.id, id))
         .limit(1);

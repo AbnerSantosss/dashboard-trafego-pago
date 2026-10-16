@@ -1,0 +1,29 @@
+/* Telas públicas de conta: cartão no centro, mesmos tokens e controles das Configurações. */
+.conta-fundo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--p-bg-main);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+.conta-cartao {
+  width: 420px;
+  padding: 32px 36px;
+  border: 1px solid var(--p-card-borda);
+  border-radius: 12px;
+  background: var(--p-card-bg);
+}
+.conta-cartao .cfg-form {
+  max-width: none;
+}
+.conta-titulo {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 600;
+}
+.conta-sub {
+  margin: 0 0 22px;
+  color: var(--p-text-sec);
+}

@@ -25,6 +25,9 @@ export interface EstadoAcao {
   segredo?: string;
   /** Fonte a que o segredo pertence. */
   slug?: string;
+  /** Só no convite: link de aceite, para copiar se o e-mail não chegar. */
+  link?: string;
+  emailEnviado?: boolean;
 }
 
 export const ESTADO_INICIAL: EstadoAcao = { ok: true, mensagem: '' };

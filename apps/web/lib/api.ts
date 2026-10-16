@@ -7,11 +7,22 @@
  * 2. Fallback, se a rota não existir (404): o próprio servidor assina um JWT HS256 com `AUTH_SECRET`
  *    e claims `sub` = `WEB_USUARIO_ID`, `email` = `WEB_USUARIO_EMAIL` (exige `WEB_USUARIO_ID`).
  * O token fica em memória até 60 s antes de expirar. Toda chamada leva `Authorization: Bearer` e
- * `x-tenant: WEB_EMPRESA`. Com `WEB_MOCK_API=1`, devolve dados montados da fixture (só testes visuais).
+ * `x-tenant: WEB_EMPRESA`.
+ *
+ * Sessão real: quando o navegador tem o cookie httpOnly `sessao` (login, convite ou redefinição),
+ * esse token e o cookie `empresa` valem para a requisição e o caminho provisório acima não é usado. Com `WEB_MOCK_API=1`, devolve dados montados da fixture (só testes visuais).
  */
 import type {
   ApresentacaoPatch,
   ApresentacaoResposta,
+  ConviteCriado,
+  ConvitePublico,
+  MePatch,
+  MeResposta,
+  Papel,
+  Sessao,
+  UsuarioConta,
+  UsuariosResposta,
   FonteAtualizar,
   FonteComSegredo,
   FonteCriar,
@@ -22,6 +33,7 @@ import type {
 } from '@trafego/contratos';
 import { decodeJwt, SignJWT } from 'jose';
 import { adminMock, visaoGeralMock } from './mock';
+import { lerSessaoDoCookie, type SessaoCookie } from './sessao';
 
 export interface ConfigApi {
   apiUrl: string;
@@ -56,9 +68,10 @@ type Fetch = typeof fetch;
 
 export function criarClienteApi(
   config: ConfigApi,
-  deps: { fetch?: Fetch; agora?: () => number } = {},
+  deps: { fetch?: Fetch; agora?: () => number; sessao?: () => Promise<SessaoCookie> } = {},
 ) {
   const f = deps.fetch ?? fetch;
+  const lerSessao = deps.sessao ?? lerSessaoDoCookie;
   const agora = deps.agora ?? Date.now;
   let cache: { token: string; expiraEm: number } | null = null;
 
@@ -112,11 +125,12 @@ export function criarClienteApi(
     corpo?: unknown,
   ): Promise<Resultado<T>> {
     try {
+      const sessao = await lerSessao();
       for (let tentativa = 0; tentativa < 2; tentativa++) {
-        const token = await obterToken();
+        const token = sessao.token ?? (await obterToken());
         const headers: Record<string, string> = {
           authorization: `Bearer ${token}`,
-          'x-tenant': config.empresa,
+          'x-tenant': sessao.empresa ?? config.empresa,
         };
         if (corpo !== undefined) headers['content-type'] = 'application/json';
         const r = await f(`${config.apiUrl}${caminho}`, {
@@ -126,11 +140,12 @@ export function criarClienteApi(
           cache: 'no-store',
           signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
         });
-        if (r.status === 401 && tentativa === 0) {
+        if (r.status === 401 && tentativa === 0 && !sessao.token) {
           cache = null; // token recusado: pede outro uma vez
           continue;
         }
         if (!r.ok) return { ok: false, status: r.status, ...(await lerErro(r)) };
+        if (r.status === 204) return { ok: true, dados: null as T };
         return { ok: true, dados: (await r.json()) as T };
       }
       return { ok: false, mensagem: 'Sessão recusada pela API.', status: 401 };
@@ -143,6 +158,36 @@ export function criarClienteApi(
   function get<T>(caminho: string): Promise<Resultado<T>> {
     return chamar<T>('GET', caminho);
   }
+
+  /** Rotas sem login (entrar, recuperar, convite): sem token nem empresa. */
+  async function publico<T>(
+    metodo: string,
+    caminho: string,
+    corpo?: unknown,
+  ): Promise<Resultado<T>> {
+    try {
+      const r = await f(`${config.apiUrl}${caminho}`, {
+        method: metodo,
+        ...(corpo !== undefined
+          ? { headers: { 'content-type': 'application/json' }, body: JSON.stringify(corpo) }
+          : {}),
+        cache: 'no-store',
+        signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
+      });
+      if (!r.ok) return { ok: false, status: r.status, ...(await lerErro(r)) };
+      const texto = await r.text();
+      return { ok: true, dados: (texto ? JSON.parse(texto) : null) as T };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return { ok: false, mensagem: `API indisponível: ${msg}` };
+    }
+  }
+
+  const semMock = <T>(): Resultado<T> => ({
+    ok: false,
+    mensagem: 'Indisponível com WEB_MOCK_API=1.',
+  });
+  const id = (v: string) => encodeURIComponent(v);
 
   return {
     obterToken,
@@ -182,6 +227,37 @@ export function criarClienteApi(
         {},
       );
     },
+    // --- Conta e usuários (contrato em packages/contratos/src/conta.ts) ---
+    entrar: (email: string, senha: string) =>
+      publico<Sessao>('POST', '/auth/login', { email, senha }),
+    recuperar: (email: string) => publico<null>('POST', '/auth/recuperar', { email }),
+    redefinir: (token: string, senha: string) =>
+      publico<Sessao>('POST', '/auth/redefinir', { token, senha }),
+    convite: (token: string) => publico<ConvitePublico>('GET', `/convites/${id(token)}`),
+    aceitarConvite: (token: string, p: { nome: string; sobrenome: string; senha: string }) =>
+      publico<Sessao>('POST', `/convites/${id(token)}/aceitar`, p),
+    async me(): Promise<Resultado<MeResposta>> {
+      if (config.mock) return semMock();
+      return get<MeResposta>('/me');
+    },
+    async atualizarMe(p: MePatch): Promise<Resultado<{ usuario: UsuarioConta }>> {
+      if (config.mock) return semMock();
+      return chamar<{ usuario: UsuarioConta }>('PATCH', '/me', p);
+    },
+    async usuarios(): Promise<Resultado<UsuariosResposta>> {
+      if (config.mock) return semMock();
+      return get<UsuariosResposta>('/empresas/atual/usuarios');
+    },
+    async convidar(email: string, papel: Papel): Promise<Resultado<ConviteCriado>> {
+      if (config.mock) return semMock();
+      return chamar<ConviteCriado>('POST', '/empresas/atual/convites', { email, papel });
+    },
+    cancelarConvite: (conviteId: string) =>
+      chamar<null>('DELETE', `/empresas/atual/convites/${id(conviteId)}`),
+    mudarPapel: (usuarioId: string, papel: Papel) =>
+      chamar<null>('PATCH', `/empresas/atual/usuarios/${id(usuarioId)}`, { papel }),
+    removerMembro: (usuarioId: string) =>
+      chamar<null>('DELETE', `/empresas/atual/usuarios/${id(usuarioId)}`),
   };
 }
 

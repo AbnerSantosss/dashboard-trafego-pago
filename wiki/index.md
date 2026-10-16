@@ -37,7 +37,7 @@ Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde
 - [[regras-de-tratamento/metricas-e-kpis]] — definição de cada KPI, funil e taxa
 
 ## Administração multiempresa
-- [[administracao-multiempresa/configuracao-por-empresa]] — webhooks, regras, apresentação (logo, nome, paleta), usuários
+- [[administracao-multiempresa/configuracao-por-empresa]] — webhooks, regras, apresentação (logo, nome, paleta), usuários, convites, perfil, tag GTM
 
 ## QA visual
 - [[qa-visual/fidelidade-visual]] — gates G0 a G4, limite de 2% de diff, como rodar a comparação
