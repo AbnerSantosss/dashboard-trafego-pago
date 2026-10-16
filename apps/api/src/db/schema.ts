@@ -130,6 +130,8 @@ export const sources = pgTable(
     nome: text('nome').notNull(),
     /** Hash do segredo HMAC (o segredo em claro é mostrado uma vez e nunca gravado). */
     secretHash: text('secret_hash').notNull(),
+    /** Segredo HMAC cifrado (AES-256-GCM, `v1$iv$tag$ct`) com a chave de WEBHOOK_CHAVE_CIFRA (P5.2). */
+    secretEnc: text('secret_enc'),
     /** Versão de regras ativa nesta fonte (espelho de `rules.version` com `ativo = true`). */
     rulesVersion: integer('rules_version'),
     ativo: boolean('ativo').notNull().default(true),

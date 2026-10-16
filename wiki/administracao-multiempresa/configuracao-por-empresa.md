@@ -43,3 +43,10 @@ Nome exibido, subtítulo, 5 KPIs na ordem da imagem, 10 colunas e canais com cor
 
 ## Papéis na API (P2.2, 2026-10-15)
 Implementado em `apps/api/src/auth/plugin.ts` e `src/rotas/auth.ts` (ver `apps/api/README.md`, seção "Autenticação e empresa ativa"). Hierarquia admin > analista > leitor, aplicada por `app.exigirPapel`. Toda consulta por empresa roda em `request.comTenant(fn)`, sob RLS. Rotas: `GET /me` (usuário, empresas com papel, empresa ativa), `POST /me/empresa` (troca de empresa ativa, devolve token novo), `GET /empresas/atual`. Erros: 401 `nao_autenticado`/`token_invalido`, 403 `acesso_negado`, 400 `empresa_nao_informada`. Decisão D12. Testes de isolamento em `src/auth/plugin.test.ts` (embrião do gate G2).
+
+## Implementado na Fase 5 enxuta (2026-10-15)
+Telas em `apps/web/app/(admin)/configuracoes/` (abas Apresentação e Webhooks, acesso por `/configuracoes` ou pelo link na Ajuda). Rotas em `apps/api/src/admin/`, todas com papel `admin` (detalhes em `apps/api/docs/admin.md`):
+- `GET`/`PATCH /empresas/atual/apresentacao`: nome exibido (até 60) e logo PNG/SVG até 512 KB, guardado no banco como data URL; `logo: null` volta ao padrão (PASIO: `/brand/pasio-logo.png`; outras: nome em texto). O PATCH limpa o cache de métricas; o painel reflete ao recarregar.
+- `GET`/`POST /empresas/atual/fontes`, `PATCH /empresas/atual/fontes/:id` (nome, ativo), `POST /empresas/atual/fontes/:id/segredo` (rotação). O segredo aparece uma vez na resposta e na tela, com botão copiar.
+- Ficaram fora (D15): regras, KPIs/colunas/canais/paleta, usuários e convites. Papéis continuam via seed/SQL.
+- Armadilha: trocar `WEBHOOK_CHAVE_CIFRA` exige rotacionar todas as fontes (D18).

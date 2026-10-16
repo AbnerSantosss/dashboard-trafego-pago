@@ -1,0 +1,203 @@
+/* Configurações (Fase 5): layout próprio sobre os tokens da tela; fora da área comparada pixel a pixel. */
+.cfg-principal {
+  left: 181px;
+  top: 0;
+  width: 1134px;
+  height: 710px;
+  overflow: auto;
+  padding: 28px 36px;
+  background: var(--p-bg-main);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+.cfg-titulo {
+  margin: 0 0 18px;
+  font-size: 22px;
+  font-weight: 600;
+}
+.cfg-abas {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--p-card-borda);
+}
+.cfg-aba {
+  padding: 8px 14px;
+  border-bottom: 2px solid transparent;
+  color: var(--p-text-sec);
+  text-decoration: none;
+}
+.cfg-aba[aria-current='page'] {
+  border-bottom-color: var(--p-nav-ic-ativo);
+  color: var(--text-primary);
+}
+.cfg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 520px;
+}
+.cfg-form-linha {
+  flex-direction: row;
+  align-items: flex-end;
+  max-width: none;
+  margin-top: 18px;
+}
+.cfg-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cfg-rotulo {
+  color: var(--p-filtro-rot);
+  font-size: 12.5px;
+}
+.cfg-input {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--p-campo-borda);
+  border-radius: 6px;
+  background: var(--p-campo-bg);
+  color: var(--p-filtro-val);
+  font: inherit;
+}
+.cfg-input-arquivo {
+  color: var(--p-text-sec);
+  font: inherit;
+}
+.cfg-previa {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  min-width: 172px;
+  height: 56px;
+  padding: 10px 12px;
+  border: 1px solid var(--p-card-borda);
+  border-radius: 8px;
+  background: var(--bg-sidebar);
+}
+/* Mesma regra da sidebar: altura 36 px, largura proporcional até 148 px. */
+.cfg-previa-img {
+  width: auto;
+  max-width: 148px;
+  height: 36px;
+  object-fit: contain;
+}
+.cfg-previa-texto {
+  max-width: 148px;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.cfg-dica {
+  color: var(--p-funil-leg);
+  font-size: 12px;
+}
+.cfg-acoes,
+.cfg-linha-acoes {
+  display: flex;
+  gap: 10px;
+}
+.cfg-botao {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--p-borda-button);
+  border-radius: 6px;
+  background: var(--p-bg-button);
+  color: var(--p-text-sec);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.cfg-botao:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.cfg-botao-primario {
+  border-color: var(--p-limpar-borda);
+  background: var(--p-limpar-bg);
+  color: var(--p-limpar-txt);
+}
+.cfg-nova {
+  margin-top: 18px;
+}
+.cfg-sucesso,
+.cfg-erro,
+.cfg-faixa-erro {
+  margin: 0 0 14px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.cfg-sucesso {
+  border: 1px solid var(--p-limpar-borda);
+  background: var(--p-limpar-bg);
+  color: var(--p-positivo);
+}
+.cfg-erro,
+.cfg-faixa-erro {
+  border: 1px solid #5a2433;
+  background: #2a1220;
+  color: #ffb3c1;
+}
+.cfg-campo .cfg-erro {
+  margin: 0;
+}
+.cfg-tabela {
+  width: 100%;
+  border: 1px solid var(--p-card-borda);
+  border-collapse: collapse;
+  background: var(--p-card-bg);
+}
+.cfg-tabela th,
+.cfg-tabela td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--p-grade);
+  text-align: left;
+  vertical-align: middle;
+}
+.cfg-tabela th {
+  color: var(--p-th);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.cfg-tabela td {
+  color: var(--p-td);
+}
+.cfg-url {
+  color: var(--p-cal);
+  word-break: break-all;
+}
+.cfg-vazio {
+  color: var(--p-funil-leg);
+}
+.cfg-segredo {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--p-nav-ic-ativo);
+  border-radius: 8px;
+  background: var(--p-filtro-bg);
+}
+.cfg-segredo-titulo {
+  margin: 0 0 8px;
+  color: var(--p-text-sec);
+}
+.cfg-segredo-linha {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.cfg-segredo-valor {
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: var(--p-campo-bg);
+  color: var(--p-filtro-val);
+  word-break: break-all;
+}
+.cfg-aviso {
+  margin: 8px 0 0;
+  color: #ffd27a;
+  font-size: 12.5px;
+}

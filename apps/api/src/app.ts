@@ -13,7 +13,9 @@ import {
   validatorCompiler,
   type ZodTypeProvider,
 } from 'fastify-type-provider-zod';
-import { carregarEnv, type Env } from './env.js';
+import { carregarEnv, chaveCifraWebhook, type Env } from './env.js';
+import { rotasApresentacao } from './admin/apresentacao.js';
+import { rotasFontes } from './admin/fontes.js';
 import { registrarTratamentoDeErros } from './erros.js';
 import { rotasHealth } from './rotas/health.js';
 import { rotasAuth, rotasSessaoDev } from './rotas/auth.js';
@@ -23,7 +25,13 @@ import type { Db } from './db/client.js';
 import { rotasWebhookAdmin, rotasWebhookRecebimento } from './rotas/webhooks.js';
 import { lerConfigWebhooks } from './webhooks/config.js';
 import { criarFilaMemoria, type Fila } from './webhooks/fila.js';
-import { lerMapaSegredos, obterSegredoDeMapa, type ObterSegredo } from './webhooks/segredos.js';
+import {
+  combinarSegredos,
+  lerMapaSegredos,
+  obterSegredoDeMapa,
+  obterSegredoDoBanco,
+  type ObterSegredo,
+} from './webhooks/segredos.js';
 
 const require = createRequire(import.meta.url);
 const { version: VERSAO } = require('../package.json') as { version: string };
@@ -160,15 +168,25 @@ export async function buildApp(opcoes: OpcoesApp = {}) {
     app.log.warn('webhooks sem fila pg-boss: jobs ficam só em memória (não processados)');
   }
   const fila = opcoesWh.fila ?? criarFilaMemoria();
+  // Segredo HMAC: `sources.secret_enc` primeiro, WEBHOOK_SEGREDOS como fallback (D13).
+  const chaveCifra = chaveCifraWebhook(env, (msg) => {
+    if (env.NODE_ENV !== 'test') app.log.warn(msg);
+  });
+  const mapaSegredos = lerMapaSegredos(configWebhooks.segredosJson);
   await app.register(rotasWebhookRecebimento, {
     fila,
     obterSegredo:
-      opcoesWh.obterSegredo ?? obterSegredoDeMapa(lerMapaSegredos(configWebhooks.segredosJson)),
+      opcoesWh.obterSegredo ??
+      combinarSegredos(obterSegredoDoBanco(chaveCifra), obterSegredoDeMapa(mapaSegredos)),
     janelaSegundos: opcoesWh.janelaSegundos ?? configWebhooks.janelaSegundos,
     limitePorMinuto: opcoesWh.limitePorMinuto ?? configWebhooks.limitePorMinuto,
     ...(opcoesWh.agora ? { agora: opcoesWh.agora } : {}),
   });
   await app.register(rotasWebhookAdmin, { fila });
+
+  // Administração por empresa (Fase 5 enxuta): apresentação e fontes de webhook.
+  await app.register(rotasApresentacao);
+  await app.register(rotasFontes, { chaveCifra, mapaSegredos });
 
   return app;
 }

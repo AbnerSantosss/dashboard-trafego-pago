@@ -70,3 +70,13 @@ tags: [log, historico]
 - Medição: 5,39% contra a imagem, 1,45% contra o protótipo (ver [[qa-visual/fidelidade-visual]]).
 - Armadilhas: porta 3001 pode estar ocupada por outro processo da máquina (usar `API_PORT`); o `<Funil>` só pode ser montado em `top: 322`; `sessao-dev` não existe em produção, então o web em produção ainda não tem token (pendência para a Fase 7).
 - Entregue: commit da Fase 4. Próximo: Fase 5 enxuta (apresentação nome/logo, webhooks por empresa).
+
+## [2026-10-15] update | Fase 5 enxuta concluída: apresentação (nome/logo) e webhooks por empresa com segredo rotacionável
+- Pedido: "Sim, Fase 5" e, ao final, "Sim, atualize a wiki, commite e envie a Fase 5."
+- Contrato fixado pelo orquestrador em `packages/contratos/src/admin.ts`; dois subagentes em paralelo (D7).
+  - **API**: `apps/api/src/admin/` (apresentação, fontes, validação de logo, cifra AES-256-GCM), coluna `sources.secret_enc` (migração 0004), `WEBHOOK_CHAVE_CIFRA`, recebimento banco → `WEBHOOK_SEGREDOS`. 31 testes novos, inclusive ponta a ponta (criar fonte, webhook assinado 202, rotação invalida o segredo antigo) e isolamento entre empresas. Docs em `apps/api/docs/admin.md`.
+  - **Web**: `/configuracoes/apresentacao` e `/configuracoes/webhooks` com server actions (o navegador não fala com a API), segredo exibido uma vez, mensagens de erro em português; Sidebar mostra o nome em texto quando não há logo; link na Ajuda. 10 testes novos.
+  - Orquestrador: `extensionAlias` no `next.config.ts` para os imports `.js` dos pacotes; decisão D18.
+- Verificação: `pnpm check` verde (API 141 testes, web 20, gráficos 10); telas conferidas no navegador ligadas à API real.
+- Pendência visual menor: na largura do painel do navegador a tabela de fontes corta a coluna de ações (sem rolagem horizontal); revisar na Fase 6 se incomodar.
+- Entregue: commit da Fase 5. Próximo: Fase 6 enxuta (CI com `pnpm check` + diff visual, e2e de isolamento, gate G3).

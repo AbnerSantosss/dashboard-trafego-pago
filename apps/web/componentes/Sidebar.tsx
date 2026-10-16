@@ -17,12 +17,36 @@ export function Sidebar({
   nomeEmpresa = referencia.empresa,
 }: {
   ativo: string;
-  logoUrl?: string;
+  /** `null` = sem logo nem padrão: mostra o nome exibido em texto na mesma caixa. */
+  logoUrl?: string | null;
   nomeEmpresa?: string;
 }) {
   return (
     <aside className="sidebar" aria-label="Menu principal">
-      <img className="logo logo-pasio" src={logoUrl} alt={nomeEmpresa} />
+      {logoUrl === null ? (
+        <span
+          className="logo-texto"
+          title={nomeEmpresa}
+          style={{
+            left: 16,
+            top: 26,
+            height: 36,
+            maxWidth: 148,
+            display: 'flex',
+            alignItems: 'center',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis',
+            fontSize: 16,
+            fontWeight: 600,
+            color: 'var(--text-primary)',
+          }}
+        >
+          {nomeEmpresa}
+        </span>
+      ) : (
+        <img className="logo logo-pasio" src={logoUrl} alt={nomeEmpresa} />
+      )}
       <Nos nos={montarSidebar(referencia.menu, ativo)} />
       <nav aria-label="Seções">
         {referencia.menu.map((m) => {

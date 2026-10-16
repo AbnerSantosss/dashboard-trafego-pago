@@ -9,9 +9,19 @@
  * O token fica em memória até 60 s antes de expirar. Toda chamada leva `Authorization: Bearer` e
  * `x-tenant: WEB_EMPRESA`. Com `WEB_MOCK_API=1`, devolve dados montados da fixture (só testes visuais).
  */
-import type { VisaoGeralQuery, VisaoGeralResposta } from '@trafego/contratos';
+import type {
+  ApresentacaoPatch,
+  ApresentacaoResposta,
+  FonteAtualizar,
+  FonteComSegredo,
+  FonteCriar,
+  FonteResumo,
+  FontesResposta,
+  VisaoGeralQuery,
+  VisaoGeralResposta,
+} from '@trafego/contratos';
 import { decodeJwt, SignJWT } from 'jose';
-import { visaoGeralMock } from './mock';
+import { adminMock, visaoGeralMock } from './mock';
 
 export interface ConfigApi {
   apiUrl: string;
@@ -33,7 +43,9 @@ export function lerConfig(env: Record<string, string | undefined> = process.env)
   };
 }
 
-export type Resultado<T> = { ok: true; dados: T } | { ok: false; mensagem: string };
+/** Em falha, `codigo` vem de `erro.codigo` da API (quando houver) e `status` do HTTP. */
+export type Resultado<T> =
+  { ok: true; dados: T } | { ok: false; mensagem: string; codigo?: string; status?: number };
 
 /** Margem antes do vencimento para renovar o token. */
 const MARGEM_MS = 60_000;
@@ -94,12 +106,23 @@ export function criarClienteApi(
     throw new Error(`Falha ao obter sessão (HTTP ${r.status}).`);
   }
 
-  async function get<T>(caminho: string): Promise<Resultado<T>> {
+  async function chamar<T>(
+    metodo: string,
+    caminho: string,
+    corpo?: unknown,
+  ): Promise<Resultado<T>> {
     try {
       for (let tentativa = 0; tentativa < 2; tentativa++) {
         const token = await obterToken();
+        const headers: Record<string, string> = {
+          authorization: `Bearer ${token}`,
+          'x-tenant': config.empresa,
+        };
+        if (corpo !== undefined) headers['content-type'] = 'application/json';
         const r = await f(`${config.apiUrl}${caminho}`, {
-          headers: { authorization: `Bearer ${token}`, 'x-tenant': config.empresa },
+          method: metodo,
+          headers,
+          ...(corpo !== undefined ? { body: JSON.stringify(corpo) } : {}),
           cache: 'no-store',
           signal: AbortSignal.timeout(TEMPO_LIMITE_MS),
         });
@@ -107,14 +130,18 @@ export function criarClienteApi(
           cache = null; // token recusado: pede outro uma vez
           continue;
         }
-        if (!r.ok) return { ok: false, mensagem: await mensagemDeErro(r) };
+        if (!r.ok) return { ok: false, status: r.status, ...(await lerErro(r)) };
         return { ok: true, dados: (await r.json()) as T };
       }
-      return { ok: false, mensagem: 'Sessão recusada pela API.' };
+      return { ok: false, mensagem: 'Sessão recusada pela API.', status: 401 };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       return { ok: false, mensagem: `API indisponível: ${msg}` };
     }
+  }
+
+  function get<T>(caminho: string): Promise<Resultado<T>> {
+    return chamar<T>('GET', caminho);
   }
 
   return {
@@ -126,17 +153,50 @@ export function criarClienteApi(
       const busca = s.toString();
       return get<VisaoGeralResposta>(`/metricas/visao-geral${busca ? `?${busca}` : ''}`);
     },
+    // --- Administração (contrato em packages/contratos/src/admin.ts) ---
+    async apresentacao(): Promise<Resultado<ApresentacaoResposta>> {
+      if (config.mock) return adminMock.apresentacao();
+      return get<ApresentacaoResposta>('/empresas/atual/apresentacao');
+    },
+    async salvarApresentacao(p: ApresentacaoPatch): Promise<Resultado<ApresentacaoResposta>> {
+      if (config.mock) return adminMock.salvarApresentacao(p);
+      return chamar<ApresentacaoResposta>('PATCH', '/empresas/atual/apresentacao', p);
+    },
+    async fontes(): Promise<Resultado<FontesResposta>> {
+      if (config.mock) return adminMock.fontes();
+      return get<FontesResposta>('/empresas/atual/fontes');
+    },
+    async criarFonte(p: FonteCriar): Promise<Resultado<FonteComSegredo>> {
+      if (config.mock) return adminMock.criarFonte(p);
+      return chamar<FonteComSegredo>('POST', '/empresas/atual/fontes', p);
+    },
+    async atualizarFonte(id: string, p: FonteAtualizar): Promise<Resultado<FonteResumo>> {
+      if (config.mock) return adminMock.atualizarFonte(id, p);
+      return chamar<FonteResumo>('PATCH', `/empresas/atual/fontes/${encodeURIComponent(id)}`, p);
+    },
+    async rotacionarSegredo(id: string): Promise<Resultado<FonteComSegredo>> {
+      if (config.mock) return adminMock.rotacionarSegredo(id);
+      return chamar<FonteComSegredo>(
+        'POST',
+        `/empresas/atual/fontes/${encodeURIComponent(id)}/segredo`,
+        {},
+      );
+    },
   };
 }
 
-async function mensagemDeErro(r: Response): Promise<string> {
+async function lerErro(r: Response): Promise<{ mensagem: string; codigo?: string }> {
   try {
-    const corpo = (await r.json()) as { erro?: { mensagem?: string } };
-    if (corpo.erro?.mensagem) return `${corpo.erro.mensagem} (HTTP ${r.status})`;
+    const corpo = (await r.json()) as { erro?: { mensagem?: string; codigo?: string } };
+    const codigo = typeof corpo.erro?.codigo === 'string' ? corpo.erro.codigo : undefined;
+    const extra = codigo ? { codigo } : {};
+    if (corpo.erro?.mensagem)
+      return { mensagem: `${corpo.erro.mensagem} (HTTP ${r.status})`, ...extra };
+    return { mensagem: `A API respondeu HTTP ${r.status}.`, ...extra };
   } catch {
     // corpo não é JSON
   }
-  return `A API respondeu HTTP ${r.status}.`;
+  return { mensagem: `A API respondeu HTTP ${r.status}.` };
 }
 
 let padrao: ReturnType<typeof criarClienteApi> | null = null;

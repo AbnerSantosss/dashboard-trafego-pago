@@ -33,6 +33,8 @@ describe('carregarEnv', () => {
         NODE_ENV: 'production',
         DATABASE_URL: 'postgres://u@h/db',
         AUTH_SECRET: segredo,
+        // Chave fictícia (só para isolar a checagem de AUTH_SECRET).
+        WEBHOOK_CHAVE_CIFRA: 'ab'.repeat(32),
       }),
     );
     expect(e.variaveis).toEqual(['AUTH_SECRET']);

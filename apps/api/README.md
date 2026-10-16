@@ -71,6 +71,17 @@ CORS: só `WEB_URL`, com credenciais. Rate limit global: 300 req/min por IP (429
 
 Contrato completo em [docs/webhooks.md](docs/webhooks.md).
 
+## Administração por empresa (Fase 5)
+
+Papel `admin` na empresa ativa (`x-tenant`); contrato em `packages/contratos/src/admin.ts`.
+
+- `GET/PATCH /empresas/atual/apresentacao` — nome exibido e logo (PNG/SVG em base64, até 512 KB).
+- `GET/POST /empresas/atual/fontes`, `PATCH /empresas/atual/fontes/:id` — fontes de webhook.
+- `POST /empresas/atual/fontes/:id/segredo` — rotação; o segredo aparece só nessa resposta.
+- Segredos ficam cifrados em `sources.secret_enc` com `WEBHOOK_CHAVE_CIFRA`; `WEBHOOK_SEGREDOS` vira fallback.
+
+Detalhes em [docs/admin.md](docs/admin.md).
+
 ## Convenções
 
 - Erros: contrato único `{ erro: { codigo, mensagem, detalhes?, requestId } }`. Ver [docs/erros.md](docs/erros.md).

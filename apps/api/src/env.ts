@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { derivarChaveDeAuthSecret, lerChaveCifra } from './admin/cifra.js';
 
 /**
  * Variáveis de ambiente da API, validadas na subida.
@@ -32,6 +33,11 @@ const schemaEnv = z
     LOG_LEVEL: z
       .enum(NIVEIS_LOG, { error: `deve ser um de: ${NIVEIS_LOG.join(', ')}` })
       .default('info'),
+    /** Chave AES-256-GCM dos segredos de webhook: 32 bytes em base64 ou hex. Obrigatória em produção. */
+    WEBHOOK_CHAVE_CIFRA: z
+      .string()
+      .refine((v) => lerChaveCifra(v) !== null, 'deve ter 32 bytes em base64 ou hex')
+      .optional(),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === 'production' && env.AUTH_SECRET.length < 32) {
@@ -39,6 +45,13 @@ const schemaEnv = z
         code: 'custom',
         path: ['AUTH_SECRET'],
         message: 'precisa ter no mínimo 32 caracteres em produção',
+      });
+    }
+    if (env.NODE_ENV === 'production' && !env.WEBHOOK_CHAVE_CIFRA) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['WEBHOOK_CHAVE_CIFRA'],
+        message: 'obrigatória em produção',
       });
     }
   });
@@ -85,4 +98,17 @@ function stripUndefined(obj: Record<string, string | undefined>): Record<string,
   const saida: Record<string, string> = {};
   for (const [chave, valor] of Object.entries(obj)) if (valor !== undefined) saida[chave] = valor;
   return saida;
+}
+
+/**
+ * Chave de cifra dos segredos de webhook. Sem `WEBHOOK_CHAVE_CIFRA` (só fora de produção), deriva
+ * `sha256(AUTH_SECRET)` e chama `avisar` (uma vez por chamada; o app chama uma vez na subida).
+ */
+export function chaveCifraWebhook(env: Env, avisar?: (msg: string) => void): Buffer {
+  const chave = env.WEBHOOK_CHAVE_CIFRA ? lerChaveCifra(env.WEBHOOK_CHAVE_CIFRA) : null;
+  if (chave) return chave;
+  avisar?.(
+    'WEBHOOK_CHAVE_CIFRA ausente: usando chave derivada de AUTH_SECRET (só fora de produção)',
+  );
+  return derivarChaveDeAuthSecret(env.AUTH_SECRET);
 }

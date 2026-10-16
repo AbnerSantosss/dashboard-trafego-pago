@@ -93,7 +93,12 @@ async function resolverFonte(
   if (!t) return null;
   const [s] = await comTenant(db, t.id, (tx) =>
     tx
-      .select({ id: sources.id, slug: sources.slug, secretHash: sources.secretHash })
+      .select({
+        id: sources.id,
+        slug: sources.slug,
+        secretHash: sources.secretHash,
+        secretEnc: sources.secretEnc,
+      })
       .from(sources)
       .where(and(eq(sources.slug, fonte), eq(sources.ativo, true)))
       .limit(1),
@@ -105,6 +110,7 @@ async function resolverFonte(
     sourceId: s.id,
     fonteSlug: s.slug,
     secretHash: s.secretHash,
+    secretEnc: s.secretEnc,
   };
 }
 
@@ -187,7 +193,8 @@ export const rotasWebhookRecebimento: FastifyPluginAsyncZod<OpcoesWebhooks> = as
       }
 
       const segredo = await opcoes.obterSegredo(alvo);
-      if (!segredo) log.warn('fonte sem segredo utilizável no servidor (WEBHOOK_SEGREDOS)');
+      if (!segredo)
+        log.warn('fonte sem segredo utilizável no servidor (secret_enc ou WEBHOOK_SEGREDOS)');
       if (!segredo || !assinaturaConfere(segredo, timestamp, corpo, assinatura)) {
         throw rejeitar(ErroApi.de('assinatura_invalida', 'Assinatura do webhook não confere.'));
       }

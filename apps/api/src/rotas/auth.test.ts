@@ -239,6 +239,7 @@ describe.skipIf(!disponivel)('POST /auth/sessao-dev', () => {
         NODE_ENV: 'production',
         DATABASE_URL: URL_APP,
         AUTH_SECRET: 'segredo-de-teste-somente-local-0123456789abcdef',
+        WEBHOOK_CHAVE_CIFRA: 'ab'.repeat(32),
       }),
       logger: false,
     });

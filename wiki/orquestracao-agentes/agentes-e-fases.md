@@ -33,7 +33,7 @@ Orquestrador (esta sessão) despacha subagentes Opus 5.5 em modo Auto, um por es
 | 2 Dados | 3–6 | schema, RLS, migrações, seed | — |
 | 3 Ingestão e regras | 5–10 | webhooks, fila, motor, classificador | G2 |
 | 4 Dashboard React | 8–14 | tela Visão Geral conectada à API (concluída 2026-10-15) | — |
-| 5 Administração (enxuta, D15) | 12–14 | apresentação (nome/logo), webhooks (segredo) | — |
+| 5 Administração (enxuta, D15) | 12–14 | apresentação (nome/logo), webhooks (segredo) (concluída 2026-10-15) | — |
 | 6 QA (enxuta, D15) | 14–15 | pnpm check + diff visual no CI, e2e isolamento | G3 |
 | 7 Entrega | 15–17 | wiki essencial, Portainer + túnel, aprovação | G4 |
 

@@ -125,8 +125,8 @@ Formato: **ID** — tarefa · agente · entrega · critério de aceite · depend
 - **P4.8** — Ligação à API de métricas com cache por empresa e período · backend-ingestion · hooks · primeira pintura com dados < 1,5 s com seed local · P3.5 · D14–D16
 
 ### Fase 5 — Administração (enxuta, D15)
-- **P5.1** — Apresentação: nome exibido e logo (upload PNG/SVG) em Configurações → Apresentação · tenant-admin · tela + rota PATCH /empresas/atual/apresentacao · painel reflete após recarregar · P4.8
-- **P5.2** — Webhooks por empresa: listar fontes, gerar/rotacionar segredo (exibido uma vez) · tenant-admin · tela + rotas · segredo nunca persistido em claro · P3.1
+- **P5.1** — Apresentação: nome exibido e logo (upload PNG/SVG) em Configurações → Apresentação · tenant-admin · tela + rota PATCH /empresas/atual/apresentacao · painel reflete após recarregar · P4.8 · **concluída 2026-10-15**
+- **P5.2** — Webhooks por empresa: listar fontes, gerar/rotacionar segredo (exibido uma vez) · tenant-admin · tela + rotas · segredo nunca persistido em claro · P3.1 · **concluída 2026-10-15** (D18)
 - ~~P5.3 Editor de regras com teste ao vivo~~ · ~~P5.4 KPIs/paleta/colunas configuráveis~~ · ~~P5.5 Usuários, papéis e convites~~ — removidos (D15); papéis continuam só via seed/SQL.
 
 ### Fase 6 — QA (enxuta, D15)

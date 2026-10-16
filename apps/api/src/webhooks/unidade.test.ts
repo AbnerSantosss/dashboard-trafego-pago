@@ -36,6 +36,7 @@ describe('segredos', () => {
     sourceId: 's',
     fonteSlug: 'demo',
     secretHash: hash,
+    secretEnc: null,
   });
 
   it('confere com o hash scrypt do seed', async () => {

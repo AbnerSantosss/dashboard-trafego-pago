@@ -1,0 +1,1 @@
+ALTER TABLE "sources" ADD COLUMN "secret_enc" text;

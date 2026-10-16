@@ -3,6 +3,13 @@
  * (testes visuais e desenvolvimento sem a rota pronta); nunca como fallback de falha.
  */
 import type {
+  ApresentacaoPatch,
+  ApresentacaoResposta,
+  FonteAtualizar,
+  FonteComSegredo,
+  FonteCriar,
+  FonteResumo,
+  FontesResposta,
   LinhaCanalMetrica,
   VisaoGeralQuery,
   VisaoGeralResposta,
@@ -74,3 +81,95 @@ export function visaoGeralMock(q: VisaoGeralQuery): VisaoGeralResposta {
     },
   };
 }
+
+// ---------------------------------------------------------------------------
+// Administração (Fase 5): estado em memória do processo, só para WEB_MOCK_API=1.
+// ---------------------------------------------------------------------------
+
+type R<T> =
+  { ok: true; dados: T } | { ok: false; mensagem: string; codigo?: string; status?: number };
+
+function fonteBase(slug: string, nome: string, n: number): FonteResumo {
+  return {
+    id: `mock-${n}`,
+    slug,
+    nome,
+    ativo: true,
+    caminho: `/webhooks/pasio/${slug}`,
+    segredoUtilizavel: true,
+    criadoEm: '2024-05-01T12:00:00.000Z',
+    atualizadoEm: null,
+  };
+}
+
+function estadoInicial() {
+  const apresentacao: ApresentacaoResposta = {
+    nomeExibicao: referencia.empresa,
+    logoUrl: null,
+    logoPadraoUrl: '/brand/pasio-logo.png',
+    atualizadoEm: null,
+  };
+  return {
+    apresentacao,
+    fontes: [fonteBase('hotmart', 'Hotmart', 1), fonteBase('plataforma', 'Plataforma', 2)],
+    seq: 2,
+  };
+}
+
+let estado = estadoInicial();
+
+/** Segredo falso e previsível: o mock não protege nada. */
+function segredoFalso(): string {
+  return `mock-segredo-${Date.now().toString(36)}`;
+}
+
+const naoEncontrada = {
+  ok: false as const,
+  mensagem: 'Fonte não encontrada.',
+  codigo: 'fonte_nao_encontrada',
+  status: 404,
+};
+
+export const adminMock = {
+  reiniciar() {
+    estado = estadoInicial();
+  },
+  async apresentacao(): Promise<R<ApresentacaoResposta>> {
+    return { ok: true, dados: { ...estado.apresentacao } };
+  },
+  async salvarApresentacao(p: ApresentacaoPatch): Promise<R<ApresentacaoResposta>> {
+    const a = { ...estado.apresentacao, atualizadoEm: new Date().toISOString() };
+    if (p.nomeExibicao !== undefined) a.nomeExibicao = p.nomeExibicao;
+    if (p.logo === null) a.logoUrl = null;
+    else if (p.logo) a.logoUrl = `data:${p.logo.tipo};base64,${p.logo.base64}`;
+    estado.apresentacao = a;
+    return { ok: true, dados: { ...a } };
+  },
+  async fontes(): Promise<R<FontesResposta>> {
+    return { ok: true, dados: { fontes: estado.fontes.map((f) => ({ ...f })) } };
+  },
+  async criarFonte(p: FonteCriar): Promise<R<FonteComSegredo>> {
+    if (estado.fontes.some((f) => f.slug === p.slug))
+      return { ok: false, mensagem: 'Slug já existe.', codigo: 'fonte_existente', status: 409 };
+    const fonte = {
+      ...fonteBase(p.slug, p.nome, ++estado.seq),
+      criadoEm: new Date().toISOString(),
+    };
+    estado.fontes.push(fonte);
+    return { ok: true, dados: { fonte: { ...fonte }, segredo: segredoFalso() } };
+  },
+  async atualizarFonte(id: string, p: FonteAtualizar): Promise<R<FonteResumo>> {
+    const f = estado.fontes.find((x) => x.id === id);
+    if (!f) return naoEncontrada;
+    if (p.nome !== undefined) f.nome = p.nome;
+    if (p.ativo !== undefined) f.ativo = p.ativo;
+    f.atualizadoEm = new Date().toISOString();
+    return { ok: true, dados: { ...f } };
+  },
+  async rotacionarSegredo(id: string): Promise<R<FonteComSegredo>> {
+    const f = estado.fontes.find((x) => x.id === id);
+    if (!f) return naoEncontrada;
+    f.segredoUtilizavel = true;
+    return { ok: true, dados: { fonte: { ...f }, segredo: segredoFalso() } };
+  },
+};

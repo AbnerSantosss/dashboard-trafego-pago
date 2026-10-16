@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
     '@trafego/contratos',
     '@trafego/graficos',
   ],
+  // Os pacotes internos importam com sufixo .js (NodeNext); o webpack precisa resolver para .ts.
+  webpack: (config) => {
+    config.resolve.extensionAlias = { '.js': ['.ts', '.tsx', '.js'] };
+    return config;
+  },
 };
 
 export default nextConfig;

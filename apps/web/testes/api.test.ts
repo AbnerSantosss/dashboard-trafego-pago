@@ -65,6 +65,10 @@ describe('lib/api', () => {
         : resposta(503, { erro: { mensagem: 'Banco fora.' } }),
     );
     const cli = criarClienteApi(config, { fetch: fetch as unknown as F });
-    expect(await cli.visaoGeral({})).toEqual({ ok: false, mensagem: 'Banco fora. (HTTP 503)' });
+    expect(await cli.visaoGeral({})).toEqual({
+      ok: false,
+      status: 503,
+      mensagem: 'Banco fora. (HTTP 503)',
+    });
   });
 });
