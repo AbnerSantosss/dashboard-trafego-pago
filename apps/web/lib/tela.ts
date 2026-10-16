@@ -125,11 +125,14 @@ export const NAV_Y: Record<string, number> = {
   'visao-geral': 105,
   'gestao-custos': 149.5,
   relatorios: 193.5,
+  // Fora da imagem de referência: quarto item, no mesmo passo de 44 px dos de cima.
+  configuracoes: 237.5,
 };
 const NAV_TXT: Record<string, [number, number]> = {
   'visao-geral': [57, 110],
   'gestao-custos': [56, 155],
   relatorios: [56, 199],
+  configuracoes: [56, 243],
 };
 const NAV_IC_AJ: Record<string, [number, number]> = {
   'visao-geral': [3, 0],
@@ -338,12 +341,17 @@ function icInfo(slot: string, i: InfoTela, cls: string): NoIcone {
   return ic(slot, 'info', i.x, i.y, i.w, i.h, cls);
 }
 
-/** Item extra do rodapé da sidebar, fora da fixture da imagem. */
+/** Item extra do menu, fora da fixture da imagem: entra logo abaixo de Relatórios. */
 export const ITEM_CONFIGURACOES = { id: 'configuracoes', rotulo: 'Configurações' } as const;
 
 export function montarSidebar(menu: ItemMenu[], ativo: string): No[] {
   const nos: No[] = [];
-  for (const m of menu.filter((i) => i.posicao === 'topo')) {
+  // A Ajuda (item de rodapé da fixture) saiu do menu; o rodapé agora é só a conta (Sidebar.tsx).
+  const itens = [
+    ...menu.filter((i) => i.posicao === 'topo').map((m) => ({ id: m.id, rotulo: m.rotulo })),
+    ITEM_CONFIGURACOES,
+  ];
+  for (const m of itens) {
     const cy = NAV_Y[m.id] ?? 0;
     const [ajx, ajy] = NAV_IC_AJ[m.id] ?? [0, 0];
     const [tx, tb] = NAV_TXT[m.id] ?? [56, cy + 5];
@@ -353,27 +361,6 @@ export function montarSidebar(menu: ItemMenu[], ativo: string): No[] {
       ic(`nav.${m.id}.ic`, m.id, 21 + ajx, cy - 9.5 + ajy, 19, 19, on ? 'nav-ic-ativo' : 'nav-ic'),
     );
     nos.push(T(`nav.${m.id}`, tx, tb, on ? 'nav nav-on' : 'nav', m.rotulo));
-  }
-  const ajuda = menu.find((m) => m.posicao === 'rodape');
-  if (ajuda) {
-    nos.push(
-      ic(
-        'nav.ajuda.ic',
-        ajuda.id,
-        20.5,
-        690,
-        20,
-        20,
-        ajuda.id === ativo ? 'nav-ic-ativo' : 'nav-ic',
-      ),
-    );
-    nos.push(T('nav.ajuda', 53, 707, ajuda.id === ativo ? 'nav nav-on' : 'nav', ajuda.rotulo));
-    // Configurações não está na imagem de referência: fica no rodapé, 40 px acima da Ajuda.
-    const cfgOn = ativo === ITEM_CONFIGURACOES.id;
-    nos.push(
-      ic('nav.config.ic', 'configuracoes', 20.5, 650, 20, 20, cfgOn ? 'nav-ic-ativo' : 'nav-ic'),
-    );
-    nos.push(T('nav.config', 53, 667, cfgOn ? 'nav nav-on' : 'nav', ITEM_CONFIGURACOES.rotulo));
   }
   return nos;
 }
@@ -625,6 +612,10 @@ function calcularChaves(): Map<string, string> {
 }
 
 const CHAVES = calcularChaves();
+/** Textos fora da referência (sem calibração medida) que copiam a de um vizinho para combinar. */
+const CALIBRACAO_EXTRA: Record<string, (typeof calibracao)[string]> = {
+  'Configurações#1': { ff: 1, op: 0.92 },
+};
 const FAMILIAS = [
   '',
   "'Segoe UI Variable Text'",
@@ -635,7 +626,7 @@ const FAMILIAS = [
 /** Estilo de calibração (tamanho, peso, família, deslocamento subpixel) do slot. */
 export function estiloCalibrado(slot: string): Record<string, string | number> {
   const chave = CHAVES.get(slot);
-  const c = chave ? calibracao[chave] : undefined;
+  const c = chave ? (calibracao[chave] ?? CALIBRACAO_EXTRA[chave]) : undefined;
   if (!c) return {};
   const e: Record<string, string | number> = {};
   if (c.fs) e.fontSize = `${c.fs}px`;

@@ -1,5 +1,6 @@
 /*
- * Painel lateral do funil (lista da etapa e ficha do usuário). Medidas em px da tela de 1315×710:
+ * Painel lateral do funil (lista da etapa e ficha do usuário). Medidas em px da tela fixa (1315 px
+ * por --tela-alt):
  * a tela inteira é ampliada por `zoom`, então o painel cresce junto. Cobre a tabela, não o funil.
  * Movimento: só transform e opacity, curva de entrada dos Hyperframes, só sob no-preference.
  */
@@ -15,7 +16,7 @@
   top: 4px;
   right: 3px;
   width: 460px;
-  height: 706px;
+  height: calc(var(--tela-alt, 710px) - 4px);
   display: flex;
   flex-direction: column;
   background: linear-gradient(180deg, #08203a 0%, #061a2c 140px, #05172a 100%);

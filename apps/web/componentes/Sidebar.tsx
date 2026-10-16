@@ -10,7 +10,6 @@ export const ROTAS: Record<string, string> = {
   'visao-geral': '/',
   'gestao-custos': '/gestao-de-custos',
   relatorios: '/relatorios',
-  ajuda: '/ajuda',
   configuracoes: '/configuracoes',
 };
 
@@ -44,8 +43,7 @@ const iniciais = (c: NonNullable<ContaSidebar>) =>
 
 /**
  * Conta no rodapé: avatar com as iniciais e nome (link para o Perfil) e o botão Sair (apaga a
- * sessão e vai ao login).
- * Fica acima de Configurações porque a Ajuda ocupa a última linha da imagem de referência.
+ * sessão e vai ao login). Fica colada ao fim da sidebar, qualquer que seja a altura da moldura.
  * Sem sessão, o mesmo lugar vira o atalho para entrar.
  */
 function RodapeConta({ conta }: { conta: ContaSidebar }) {
@@ -86,7 +84,7 @@ function RodapeConta({ conta }: { conta: ContaSidebar }) {
   );
 }
 
-/** Sidebar de 180 px: logo, menu principal e, no rodapé, conta, Configurações e Ajuda. */
+/** Sidebar de 180 px: logo, menu (com Configurações logo abaixo de Relatórios) e a conta no rodapé. */
 export function Sidebar({
   ativo,
   logoUrl = '/brand/pasio-logo.png',
@@ -128,28 +126,17 @@ export function Sidebar({
       )}
       <Nos nos={montarSidebar(referencia.menu, ativo)} />
       <nav aria-label="Seções">
-        {referencia.menu.map((m) => {
-          const topo = m.posicao === 'rodape' ? 680 : (NAV_Y[m.id] ?? 0) - 20;
-          return (
-            <Link
-              key={m.id}
-              href={ROTAS[m.id] ?? '/'}
-              className="alvo nav-link"
-              style={{ left: 8, top: topo, width: 160, height: m.posicao === 'rodape' ? 30 : 40 }}
-              aria-current={m.id === ativo ? 'page' : undefined}
-            >
-              <span className="so-leitor">{m.rotulo}</span>
-            </Link>
-          );
-        })}
-        <Link
-          href={ROTAS.configuracoes!}
-          className="alvo nav-link"
-          style={{ left: 8, top: 640, width: 160, height: 30 }}
-          aria-current={ativo === ITEM_CONFIGURACOES.id ? 'page' : undefined}
-        >
-          <span className="so-leitor">{ITEM_CONFIGURACOES.rotulo}</span>
-        </Link>
+        {[...referencia.menu.filter((m) => m.posicao === 'topo'), ITEM_CONFIGURACOES].map((m) => (
+          <Link
+            key={m.id}
+            href={ROTAS[m.id] ?? '/'}
+            className="alvo nav-link"
+            style={{ left: 8, top: (NAV_Y[m.id] ?? 0) - 20, width: 160, height: 40 }}
+            aria-current={m.id === ativo ? 'page' : undefined}
+          >
+            <span className="so-leitor">{m.rotulo}</span>
+          </Link>
+        ))}
       </nav>
       <RodapeConta conta={conta} />
     </aside>

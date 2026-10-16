@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Fundo animado das telas internas (Relatórios, Ajuda): fitas de fios em SVG no estilo das ondas
+ * Fundo animado das telas internas (como Relatórios): fitas de fios em SVG no estilo das ondas
  * do login, sem imagem. O painel `/` não usa, para não mexer no diff com a referência.
  *
  * Movimento no contrato do Hyperframes (só referência, wiki 18 - Hyperframes, 04-animacao):
@@ -105,7 +105,12 @@ export function FundoOndas() {
     <div ref={raiz} className="fo" data-fo="espera" aria-hidden="true">
       <div className="fo-brilho" />
 
-      <svg className="fo-camada fo-fundo" viewBox={CAIXA} focusable="false">
+      <svg
+        className="fo-camada fo-fundo"
+        viewBox={CAIXA}
+        preserveAspectRatio="xMidYMax slice"
+        focusable="false"
+      >
         <defs>
           <linearGradient
             id="fo-g-fundo"
@@ -134,7 +139,12 @@ export function FundoOndas() {
         </g>
       </svg>
 
-      <svg className="fo-camada fo-principal" viewBox={CAIXA} focusable="false">
+      <svg
+        className="fo-camada fo-principal"
+        viewBox={CAIXA}
+        preserveAspectRatio="xMidYMax slice"
+        focusable="false"
+      >
         <defs>
           <linearGradient
             id="fo-g-principal"
@@ -184,7 +194,12 @@ export function FundoOndas() {
         </g>
       </svg>
 
-      <svg className="fo-camada fo-pontos" viewBox={CAIXA} focusable="false">
+      <svg
+        className="fo-camada fo-pontos"
+        viewBox={CAIXA}
+        preserveAspectRatio="xMidYMax slice"
+        focusable="false"
+      >
         <defs>
           <linearGradient
             id="fo-g-pontos"

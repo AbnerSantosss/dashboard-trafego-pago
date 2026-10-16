@@ -66,7 +66,9 @@ describe('EmConstrucao', () => {
 
   it('com a leitura falhando, mostra o logo padrão', async () => {
     apresentacao.mockResolvedValue({ ok: false, mensagem: 'erro', status: 500 });
-    const html = renderToStaticMarkup(await EmConstrucao({ ativo: 'ajuda', titulo: 'Ajuda' }));
+    const html = renderToStaticMarkup(
+      await EmConstrucao({ ativo: 'relatorios', titulo: 'Relatórios' }),
+    );
     expect(html).toContain('src="/brand/pasio-logo.png"');
   });
 });

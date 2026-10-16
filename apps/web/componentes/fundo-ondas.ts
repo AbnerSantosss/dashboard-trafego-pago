@@ -1,5 +1,5 @@
 /**
- * Geometria do fundo de ondas das telas internas (Relatórios, Ajuda), no estilo das imagens de
+ * Geometria do fundo de ondas das telas internas (como Relatórios), no estilo das imagens de
  * referência do login: fitas de fios finos que se torcem num ponto, com uma grade de pontos sobre a
  * fita principal. Tudo é calculado aqui, sem nada aleatório (o "acaso" de brilho e tamanho vem de um
  * hash do índice, como pede o contrato do Hyperframes), então servidor e navegador desenham igual.

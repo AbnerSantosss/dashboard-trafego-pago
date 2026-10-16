@@ -270,7 +270,8 @@
     top: 1rem;
     right: auto;
     width: auto;
-    height: calc(100vh / var(--cfg-escala, 1) - 2rem);
+    /* .cfg-principal desfaz o zoom da moldura, então aqui 100vh já é a altura da janela. */
+    height: calc(100vh - 2rem);
     border: 1px solid var(--gf-borda);
     border-radius: var(--cfg-raio);
     box-shadow: 0 16px 40px rgb(0 0 0 / 0.35);

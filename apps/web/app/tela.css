@@ -65,16 +65,31 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/*
+ * Altura da moldura. A referência é um recorte de 710 px que corta o funil e a tabela no fim
+ * (os cards vão até y 721); só a captura do teste visual (janela de 1315×710) usa esse recorte. Em
+ * qualquer outra janela a moldura tem 735 px, para os cards fecharem com a mesma margem das laterais
+ * e nada ficar cortado embaixo.
+ */
+:root {
+  --tela-alt: 735px;
+}
+@media (width: 1315px) and (height: 710px) {
+  :root {
+    --tela-alt: 710px;
+  }
+}
+
 .tela {
   position: relative;
   width: 1315px;
-  height: 710px;
+  height: var(--tela-alt);
   overflow: hidden;
 }
 
 /*
- * Desktop: a tela fixa de 1315×710 é ampliada (ou reduzida) por igual até caber na janela, centrada na
- * horizontal. `tan(atan2(a, b))` dá a razão a/b como número puro, o que `zoom` exige. Com a janela em
+ * Desktop: a tela fixa de 1315 px por --tela-alt é ampliada (ou reduzida) por igual até caber na
+ * janela, centrada na horizontal. `tan(atan2(a, b))` dá a razão a/b como número puro, o que `zoom` exige. Com a janela em
  * 1315×710 (a captura do teste visual) a escala é exatamente 1 e nada muda. O fundo da página continua a
  * sidebar e o divisor nas faixas que sobram, para não aparecer moldura.
  */
@@ -85,7 +100,7 @@ body {
     overflow: hidden;
   }
   body:has(.tela) {
-    --tela-escala: min(tan(atan2(100vw, 1315px)), tan(atan2(100vh, 710px)));
+    --tela-escala: min(tan(atan2(100vw, 1315px)), tan(atan2(100vh, var(--tela-alt))));
     --tela-borda: calc((100vw - 1315px * var(--tela-escala)) / 2 + 180px * var(--tela-escala));
     height: 100vh;
     background: linear-gradient(
@@ -135,7 +150,7 @@ body {
   left: 0;
   top: 0;
   width: 1315px;
-  height: 710px;
+  height: var(--tela-alt);
   background: radial-gradient(
     ellipse 760px 520px at 700px 0px,
     #071829 0%,
@@ -148,7 +163,7 @@ body {
   left: 0;
   top: 0;
   width: 180px;
-  height: 710px;
+  height: var(--tela-alt);
   background: var(--bg-sidebar);
   z-index: 1;
 }
@@ -156,7 +171,7 @@ body {
   left: 180px;
   top: 0;
   width: 1px;
-  height: 710px;
+  height: var(--tela-alt);
   background: var(--p-divisor);
   z-index: 1;
 }
@@ -238,11 +253,11 @@ body {
   color: var(--text-primary);
 }
 
-/* Conta no rodapé da sidebar: avatar, nome e Sair. Acima de Configurações (y 640) porque a
-   Ajuda ocupa a última linha da referência; traço fino separa a conta do menu. */
+/* Conta no rodapé da sidebar: avatar, nome e Sair, colada ao fim da moldura (seja ela de 710 ou
+   735 px); traço fino separa a conta do resto da coluna. */
 .sb-conta {
   left: 8px;
-  top: 586px;
+  bottom: 16px;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -989,7 +1004,7 @@ body {
   left: 181px;
   top: 0;
   width: 1134px;
-  height: 710px;
+  height: var(--tela-alt);
   overflow: hidden;
   pointer-events: none;
 }

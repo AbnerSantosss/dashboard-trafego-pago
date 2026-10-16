@@ -7,7 +7,7 @@ import { ESTADO_INICIAL } from '../validacao';
 export function FormPerfil({ usuario }: { usuario: UsuarioConta }) {
   const [estado, enviar, pendente] = useActionState(salvarPerfil, ESTADO_INICIAL);
   return (
-    <form action={enviar} className="cfg-form">
+    <form action={enviar} className="cfg-form cfg-form-perfil">
       <div className="cfg-form cfg-form-linha cfg-sem-margem">
         <label className="cfg-campo">
           <span className="cfg-rotulo">Nome</span>

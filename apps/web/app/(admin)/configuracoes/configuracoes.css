@@ -43,7 +43,9 @@
 @media (min-width: 48em) {
   .cfg-tela,
   .conta-fundo {
-    --cfg-fs-corpo: 0.9375rem;
+    --cfg-fs-titulo: 1.375rem;
+    --cfg-fs-sub: 1rem;
+    --cfg-fs-corpo: 0.875rem;
     --cfg-alvo: 2.5rem;
   }
 }
@@ -102,14 +104,15 @@
   max-width: 90rem;
 }
 /*
- * Desktop: a mesma moldura e a mesma escala do painel (D32/D33). A largura de desenho é 1315 px e a
- * tela inteira cresce junto, então a sidebar fica no mesmo lugar e no mesmo tamanho ao trocar de
- * página. Diferente do painel, a escala nunca fica abaixo de 1 (o texto não desce de 15 px) e a
- * altura rola. O que fica fora da moldura continua a sidebar e o fundo, como no painel.
+ * Desktop: a mesma moldura e a mesma escala do painel (D32/D33, D38). A largura de desenho é 1315 px
+ * e a moldura cresce junto com a janela, então a sidebar fica no mesmo lugar e no mesmo tamanho ao
+ * trocar de página. O conteúdo não: .cfg-principal desfaz o zoom e fica no tamanho natural (texto de
+ * 14 px em qualquer janela), usando a largura a mais para respirar. A altura rola só quando o
+ * conteúdo passa da janela. O que fica fora da moldura continua a sidebar e o fundo, como no painel.
  */
 @media (min-width: 900px) {
   body:has(.cfg-tela) {
-    --cfg-escala: max(1, min(tan(atan2(100vw, 1315px)), tan(atan2(100vh, 710px))));
+    --cfg-escala: min(tan(atan2(100vw, 1315px)), tan(atan2(100vh, var(--tela-alt, 735px))));
     --cfg-borda: calc(
       max(0px, (100% - 1315px * var(--cfg-escala)) / 2) + 180px * var(--cfg-escala)
     );
@@ -145,7 +148,8 @@
     height: calc(100vh / var(--cfg-escala));
   }
   .cfg-principal {
-    padding: 2rem 3rem 3rem;
+    padding: 1.75rem 3rem 2rem;
+    zoom: calc(1 / var(--cfg-escala));
   }
 }
 @media (max-width: 47.99em) {
@@ -207,7 +211,7 @@
 .cfg-abas {
   display: flex;
   gap: 0.25rem;
-  margin: 0 -1rem 1.75rem;
+  margin: 0 -1rem 1.25rem;
   padding: 0 1rem;
   overflow-x: auto;
   border-bottom: 1px solid var(--p-card-borda);
@@ -259,9 +263,28 @@
     transform: scaleX(0);
   }
 }
-/* Cada aba é uma cena (template.tsx remonta a cada navegação): entra subindo, sem saída. */
+/*
+ * Cada aba é uma cena (template.tsx remonta a cada navegação): entra subindo, sem saída. A cena é
+ * também uma folha translúcida atrás dos formulários, que segura a leitura sobre a imagem de fundo
+ * sem escondê-la; a largura acompanha o conteúdo, até a coluna inteira.
+ */
 .cfg-cena {
+  width: fit-content;
+  min-width: min(100%, 26rem);
+  max-width: 100%;
+  padding: 1.5rem 1.75rem 1.75rem;
+  border: 1px solid rgb(120 170 220 / 0.14);
+  border-radius: 0.75rem;
+  background: rgb(5 19 33 / 0.68);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.22);
   animation: cfg-surge 400ms var(--cfg-entra) backwards;
+}
+@media (max-width: 47.99em) {
+  .cfg-cena {
+    width: auto;
+    min-width: 0;
+    padding: 1rem;
+  }
 }
 @keyframes cfg-surge {
   from {
@@ -306,6 +329,12 @@
   /* 16 px no mínimo: abaixo disso o Safari do iPhone dá zoom ao focar. */
   font-size: max(1rem, 16px);
   transition: border-color 200ms var(--cfg-entra);
+}
+/* Com mouse e tela larga não há zoom ao focar: o campo acompanha o corpo do texto. */
+@media (min-width: 48em) and (pointer: fine) {
+  .cfg-input {
+    font-size: var(--cfg-fs-corpo);
+  }
 }
 .cfg-input:hover {
   border-color: var(--p-filtro-rot);
@@ -560,9 +589,6 @@ select.cfg-input {
 }
 
 /* Perfil, Usuários e Tag GTM */
-.cfg-sem-margem {
-  margin-top: 0;
-}
 .cfg-perfil {
   display: flex;
   flex-wrap: wrap;
@@ -582,6 +608,32 @@ select.cfg-input {
 }
 .cfg-bloco .cfg-subtitulo {
   margin-top: 0;
+}
+/* Depois de .cfg-subtitulo de propósito: antes perdia na cascata e sobrava um vão no topo da folha. */
+.cfg-sem-margem {
+  margin-top: 0;
+}
+/* Perfil em tela larga: dados pessoais à esquerda, troca de senha à direita, Salvar embaixo.
+   Colunas de 18rem para o bloco Acesso caber ao lado já em 1366 px (senão desce e a tela rola). */
+@media (min-width: 64em) {
+  .cfg-form-perfil {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 18rem));
+    gap: 1rem 2rem;
+    align-items: start;
+    max-width: none;
+  }
+  .cfg-form-perfil > * {
+    grid-column: 1;
+  }
+  .cfg-form-perfil > .cfg-grupo {
+    grid-row: 1 / span 2;
+    grid-column: 2;
+  }
+  .cfg-form-perfil > [role='status'],
+  .cfg-form-perfil > .cfg-acoes {
+    grid-column: 1 / -1;
+  }
 }
 .cfg-lista,
 .cfg-passos {
