@@ -1,6 +1,9 @@
-# Produção (P7.2, D39): stack do Portainer criada a partir deste repositório. Nenhum segredo passa
-# por aqui nem pelas variáveis da stack: o serviço `segredos` os gera no próprio servidor na primeira
-# subida. As variáveis que sobram estão em deploy/producao.env.example.
+# Produção (P7.2, D39, D41): stack do Portainer criada a partir deste repositório. As imagens `api` e
+# `web` não são mais construídas no servidor: o workflow .github/workflows/deploy.yml as constrói no
+# GitHub Actions, publica no GHCR e chama o webhook da stack, que só baixa e recria os contêineres.
+# IMAGEM_TAG escolhe a versão (padrão `latest`; `sha-xxxxxxx` fixa um commit num rollback).
+# Nenhum segredo passa por aqui nem pelas variáveis da stack: o serviço `segredos` os gera no próprio
+# servidor na primeira subida. As variáveis que sobram estão em deploy/producao.env.example.
 # Web e API ficam só em 127.0.0.1 do servidor; o túnel Cloudflare do host publica os dois.
 services:
   # Senhas do banco, segredo das sessões e chave de cifra: 32 bytes aleatórios em hex, gerados uma
@@ -43,12 +46,9 @@ services:
       retries: 30
 
   api:
-    build:
-      context: .
-      target: api
-    image: trafego-pasio-api:latest
-    # Sempre a partir do código: "Pull and redeploy" no Portainer reconstrói a imagem.
-    pull_policy: build
+    image: ghcr.io/abnersantosss/dashboard-trafego-pago/api:${IMAGEM_TAG:-latest}
+    # Imagem pronta do GHCR, construída no GitHub Actions: o redeploy sempre baixa a versão da tag.
+    pull_policy: always
     restart: unless-stopped
     depends_on:
       db:
@@ -82,11 +82,8 @@ services:
       retries: 6
 
   web:
-    build:
-      context: .
-      target: web
-    image: trafego-pasio-web:latest
-    pull_policy: build
+    image: ghcr.io/abnersantosss/dashboard-trafego-pago/web:${IMAGEM_TAG:-latest}
+    pull_policy: always
     restart: unless-stopped
     depends_on:
       api:

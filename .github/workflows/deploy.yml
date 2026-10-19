@@ -1,0 +1,97 @@
+# Deploy de produção (D41): as imagens `api` e `web` são construídas aqui no GitHub Actions e
+# publicadas no GHCR. A VPS deixa de compilar (o `next build` caía por falta de memória e a
+# requisição do Portainer estourava os ~100 s do túnel da Cloudflare); a stack só baixa as imagens
+# prontas (`pull_policy: always` em docker-compose.prod.yml) e o redeploy leva segundos.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    # Mudança só de documentação não gera imagem nova nem redeploy.
+    paths-ignore:
+      - 'wiki/**'
+      - 'registro/**'
+      - '**/*.md'
+  workflow_dispatch:
+
+# Um deploy por vez; um push novo não cancela o que já está publicando, só espera a vez.
+concurrency:
+  group: deploy-producao
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  # Necessário para o GITHUB_TOKEN publicar no ghcr.io.
+  packages: write
+
+env:
+  # O GHCR exige o nome em minúsculas (o dono do repositório tem maiúsculas).
+  IMAGEM_BASE: ghcr.io/abnersantosss/dashboard-trafego-pago
+
+jobs:
+  imagens:
+    name: imagem ${{ matrix.alvo }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      # Se uma imagem falhar, a outra termina mesmo assim, mas o redeploy não acontece.
+      fail-fast: false
+      matrix:
+        alvo: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+
+      # Tag curta e imutável para rollback: fixar IMAGEM_TAG=sha-xxxxxxx na stack.
+      - name: Tag do commit
+        id: tag
+        run: echo "curta=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          target: ${{ matrix.alvo }}
+          # A VPS é x86_64; construir só essa plataforma mantém o build rápido.
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGEM_BASE }}/${{ matrix.alvo }}:latest
+            ${{ env.IMAGEM_BASE }}/${{ matrix.alvo }}:${{ steps.tag.outputs.curta }}
+          # Cache de camadas no próprio GitHub, separado por alvo para um não expulsar o outro.
+          cache-from: type=gha,scope=${{ matrix.alvo }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.alvo }}
+
+  redeploy:
+    name: redeploy no Portainer
+    needs: imagens
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # O webhook da stack faz o Portainer baixar as imagens novas e recriar os contêineres.
+      # A URL é um segredo (quem a tem dispara o deploy): vem só do secret e nunca é impressa.
+      - name: Chama o webhook da stack
+        env:
+          URL: ${{ secrets.PORTAINER_WEBHOOK_URL }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::notice::PORTAINER_WEBHOOK_URL não definido; imagens publicadas, redeploy não disparado."
+            exit 0
+          fi
+          for tentativa in 1 2 3; do
+            if curl -fsS -o /dev/null -X POST --max-time 60 "$URL"; then
+              echo "Redeploy disparado (tentativa $tentativa)."
+              exit 0
+            fi
+            echo "Tentativa $tentativa falhou."
+            if [ "$tentativa" -lt 3 ]; then sleep 15; fi
+          done
+          echo "::error::O webhook do Portainer não respondeu depois de 3 tentativas."
+          exit 1
