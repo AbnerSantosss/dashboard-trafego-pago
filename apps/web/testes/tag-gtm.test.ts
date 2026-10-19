@@ -50,6 +50,10 @@ describe('tag GTM', () => {
     expect(ENDPOINT).toBe('https://api.teste/t/pasio/clk');
   });
 
+  it('não tem duas chaves seguidas, que o GTM recusa ao salvar a tag', () => {
+    expect(gerarTagGtm(ENDPOINT)).not.toContain('{{');
+  });
+
   it('envia clique, utms, user_id do dataLayer e cv=1 só na primeira página', () => {
     const n = navegador({
       busca: '?gclid=G1&utm_source=google&utm_campaign=bf&utm_content={{Click Text}}',

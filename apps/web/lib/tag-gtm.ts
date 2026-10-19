@@ -8,7 +8,8 @@
  * - fbclid também sai do cookie `_fbc`; `_fbp` e `_ttp` vão como estão;
  * - user_id é o último encontrado no dataLayer (raiz ou `custom_parameters`), o mesmo id que a
  *   plataforma manda no webhook de cadastro/FTD/depósito; é isso que cruza os dois lados;
- * - valores `{{...}}` não resolvidos pelo GTM são ignorados;
+ * - valores `{{...}}` não resolvidos pelo GTM são ignorados. O código da tag não pode ter duas
+ *   chaves seguidas: o GTM lê isso como variável sem fechamento e recusa salvar a tag;
  * - envia uma vez por sessão e por identidade; a primeira página da sessão leva `cv: 1` (conta
  *   como visita); quando o user_id aparece depois do login, envia de novo para ligar o lead;
  * - sendBeacon com text/plain (sem preflight de CORS) e, se falhar, fetch keepalive.
@@ -44,7 +45,7 @@ export function gerarTagGtm(endpoint: string): string {
   function valido(v) {
     if (v === null || v === undefined) return null;
     v = String(v);
-    return v && v.indexOf('{{') === -1 ? v.slice(0, 500) : null;
+    return v && v.indexOf('{' + '{') === -1 ? v.slice(0, 500) : null;
   }
   function ler(k) { try { return localStorage.getItem(P + k); } catch (e) { return null; } }
   function gravar(k, v) { try { localStorage.setItem(P + k, v); } catch (e) {} }
