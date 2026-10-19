@@ -1,10 +1,12 @@
 ---
 tipo: arquitetura
-atualizado: 2026-10-15
+atualizado: 2026-10-19
 tags: [arquitetura, webhooks, multiempresa, fluxo]
 ---
 
 # Visão geral da arquitetura
+
+O mapa completo de produção e do código (Cloudflare, túnel, contêineres, rotas e a origem de cada número do painel) está em [[arquitetura/mapa-do-sistema]].
 
 Sistema web multiempresa que recebe eventos por webhook, trata conforme regras de cada empresa, agrega por dia e exibe um dashboard idêntico à imagem de referência.
 

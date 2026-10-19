@@ -91,11 +91,14 @@ Restaurar: parar a stack, extrair os dois arquivos nos volumes vazios com o mesm
 - **Validar logo depois de trocar nameservers**: resolvedores públicos (o do Google, por exemplo) ainda devolvem a Hostinger por um tempo e o teste cai no estacionamento. Para validar o que a Cloudflare serve, fixe os IPs com `curl --resolve kapanda.lat:443:<ip da Cloudflare>`.
 - **Tag do GTM sem `{{`**: o GTM recusa salvar HTML personalizado com duas chaves seguidas que não formam uma variável. O gerador já evita isso (D40).
 - **Redeploy no Portainer**: o botão sai de "In progress" por volta dos 4 minutos sem aviso, mas o build segue no servidor (o de 2026-10-19 levou cerca de 9 minutos). Confira o horário de criação dos contêineres antes de achar que falhou.
+- **Redeploy que constrói mas não troca os contêineres**: com a notificação `[object Object]`, as imagens novas ficam prontas e os contêineres continuam os antigos (a requisição do Portainer caiu no túnel). Basta clicar de novo: com o cache, termina em segundos. Um `exit code: 1` no `next build` com o mesmo código verde no CI aponta para falta de memória na VPS. Detalhes em [[operacao/problemas-atuais]], item 2.
 
 ## Pendências
-- [ ] O usuário definir a senha do admin pelo link do log (gerado em 2026-10-19 às 19:41) e entrar.
-- [x] Tag do GTM: Tag 42 publicada na versão 12 do contêiner `GTM-KWXQWW6V` (2026-10-19).
-- [ ] Opcional: "Pull and redeploy" para levar a correção do `{{` à aba Configurações → Tag (a Tag publicada já está corrigida).
+Problemas em aberto, com causa e solução: [[operacao/problemas-atuais]].
+
+- [x] Senha do admin definida pelo link do log; o usuário entrou no painel (2026-10-19). Conferir se a senha salva não foi a sugerida pelo Chrome.
+- [x] Tag do GTM: Tag 42 publicada na versão 12 do contêiner `GTM-KWXQWW6V` (2026-10-19). Já envia visitas: 69 no canal Meta entre a publicação e as 20:10.
+- [x] "Pull and redeploy" com a correção do `{{`: stack no `d0dec89` às 20:07 de 2026-10-19, na terceira tentativa. Validação pública com 18 de 18 ok.
 - [ ] Configurar com os endereços públicos: fontes de webhook e conta do Meta Ads.
 - [ ] Opcional: tirar as rotas `pasio.*` do túnel quando ninguém mais usar o endereço antigo.
 - [ ] Critério de aceite da P7.2: um webhook de produção processar um evento de teste e aparecer no painel.

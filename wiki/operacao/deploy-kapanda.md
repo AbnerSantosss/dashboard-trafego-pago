@@ -59,7 +59,15 @@ Horários em BRT, 2026-10-19.
 - A API do GTM recusou a primeira versão com 400 `INVALID_ARGUMENT`. O motivo era o `'{{'` literal no código, que o GTM lê como variável sem fechamento. A Tag subiu com `'{' + '{'`, e o gerador (`apps/web/lib/tag-gtm.ts`) foi corrigido, com um teste que garante que não sobram duas chaves seguidas.
 - Publicada às 19:40, depois que `api.kapanda.lat` respondeu: versão 12 "Painel PASIO - Atribuição (kapanda.lat)". Antes de criar a versão, o workspace tinha só a Tag 42 como mudança; a v11 tinha 18 tags e a v12 tem 19. O usuário confirmou que a Tag fica publicada.
 
-**Admin**: o link de 17:57 venceu sem uso. Às 19:41 o contêiner `trafego-pasio-api-1` foi reiniciado pelo Portainer e o preparo imprimiu um link novo de 1 hora, que o usuário abre pelos logs para definir a senha.
+**Admin**: o link de 17:57 venceu sem uso. Às 19:41 o contêiner `trafego-pasio-api-1` foi reiniciado pelo Portainer e o preparo imprimiu um link novo de 1 hora. O usuário definiu a senha por ele e entrou no painel por volta das 19:57.
+
+**Redeploy com a correção do `{{`** (commit `d0dec89`):
+- 19:52, primeira tentativa: o `next build` falhou com `exit code: 1`. O mesmo commit construiu no CI e numa reprodução local, então a suspeita é falta de memória na VPS;
+- o usuário fez uma limpeza no servidor;
+- 20:00, segunda tentativa: as imagens ficaram prontas às 20:00 e às 20:04, mas a requisição do Portainer caiu (`[object Object]`) e os contêineres não foram trocados;
+- 20:07, terceira tentativa: com o cache, recriou tudo em menos de 1 minuto. O preparo não gerou link novo, porque o admin já tem senha.
+
+Diagnóstico completo em [[operacao/problemas-atuais]].
 
 **Validação**: `validar-kapanda.sh` confere pelo DoH da Cloudflare:
 - NS da zona;
@@ -71,6 +79,8 @@ Horários em BRT, 2026-10-19.
 
 Resultado às 19:39, com os IPs da Cloudflare fixos no curl (`--resolve`): 17 de 18 ok. O que falhou foi o NS lido pelo DoH da Cloudflare, que ainda tinha em cache os da Hostinger. Consultados direto no registro (`a.nic.lat`) e na zona (`eva.ns.cloudflare.com`), os nameservers já são `eva` e `joel.ns.cloudflare.com`.
 
-Propagação: o DNS do Google ainda respondia com os nameservers da Hostinger, então parte dos pedidos caía no estacionamento (`http` com 200 em vez de 301, `/health` sem resposta). Por isso a validação final fixou os IPs da Cloudflare. Esse resto de cache some sozinho com o TTL.
+Às 20:08, depois do redeploy: **18 de 18 ok**. O DNS do Google também já devolve os nameservers da Cloudflare.
+
+Propagação: às 19:39, o DNS do Google ainda respondia com os nameservers da Hostinger, então parte dos pedidos caía no estacionamento (`http` com 200 em vez de 301, `/health` sem resposta). Por isso a validação final fixou os IPs da Cloudflare. Esse resto de cache some sozinho com o TTL.
 
 Relacionado: [[operacao/producao]], [[operacao/runbooks]], [[operacao/retomada]], [[orquestracao-agentes/agentes-e-fases]].

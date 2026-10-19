@@ -13,6 +13,8 @@ Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde
 ## Comece por aqui
 - [[operacao/retomada]] — onde o trabalho parou, CI, próximos passos em ordem, como subir local
 - [[operacao/producao]] — painel no ar em `kapanda.lat`: endereços, stack do Portainer, túnel, segredos, atualizar, backup
+- [[operacao/problemas-atuais]] — o que não funciona em produção, por quê e o que resolve (painel só com visitas, redeploy que falha, sobras de imagem, SMTP)
+- [[arquitetura/mapa-do-sistema]] — o sistema inteiro numa página: Cloudflare, túnel, VPS, contêineres, módulos, rotas, fluxos e a origem de cada número do painel
 
 ## Como usar esta wiki
 - Antes de mexer em qualquer área, leia a página da categoria correspondente.
@@ -21,6 +23,7 @@ Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde
 - Convenções: frontmatter YAML (`tipo`, `atualizado`, `tags`), nomes kebab-case sem acento, links `[[nome]]`.
 
 ## Arquitetura
+- [[arquitetura/mapa-do-sistema]] — mapa completo de produção e do código: infraestrutura, contêineres, módulos da API, rotas, páginas, fluxos, origem de cada número e segurança
 - [[arquitetura/visao-geral]] — fluxo webhook → regras → agregação → painel, limites do sistema
 - [[arquitetura/stack]] — monorepo pnpm, Next.js, Fastify, PostgreSQL, d3, movimento em CSS + rAF, pacotes contratos e graficos, imagens Docker de produção
 - [[arquitetura/modelo-de-dados]] — tabelas, isolamento por tenant, tipos canônicos de evento
@@ -47,6 +50,7 @@ Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde
 - [[qa-visual/fidelidade-visual]] — gates G0 a G4, limite do CI (5,5%), medições, como medir igual ao CI e armadilhas
 
 ## Operação
+- [[operacao/problemas-atuais]] — problemas em aberto em produção, com sintoma, causa e solução
 - [[operacao/producao]] — o que está no ar (endereços, stack `trafego-pasio`, rotas do túnel, segredos gerados no servidor), senha do admin, atualizar, logs, backup, armadilhas e pendências
 - [[operacao/deploy-kapanda]] — plano e execução da passagem para `kapanda.lat` (zona na Cloudflare, rotas do túnel, variáveis da stack, Tag no GTM, agentes)
 - [[operacao/runbooks]] — onboarding de empresa, rotação de segredo (sem carência), reprocessamento, dead-letter, instalação de produção do zero

@@ -15,8 +15,11 @@ Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou,
   - Feito: nameservers trocados na Hostinger (pelo usuário) e rotas `kapanda.lat`, `www` e `api` criadas no túnel. **Site no ar em `https://kapanda.lat`**; validação pública com 17 de 18 itens ok (o que falhou foi só o cache de NS do DoH).
   - Feito: Tag 42 publicada no GTM (versão 12), com o ok do usuário.
   - Feito: a correção do `{{` está no `main` (`ede758e`), com CI verde.
-  - Falta: o usuário definir a senha do admin pelo link gerado às 19:41 (está nos logs do `trafego-pasio-api-1`; se passar de 1 hora, reiniciar o contêiner gera outro) e entrar.
-  - Depois: configurar as fontes de webhook e o Meta Ads com `api.kapanda.lat`; opcional, "Pull and redeploy" para a aba Configurações → Tag mostrar o código corrigido.
+  - Feito: o usuário definiu a senha do admin e entrou.
+  - Feito: "Pull and redeploy" do `d0dec89` às 20:07, na terceira tentativa. A primeira falhou no `next build`, provavelmente por falta de memória na VPS; na segunda, a requisição do Portainer caiu no túnel. Validação pública com 18 de 18 ok.
+  - **Problemas em aberto, com causa e solução: [[operacao/problemas-atuais]].** O sistema inteiro está em [[arquitetura/mapa-do-sistema]].
+  - Próximo passo do usuário: o painel só mostra visitas (vindas da Tag) porque não há fonte de webhook nem conta do Meta Ads em produção. Criar as fontes em Configurações → Webhooks, com as regras de cada uma, e conectar o Meta Ads.
+  - Proposta técnica em aberto: construir as imagens no GitHub Actions (GHCR), para a VPS não compilar mais no redeploy.
 
 ## Até 2026-10-16
 - **Deploy (P7.2) no ar** em `https://pasio.proxserverabner.site` (API em `https://pasio-api.proxserverabner.site`). Stack `trafego-pasio` no Portainer, rotas no túnel `servidor-abner`. Falta: o usuário definir a senha do admin pelo link do log (se passar de 1 hora, reiniciar o contêiner `trafego-pasio-api-1` gera outro), entrar e configurar a Tag do GTM, os webhooks e o Meta Ads com os endereços públicos. Atualizar: Portainer → stack → Pull and redeploy. Backup: volumes `trafego-pasio_pgdata` e `trafego-pasio_segredos`, juntos. Tudo sobre o ambiente no ar (endereços, contêineres, senha do admin, atualizar, logs, backup, armadilhas e pendências) em [[operacao/producao]].

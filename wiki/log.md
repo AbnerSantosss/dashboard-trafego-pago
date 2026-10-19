@@ -275,3 +275,13 @@ tags: [log, historico]
   - Portainer: `trafego-pasio-api-1` reiniciado para gerar um link novo de senha do admin (o anterior venceu);
   - wiki: [[operacao/producao]] (pendências e armadilha de propagação), [[operacao/retomada]].
 - Entregue: painel em `https://kapanda.lat`, API em `https://api.kapanda.lat`, Tag de atribuição ao vivo no GTM e o link da senha do admin nos logs. Falta o usuário definir a senha e entrar.
+
+## [2026-10-19] update | Redeploy do d0dec89, verificação geral, problemas atuais e mapa do sistema
+- Pedido: "faz o pull and redeploy no portainer", depois "faça uma verificação geral, fiz uma limpa do servidor" e "salve tudo na wiki os problemas atuais e o porque não funciona e toda a arquitetura do sistema ligada ao index junto com os problemas".
+- Feito:
+  - redeploy em três tentativas. 19:52: `next build` com `exit code: 1`; o mesmo commit construiu no CI e numa reprodução local, então a suspeita é memória da VPS. 20:00: imagens prontas, mas a requisição do Portainer caiu e os contêineres ficaram os antigos. 20:07: recriou tudo no `d0dec89` em menos de 1 minuto, com o build em cache;
+  - verificação geral: volumes `pgdata` e `segredos` intactos depois da limpeza, stack saudável, preparo sem erro e sem link novo (o admin já tem senha), validação pública 18 de 18 e o DNS do Google já propagado;
+  - diagnóstico do painel "só com visitas": só a Tag do GTM está ligada (69 visitas); não há fonte de webhook nem conta do Meta Ads em produção;
+  - páginas novas [[operacao/problemas-atuais]] (sintoma, causa e solução de cada item) e [[arquitetura/mapa-do-sistema]] (infraestrutura, contêineres, módulos, rotas, páginas, fluxos, origem de cada número e segurança), as duas no [[index]];
+  - atualizadas: [[operacao/producao]] (armadilha e pendências), [[operacao/deploy-kapanda]], [[operacao/retomada]] e [[arquitetura/visao-geral]].
+- Entregue: painel no ar com o código mais recente e a wiki com o estado real, os problemas e o mapa completo do sistema.
