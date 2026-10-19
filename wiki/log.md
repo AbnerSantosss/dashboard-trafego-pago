@@ -285,3 +285,15 @@ tags: [log, historico]
   - páginas novas [[operacao/problemas-atuais]] (sintoma, causa e solução de cada item) e [[arquitetura/mapa-do-sistema]] (infraestrutura, contêineres, módulos, rotas, páginas, fluxos, origem de cada número e segurança), as duas no [[index]];
   - atualizadas: [[operacao/producao]] (armadilha e pendências), [[operacao/deploy-kapanda]], [[operacao/retomada]] e [[arquitetura/visao-geral]].
 - Entregue: painel no ar com o código mais recente e a wiki com o estado real, os problemas e o mapa completo do sistema.
+
+## [2026-10-19] deploy | Imagens no GHCR via GitHub Actions (D41) e SMTP na stack
+- Pedido: resolver o "Pull and redeploy" que falhava (item 2 de [[operacao/problemas-atuais]]: `next build` caindo por memória na VPS e a requisição do Portainer estourando os cerca de 100 s do túnel, com `[object Object]`) e configurar o SMTP da stack (item 5).
+- Feito:
+  - decisão D41 em [[decisoes-tecnicas/decisoes]], commit `e00a616` na `main` com push: workflow novo `.github/workflows/deploy.yml` (push na `main` sem `wiki/**`, `registro/**` e `*.md`, ou `workflow_dispatch`; job `imagens` em matriz `api`/`web` publicando no GHCR com `latest` e `sha-xxxxxxx` e cache `gha`; job `redeploy` que só chama o Portainer se o secret `PORTAINER_WEBHOOK_URL` existir);
+  - `docker-compose.prod.yml` com `image: ghcr.io/abnersantosss/dashboard-trafego-pago/<alvo>:${IMAGEM_TAG:-latest}` e `pull_policy: always`, sem `build`; `deploy/producao.env.example` com `# IMAGEM_TAG=latest` para rollback;
+  - validação local antes do commit (agente pipeline): os dois alvos construíram (`api` cerca de 67 s e 1,23 GB, `web` cerca de 103 s e 1,37 GB), `docker compose config`, lint e prettier ok, sem segredos;
+  - primeiro run do Deploy (39342060273) verde: `api` e `web` publicadas com `latest` e `sha-e00a616`, pacotes públicos, sem registry no Portainer. O `redeploy` só avisou: o webhook de stack do Portainer CE 2.39.1 abre o diálogo de licença da Business Edition;
+  - SMTP: no Portainer, variáveis da stack salvas (Save settings, sem redeploy) com o servidor do Gmail, porta 465, o e-mail do admin (variável ADMIN_EMAIL / SMTP_USUARIO da stack) e o remetente "Painel PASIO"; `SMTP_SENHA` em branco, para o usuário colar a senha de app;
+  - wiki: [[operacao/producao]] (seções "Atualizar" e "E-mail (SMTP)", rollback, runs, GitOps da Business), [[operacao/problemas-atuais]] (itens 2, 3 e 5 marcados), [[operacao/retomada]] (estado e próximos passos), [[arquitetura/stack]], [[arquitetura/mapa-do-sistema]] e nota em [[operacao/deploy-kapanda]].
+- Barrado e depois liberado: o classificador do Claude Code recusou o primeiro clique em "Pull and redeploy" (deploy em produção). O usuário colou a senha de app em `SMTP_SENHA` e autorizou; o redeploy foi feito às 20:38 e levou cerca de 3 minutos (primeiro download das imagens).
+- Entregue: produção rodando as imagens do GHCR (`e00a616`), os quatro contêineres recriados e saudáveis, validação pública ok depois do redeploy, SMTP configurado. Falta o usuário testar "esqueci a senha" e limpar as imagens antigas (lista em [[operacao/retomada]]).

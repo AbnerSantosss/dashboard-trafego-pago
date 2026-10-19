@@ -66,8 +66,8 @@ Endereços, variáveis da stack e rotas do túnel em detalhe: [[operacao/produca
 |---|---|---|---|
 | `segredos` | `alpine:3.20` | — | grava 4 segredos aleatórios no volume `segredos` se ainda não existirem e sai com 0 |
 | `db` | `postgres:16-alpine` | `segredos` | banco `trafego`; senha lida de arquivo; nenhuma porta publicada |
-| `api` | alvo `api` do `Dockerfile` | `db` saudável | `segredos-do-servidor.ts` monta as variáveis → `db/producao.ts` (migrações, `app_user`, PASIO, admin) → Fastify na 3001 |
-| `web` | alvo `web` do `Dockerfile` | `api` saudável | `next start` na 3000; não recebe segredo nenhum |
+| `api` | `ghcr.io/.../api` (alvo `api` do `Dockerfile`, construída no GitHub Actions, D41) | `db` saudável | `segredos-do-servidor.ts` monta as variáveis → `db/producao.ts` (migrações, `app_user`, PASIO, admin) → Fastify na 3001 |
+| `web` | `ghcr.io/.../web` (alvo `web`, D41) | `api` saudável | `next start` na 3000; não recebe segredo nenhum |
 
 Volumes: `trafego-pasio_pgdata` (dados) e `trafego-pasio_segredos` (senhas e chave de cifra). Os dois andam juntos no backup e **nunca** podem ser apagados sozinhos.
 
@@ -122,7 +122,7 @@ Volumes: `trafego-pasio_pgdata` (dados) e `trafego-pasio_segredos` (senhas e cha
 
 **Subida da API (preparo)**: migrações → `app_user` com LOGIN → empresa PASIO, se faltar → admin de `ADMIN_EMAIL`. Na subida de 2026-10-19 às 20:07: "migrações aplicadas", "papel app_user com LOGIN", "empresa PASIO já existia; admin ok", sem link novo (o admin já tem senha).
 
-**Atualização (deploy)**: push na `main` → CI (lint, tipos, testes, build e diff visual) → Portainer → stack → "Pull and redeploy" → o servidor clona o commit, **constrói as duas imagens na própria VPS** (`pull_policy: build`) e recria os contêineres. O preparo aplica as migrações novas.
+**Atualização (deploy, desde 2026-10-19, D41)**: push na `main` → CI (lint, tipos, testes, build e diff visual) e, em paralelo, o workflow Deploy, que constrói `api` e `web` no GitHub Actions e publica no GHCR (`latest` e `sha-xxxxxxx`) → Portainer → stack → "Pull and redeploy" (manual; o webhook de stack é da Business Edition) → a stack baixa as imagens prontas (`pull_policy: always`) e recria os contêineres em segundos. O preparo aplica as migrações novas. Rollback pela variável `IMAGEM_TAG`. Antes de D41, o servidor clonava o commit e **construía as duas imagens na própria VPS** (`pull_policy: build`), o que causou as falhas do item 2 de [[operacao/problemas-atuais]].
 
 ## 6. De onde vem cada número do painel
 | Número | Origem | Situação em 2026-10-19 |
@@ -143,4 +143,4 @@ Por isso o painel mostra só as visitas: o resto depende das fontes de webhook e
 - CORS da API só para `https://kapanda.lat`; rate-limit por visitante (login 10/min, Tag 120/min).
 - Repositório público: nenhum segredo nem o e-mail do admin no código, na wiki ou no log ([[operacao/ambiente-e-seguranca]]).
 
-Relacionado: [[operacao/producao]], [[operacao/problemas-atuais]], [[operacao/deploy-kapanda]], [[decisoes-tecnicas/decisoes]] (D39, D40).
+Relacionado: [[operacao/producao]], [[operacao/problemas-atuais]], [[operacao/deploy-kapanda]], [[decisoes-tecnicas/decisoes]] (D39, D40, D41).

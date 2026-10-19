@@ -1,6 +1,6 @@
 ---
 tipo: decisao
-atualizado: 2026-10-16
+atualizado: 2026-10-19
 tags: [adr, decisoes]
 ---
 
@@ -303,7 +303,7 @@ Formato: contexto, decisão, motivo, consequências. Correção vale mais que ac
     - dá LOGIN e senha (`APP_USER_SENHA`) ao `app_user`, o papel sujeito a RLS;
     - cria a empresa PASIO (slug `pasio`, apresentação padrão) só se ela não existir e sem dados de exemplo;
     - garante o admin de `ADMIN_EMAIL`. Enquanto ele não tem senha, o log do contêiner traz um link de 1 hora para defini-la. Sem SMTP não há outro caminho, e o e-mail do admin fica só na variável do Portainer, nunca no repositório.
-  - **Stack pelo repositório Git** (`docker-compose.prod.yml` com `build:`), sem bind mounts. Atualizar é "Pull and redeploy". API e web têm `pull_policy: build`, para a imagem ser reconstruída a cada subida em vez de reaproveitar a anterior. `deploy/producao.env.example` lista as variáveis da stack, sem valores.
+  - **Stack pelo repositório Git** (`docker-compose.prod.yml` com `build:`), sem bind mounts. Atualizar é "Pull and redeploy". API e web têm `pull_policy: build`, para a imagem ser reconstruída a cada subida em vez de reaproveitar a anterior (**substituído em 2026-10-19 por D41**: as imagens vêm prontas do GHCR, com `pull_policy: always`). `deploy/producao.env.example` lista as variáveis da stack, sem valores.
   - **Segredos gerados no próprio servidor**: ninguém digita nem vê `POSTGRES_SENHA`, `APP_USER_SENHA`, `AUTH_SECRET` e `WEBHOOK_CHAVE_CIFRA`. O serviço `segredos` (alpine, roda e sai) cria cada um uma única vez, com 32 bytes aleatórios em hex, no volume `segredos`. O postgres lê a senha por `POSTGRES_PASSWORD_FILE`. A API carrega `src/segredos-do-servidor.ts` com `--import` antes do preparo e do servidor: o módulo lê `/run/segredos` e monta `DATABASE_URL` e `DATABASE_ADMIN_URL`; uma variável já definida vale mais que o arquivo, e sem a pasta (dev, CI) nada muda. Assim as variáveis da stack no Portainer ficam só com endereços e o e-mail do admin. Consequência: o volume `segredos` entra em todo backup junto com o `pgdata`, porque sem a chave de cifra os segredos de webhook e os tokens do Meta gravados no banco não abrem.
   - **Sem cloudflared na stack**: web e API publicam só em `127.0.0.1:3480` e `127.0.0.1:3481` (portas livres no servidor, trocáveis por `WEB_PORTA` e `API_PORTA`), e o túnel do host aponta para elas. O banco não publica porta.
   - **Rate-limit pelo IP da borda**: atrás do túnel, todo visitante chega à API com o IP do gateway do Docker. Isso faria da Tag do GTM (120 por minuto) e do login (10 por minuto) limites somados do site inteiro. O `keyGenerator` global usa `cf-connecting-ip` quando o valor é um IP válido; a Cloudflare grava e sobrescreve esse cabeçalho na borda. Sem ele, vale o IP da conexão. O web repassa o cabeçalho do visitante nas chamadas que faz à API. Os webhooks continuam com chave por empresa e fonte.
@@ -325,3 +325,27 @@ Formato: contexto, decisão, motivo, consequências. Correção vale mais que ac
   - **Tag no GTM** criada pela API num workspace sem outras mudanças e publicada só depois que `api.kapanda.lat` responder. O código da Tag não pode ter `{{`: o GTM lê isso como variável sem fechamento e recusa salvar (400 `INVALID_ARGUMENT`). O gerador monta a string em duas partes, e um teste garante que não sobram duas chaves seguidas.
   - **Limite do agente**: o modo automático do Claude Code barra mudanças de DNS (nameservers e rotas do túnel), mesmo com autorização no chat. Essas ações ficam com o usuário, no navegador.
 - Verificação: em [[operacao/deploy-kapanda]] (seção Execução).
+
+## D41: imagens construídas no GitHub Actions e publicadas no GHCR; a VPS só baixa (2026-10-19)
+- Contexto: o "Pull and redeploy" do Portainer compilava `api` e `web` na própria VPS (`pull_policy: build`, D39). Em 2026-10-19 o `next build` caiu com `exit code: 1` (falta de memória: 6,4 GB de RAM, cerca de 64 contêineres de outros projetos e os dois builds ao mesmo tempo), e numa segunda tentativa a requisição do Portainer passou dos cerca de 100 s do túnel da Cloudflare (`[object Object]`): as imagens ficaram prontas, mas os contêineres não foram trocados. Era o item 2 de [[operacao/problemas-atuais]]. Commit `e00a616`.
+- Decisão:
+  - **Workflow `Deploy`** (`.github/workflows/deploy.yml`): roda em push na `main` (ignora `wiki/**`, `registro/**` e `**/*.md`) e por `workflow_dispatch`. `concurrency: deploy-producao` sem cancelar o que está em andamento (um push novo espera a vez). Permissões `contents: read` e `packages: write`.
+  - **Job `imagens`** em matriz `api`/`web`: checkout, buildx, login no `ghcr.io` com o `GITHUB_TOKEN`, `build-push-action` com `target` igual ao alvo do `Dockerfile`, só `linux/amd64` (a VPS é x86_64), tags `latest` e `sha-xxxxxxx` (7 primeiros caracteres do commit), cache `type=gha` com escopo por alvo e limite de 30 minutos.
+  - **Job `redeploy`** (depende de `imagens`): se o secret `PORTAINER_WEBHOOK_URL` estiver vazio, só deixa um aviso e termina com sucesso; se existir, faz POST com `curl`, até 3 tentativas com 15 s de intervalo, sem imprimir a URL.
+  - **Compose** (`docker-compose.prod.yml`): `api` e `web` passam a `image: ghcr.io/abnersantosss/dashboard-trafego-pago/<alvo>:${IMAGEM_TAG:-latest}` com `pull_policy: always` e sem bloco `build`. O resto não muda (serviço `segredos`, `db`, portas só em `127.0.0.1`).
+  - **`deploy/producao.env.example`** ganha a linha comentada `# IMAGEM_TAG=latest`, que explica o rollback por `sha-xxxxxxx`.
+- Alternativas descartadas:
+  - **continuar compilando na VPS com menos paralelismo** (`COMPOSE_PARALLEL_LIMIT=1` ou um build por vez): alivia a memória, mas o build continua lento, disputa recursos com os outros projetos do servidor e a requisição do Portainer continua sujeita ao corte de 100 s do túnel;
+  - **GitOps / webhook de stack do Portainer**: no Portainer CE 2.39.1, ligar abre um diálogo de licença; é recurso da Business Edition.
+- Consequências:
+  - o servidor não compila mais: o "Pull and redeploy" só baixa duas imagens prontas e recria os contêineres, em segundos;
+  - **rollback** pela variável `IMAGEM_TAG` da stack: fixar `sha-xxxxxxx` de um commit anterior e fazer o redeploy; voltar a `latest` (ou apagar a variável) depois;
+  - **registro público**: os pacotes do GHCR herdaram a visibilidade do repositório público, o manifesto responde 200 sem login e não foi preciso cadastrar registry no Portainer. Nenhum segredo vai para a imagem (os segredos continuam sendo gerados no servidor, D39);
+  - **redeploy manual** até existir um jeito automático: sem o secret `PORTAINER_WEBHOOK_URL`, o job `redeploy` só avisa. O caminho possível na CE é a API do Portainer (`PUT /api/stacks/135/git/redeploy?endpointId=3`), com um token de acesso criado pelo usuário e guardado como secret do GitHub; o job teria de ser adaptado;
+  - as sobras `<none>` a cada deploy (item 3 de [[operacao/problemas-atuais]]) deixam de se acumular: as imagens antigas construídas na VPS (`trafego-pasio-api`, `trafego-pasio-web`) saem uma única vez, depois do primeiro redeploy pelo GHCR.
+- Verificação:
+  - local, antes do commit (agente pipeline): build dos dois alvos ok (`api` em cerca de 67 s, 1,23 GB; `web` em cerca de 103 s, 1,37 GB), `docker compose -f docker-compose.prod.yml config` ok, lint e prettier ok, sem segredos;
+  - primeiro run do workflow Deploy (id 39342060273) verde: `ghcr.io/abnersantosss/dashboard-trafego-pago/api` e `.../web` publicados com `latest` e `sha-e00a616`. O job `redeploy` saiu com o aviso, porque o secret não existe;
+  - o CI avisa que as actions `@v4`, `@v3` e `@v6` rodam em Node 20 forçadas para Node 24 e que `ubuntu-latest` migra para Ubuntu 26 a partir de 2026-10-19 (só avisos);
+  - **pendente**: o "Pull and redeploy" da stack com as imagens do GHCR. Ele foi barrado pelo classificador do Claude Code (deploy em produção) e fica com o usuário ([[operacao/retomada]]).
+- Substitui, em D39, o trecho "Stack pelo repositório Git (`docker-compose.prod.yml` com `build:`) … `pull_policy: build`": a stack continua criada pelo Git, mas o compose não tem mais `build:`.

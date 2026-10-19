@@ -1,6 +1,6 @@
 ---
 tipo: arquitetura
-atualizado: 2026-10-16
+atualizado: 2026-10-19
 tags: [stack, nextjs, fastify, postgresql, pnpm, d3, movimento, docker, producao]
 ---
 
@@ -45,4 +45,5 @@ Node v24.19.0, git 2.55 e pnpm 12.11.2 (instalado por `npm i -g --allow-scripts=
 - **API**: roda com `tsx` (`node --import tsx`), sem compilar, porque os pacotes internos exportam a fonte TypeScript. Antes do servidor, `src/segredos-do-servidor.ts` lê os segredos e `src/db/producao.ts` prepara o banco.
 - **Web**: `next build` na imagem e `next start` na porta 3000; fala com a API pela rede interna (`API_URL=http://api:3001`).
 - **Compose**: `docker-compose.prod.yml` com `segredos` (gera as senhas e sai), `db` (Postgres 16), `api` e `web`. Web e API só em `127.0.0.1`; o túnel Cloudflare do host publica os dois. Sem Redis e sem cloudflared na stack.
+- **Build e registro (desde 2026-10-19, D41)**: as imagens `api` e `web` são construídas no GitHub Actions (workflow `.github/workflows/deploy.yml`) e publicadas no GHCR (`ghcr.io/abnersantosss/dashboard-trafego-pago/{api,web}`, tags `latest` e `sha-xxxxxxx`). O compose de produção só as baixa (`pull_policy: always`); a VPS não compila mais.
 - Onde está, endereços e como atualizar: [[operacao/producao]].

@@ -8,6 +8,8 @@ tags: [producao, deploy, kapanda, cloudflare, tunel, hostinger, dns, gtm, orques
 
 Plano e execução da passagem do painel para o domínio `kapanda.lat`. Decisão em [[decisoes-tecnicas/decisoes]] D40. O que fica no ar depois está em [[operacao/producao]].
 
+> Nota (2026-10-19, noite): o deploy mudou depois desta página. As imagens passaram a vir prontas do GHCR, construídas no GitHub Actions (D41), e a VPS não compila mais no "Pull and redeploy". Como atualizar hoje: [[operacao/producao]], seção "Atualizar".
+
 ## Situação de partida (2026-10-19)
 - Painel no ar desde 2026-10-16 em `pasio.proxserverabner.site` (stack `trafego-pasio` no Portainer, túnel `servidor-abner` com o cloudflared no host). API saudável.
 - `kapanda.lat` registrado na Hostinger, com o DNS autoritativo na própria Hostinger (`lunar`/`solar.dns-parking.com`). A zona só tem o estacionamento: A da raiz em `2.57.91.91` e `www` em CNAME para a raiz. Não há MX nem TXT, então nenhum e-mail depende dela.

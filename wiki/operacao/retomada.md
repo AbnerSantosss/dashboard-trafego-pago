@@ -1,14 +1,31 @@
 ---
 tipo: retomada
 atualizado: 2026-10-19
-tags: [retomada, estado-atual, proximos-passos, ci, operacao]
+tags: [retomada, estado-atual, proximos-passos, ci, operacao, deploy, ghcr, smtp]
 ---
 
 # Retomada: comece por aqui
 
 Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou, o que está pendente e em que ordem. Atualize ao fim de cada sessão de trabalho relevante.
 
-## Onde paramos (2026-10-19)
+## Onde paramos (2026-10-19, à noite, por volta das 21:30)
+- **Deploy pelo GHCR (D41), commit `e00a616` na `main`, push feito.** O workflow `.github/workflows/deploy.yml` constrói `api` e `web` no GitHub Actions e publica em `ghcr.io/abnersantosss/dashboard-trafego-pago/{api,web}` (`latest` e `sha-xxxxxxx`). O `docker-compose.prod.yml` usa essas imagens com `pull_policy: always`, sem `build`. Primeiro run (39342060273) verde; pacotes públicos, sem registry no Portainer. O job `redeploy` só avisou, porque não há secret `PORTAINER_WEBHOOK_URL` (o webhook de stack do Portainer é da Business Edition). Detalhes em [[operacao/producao]], seção "Atualizar".
+- **Redeploy feito às 20:38 (UTC do servidor), com autorização do usuário.** Os quatro contêineres foram recriados com `ghcr.io/abnersantosss/dashboard-trafego-pago/api:latest` e `.../web:latest`; `db` e `api` saudáveis, `web` no ar, `segredos` com saída 0. O redeploy levou cerca de 3 minutos (primeiro download das imagens, 2,6 GB); os próximos levam segundos. Validação pública depois: `/health` 200, `/login` 200, apelidos `pasio.*` 200, webhook sem assinatura 400, TLS 1.1 recusado, Tag coletando com 204.
+- **SMTP ativo**: o usuário colou a senha de app em `SMTP_SENHA` antes do redeploy. Ainda não houve envio de teste. Seção "E-mail (SMTP)" de [[operacao/producao]].
+- GitOps updates continua desligado.
+
+### Próximos passos, em ordem (usuário)
+1. ~~Colar `SMTP_SENHA` e Save settings.~~ Feito.
+2. ~~Pull and redeploy.~~ Feito às 20:38.
+3. ~~Conferir contêineres e imagens `ghcr.io/...`.~~ Feito.
+4. ~~Conferir `/health`, login e validação pública.~~ Feito (tudo 200; login só conferido pela página, não pelo formulário).
+5. Testar "esqueci a senha" em `https://kapanda.lat/login` e ver se o e-mail chega. Se não chegar, olhar o log do `trafego-pasio-api-1` (erro de autenticação do Gmail = senha de app errada ou verificação em duas etapas desligada).
+6. Remover em Images as antigas `trafego-pasio-api`, `trafego-pasio-web` e as `<none>` (sem `docker system prune --volumes`).
+7. Opcional: redeploy automático pela API do Portainer (`PUT /api/stacks/135/git/redeploy?endpointId=3`, token de acesso como secret do GitHub e o job `redeploy` adaptado).
+
+Continuam valendo os passos de dados abaixo: fontes de webhook, regras e Meta Ads ([[operacao/problemas-atuais]], item 1).
+
+## Antes, no mesmo dia (2026-10-19)
 - **Domínio `kapanda.lat` (D40)**: o plano e a execução estão em [[operacao/deploy-kapanda]].
   - Feito: a stack `trafego-pasio` foi redeployada com `WEB_URL=https://kapanda.lat`, `WEBHOOK_URL_PUBLICA=https://api.kapanda.lat` e o novo `ADMIN_EMAIL`. O link de senha do novo admin saiu no log às 17:57, válido por 1 hora.
   - Feito: zona `kapanda.lat` criada na Cloudflare, com HTTPS sempre, TLS 1.2 e `www` → raiz.
@@ -19,7 +36,7 @@ Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou,
   - Feito: "Pull and redeploy" do `d0dec89` às 20:07, na terceira tentativa. A primeira falhou no `next build`, provavelmente por falta de memória na VPS; na segunda, a requisição do Portainer caiu no túnel. Validação pública com 18 de 18 ok.
   - **Problemas em aberto, com causa e solução: [[operacao/problemas-atuais]].** O sistema inteiro está em [[arquitetura/mapa-do-sistema]].
   - Próximo passo do usuário: o painel só mostra visitas (vindas da Tag) porque não há fonte de webhook nem conta do Meta Ads em produção. Criar as fontes em Configurações → Webhooks, com as regras de cada uma, e conectar o Meta Ads.
-  - Proposta técnica em aberto: construir as imagens no GitHub Actions (GHCR), para a VPS não compilar mais no redeploy.
+  - ~~Proposta técnica em aberto: construir as imagens no GitHub Actions (GHCR), para a VPS não compilar mais no redeploy.~~ Feita à noite (D41), com redeploy às 20:38.
 
 ## Até 2026-10-16
 - **Deploy (P7.2) no ar** em `https://pasio.proxserverabner.site` (API em `https://pasio-api.proxserverabner.site`). Stack `trafego-pasio` no Portainer, rotas no túnel `servidor-abner`. Falta: o usuário definir a senha do admin pelo link do log (se passar de 1 hora, reiniciar o contêiner `trafego-pasio-api-1` gera outro), entrar e configurar a Tag do GTM, os webhooks e o Meta Ads com os endereços públicos. Atualizar: Portainer → stack → Pull and redeploy. Backup: volumes `trafego-pasio_pgdata` e `trafego-pasio_segredos`, juntos. Tudo sobre o ambiente no ar (endereços, contêineres, senha do admin, atualizar, logs, backup, armadilhas e pendências) em [[operacao/producao]].
@@ -67,6 +84,8 @@ Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou,
 - Fora do git, de propósito: `apps/api/.env.local` (credenciais SMTP de teste) e `registro/`. O `apps/web/tsconfig.tsbuildinfo` aparece como modificado e não deve ser commitado (é gerado).
 
 ## CI: estado
+Desde 2026-10-19 há também o workflow `.github/workflows/deploy.yml` (D41: imagens no GHCR), verde no primeiro run (39342060273), com os mesmos avisos de Node 20 nas actions `@v4`, `@v3` e `@v6`. Ver os runs: `gh run list --workflow deploy.yml`.
+
 O workflow `.github/workflows/ci.yml` tem dois jobs, e os dois estão **verdes** desde o commit `817bc01` (run 38856270127, 2026-10-16); continuam verdes no `752c4dc` (run 38895390480, D34 a D37) e no `dc325ae` (run 38905350545, D38). Aviso do GitHub: as actions `@v4` rodam em Node 20, que está obsoleto (forçadas para Node 24), e `ubuntu-latest` passa para Ubuntu 26 a partir de 2026-10-19; vale atualizar as versões das actions.
 - **check** (ubuntu: lint, formato, tipos, testes com banco, build): passou.
 - **visual** (windows: diff contra `ref-1.png`, limite 5,5%, `WEB_MOCK_API=1`): passou com **5,19%** (local mede 5,16%). Regiões que mais divergem: kpis 7,4%, cabeçalho 7,0%, funil 5,8%.
