@@ -264,3 +264,14 @@ tags: [log, historico]
   - wiki: [[operacao/producao]] com os endereços `kapanda.lat`, rotas, zona e armadilhas novas; [[operacao/retomada]] e [[index]] apontando para a página do deploy.
 - Barrado: o modo automático do Claude Code recusou trocar os nameservers na Hostinger e criar as rotas no túnel ("DNS / Domain / Cert Changes"), também com a autorização do usuário no chat. Essas duas ações ficaram com o usuário.
 - Entregue: stack no ar com as URLs novas (o endereço antigo continua respondendo), zona e Tag prontas e o link da senha entregue ao usuário. A validação pública e a publicação da Tag vêm quando o DNS virar.
+
+## [2026-10-19] update | kapanda.lat no ar: rotas do túnel, validação e Tag publicada (D40)
+- Pedido: "fiz na hostinger me leve até a tela da claufer para add", depois "está autorizando" (criar as rotas) e "pode deixar publicado, segue" (Tag do GTM).
+- Feito (detalhes em [[operacao/deploy-kapanda]]):
+  - nameservers `eva`/`joel.ns.cloudflare.com` confirmados no registro `.lat` (troca feita pelo usuário na Hostinger);
+  - rotas no túnel `servidor-abner`: `kapanda.lat` e `www.kapanda.lat` → `http://localhost:3480`, `api.kapanda.lat` → `http://localhost:3481`, com os CNAMEs criados pela Cloudflare; nenhuma rota antiga tocada;
+  - validação pública com 17 de 18 ok, usando os IPs da Cloudflare fixos, porque o DNS do Google ainda guardava a Hostinger. A falha foi o NS em cache no DoH;
+  - GTM: versão 12 criada e publicada só com a Tag 42 (v11 tinha 18 tags, v12 tem 19); o usuário confirmou manter publicada;
+  - Portainer: `trafego-pasio-api-1` reiniciado para gerar um link novo de senha do admin (o anterior venceu);
+  - wiki: [[operacao/producao]] (pendências e armadilha de propagação), [[operacao/retomada]].
+- Entregue: painel em `https://kapanda.lat`, API em `https://api.kapanda.lat`, Tag de atribuição ao vivo no GTM e o link da senha do admin nos logs. Falta o usuário definir a senha e entrar.

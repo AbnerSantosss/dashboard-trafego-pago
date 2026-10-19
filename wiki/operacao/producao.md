@@ -87,13 +87,15 @@ Restaurar: parar a stack, extrair os dois arquivos nos volumes vazios com o mesm
 - **Rate-limit** é por visitante (`cf-connecting-ip`, D39). Sem esse cabeçalho, todos chegariam com o IP do gateway do Docker e dividiriam o limite do login (10 por minuto) e da Tag do GTM (120 por minuto).
 - **Server actions do Next pelo túnel** (salvar formulários): validadas na stack local, ainda não conferidas em produção. Se um formulário falhar com erro de origem, olhar o log do `trafego-pasio-web-1`.
 - **Formulário de rota da Cloudflare** guarda os valores da rota anterior ao adicionar a seguinte: conferir os campos antes de salvar.
-- **Agente e DNS**: o modo automático do Claude Code barra trocar nameservers e criar rotas no túnel ("DNS / Domain / Cert Changes"), mesmo com autorização no chat. Isso fica com o usuário (D40).
+- **Agente e DNS**: o modo automático do Claude Code barra trocar nameservers e criar rotas no túnel ("DNS / Domain / Cert Changes"), mesmo com autorização no chat. Fora do modo automático, com o usuário autorizando, as rotas foram criadas pelo agente (D40).
+- **Validar logo depois de trocar nameservers**: resolvedores públicos (o do Google, por exemplo) ainda devolvem a Hostinger por um tempo e o teste cai no estacionamento. Para validar o que a Cloudflare serve, fixe os IPs com `curl --resolve kapanda.lat:443:<ip da Cloudflare>`.
 - **Tag do GTM sem `{{`**: o GTM recusa salvar HTML personalizado com duas chaves seguidas que não formam uma variável. O gerador já evita isso (D40).
 - **Redeploy no Portainer**: o botão sai de "In progress" por volta dos 4 minutos sem aviso, mas o build segue no servidor (o de 2026-10-19 levou cerca de 9 minutos). Confira o horário de criação dos contêineres antes de achar que falhou.
 
 ## Pendências
-- [ ] O usuário definir a senha do admin pelo link do log e entrar.
-- [ ] Tag do GTM: a Tag 42 está pronta no workspace 12 do contêiner `GTM-KWXQWW6V` e é publicada quando `api.kapanda.lat` responder.
+- [ ] O usuário definir a senha do admin pelo link do log (gerado em 2026-10-19 às 19:41) e entrar.
+- [x] Tag do GTM: Tag 42 publicada na versão 12 do contêiner `GTM-KWXQWW6V` (2026-10-19).
+- [ ] Opcional: "Pull and redeploy" para levar a correção do `{{` à aba Configurações → Tag (a Tag publicada já está corrigida).
 - [ ] Configurar com os endereços públicos: fontes de webhook e conta do Meta Ads.
 - [ ] Opcional: tirar as rotas `pasio.*` do túnel quando ninguém mais usar o endereço antigo.
 - [ ] Critério de aceite da P7.2: um webhook de produção processar um evento de teste e aparecer no painel.

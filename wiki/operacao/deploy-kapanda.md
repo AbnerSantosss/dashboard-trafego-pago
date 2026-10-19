@@ -42,7 +42,8 @@ Horários em BRT, 2026-10-19.
 - "Always Use HTTPS" ligado, TLS mínimo de 1.0 para 1.2, modo SSL Full mantido.
 - Redirect Rule: `www.kapanda.lat` → `https://kapanda.lat`, mesmo caminho, 301, preservando a query string.
 - DNSSEC confirmado como desligado na Hostinger (sem DS), por isso a troca de nameservers não derruba a resolução. Os registros da Hostinger ficaram intactos.
-- **Barrado pelo Claude Code**: o classificador do modo automático (categoria "DNS / Domain / Cert Changes") recusou salvar os nameservers na Hostinger e criar as rotas no túnel. Recusou também com o usuário autorizando no chat. Essas duas ações ficam com o usuário, no navegador. Nenhuma das 38 rotas que já existem no túnel foi tocada.
+- **Barrado pelo Claude Code**: o classificador do modo automático (categoria "DNS / Domain / Cert Changes") recusou salvar os nameservers na Hostinger e criar as rotas no túnel. Recusou também com o usuário autorizando no chat. O usuário trocou os nameservers na Hostinger.
+- Rotas criadas às 19:35, com o usuário autorizando no chat e o navegador já fora do modo automático: `www.kapanda.lat` e `kapanda.lat` → `http://localhost:3480`, `api.kapanda.lat` → `http://localhost:3481`. A Cloudflare criou os CNAMEs para o túnel. Nenhuma das rotas que já existiam foi tocada.
 
 **Portainer (agente `portainer`)**
 - Antes: stack de 2026-10-16 (commit `e71438c`), db e api saudáveis, web no ar. O contêiner `segredos` não existia mais; os volumes `pgdata` e `segredos` estavam lá.
@@ -56,6 +57,9 @@ Horários em BRT, 2026-10-19.
 - Contêiner `GTM-KWXQWW6V` ("[WEB] - PASION BT"), workspace 12. A versão publicada era a v11.
 - Tag 42 criada, sem publicar: "Painel PASIO - Atribuição (kapanda.lat)", HTML personalizado, gatilho All Pages (`2147479553`), uma vez por evento, endpoint `https://api.kapanda.lat/t/pasio/clk`. No workspace, a única mudança pendente é ela.
 - A API do GTM recusou a primeira versão com 400 `INVALID_ARGUMENT`. O motivo era o `'{{'` literal no código, que o GTM lê como variável sem fechamento. A Tag subiu com `'{' + '{'`, e o gerador (`apps/web/lib/tag-gtm.ts`) foi corrigido, com um teste que garante que não sobram duas chaves seguidas.
+- Publicada às 19:40, depois que `api.kapanda.lat` respondeu: versão 12 "Painel PASIO - Atribuição (kapanda.lat)". Antes de criar a versão, o workspace tinha só a Tag 42 como mudança; a v11 tinha 18 tags e a v12 tem 19. O usuário confirmou que a Tag fica publicada.
+
+**Admin**: o link de 17:57 venceu sem uso. Às 19:41 o contêiner `trafego-pasio-api-1` foi reiniciado pelo Portainer e o preparo imprimiu um link novo de 1 hora, que o usuário abre pelos logs para definir a senha.
 
 **Validação**: `validar-kapanda.sh` confere pelo DoH da Cloudflare:
 - NS da zona;
@@ -65,6 +69,8 @@ Horários em BRT, 2026-10-19.
 - OPTIONS e POST de `/t/pasio/clk` com 204;
 - o endereço antigo `pasio.*` no ar.
 
-O resultado entra aqui quando o DNS virar.
+Resultado às 19:39, com os IPs da Cloudflare fixos no curl (`--resolve`): 17 de 18 ok. O que falhou foi o NS lido pelo DoH da Cloudflare, que ainda tinha em cache os da Hostinger. Consultados direto no registro (`a.nic.lat`) e na zona (`eva.ns.cloudflare.com`), os nameservers já são `eva` e `joel.ns.cloudflare.com`.
+
+Propagação: o DNS do Google ainda respondia com os nameservers da Hostinger, então parte dos pedidos caía no estacionamento (`http` com 200 em vez de 301, `/health` sem resposta). Por isso a validação final fixou os IPs da Cloudflare. Esse resto de cache some sozinho com o TTL.
 
 Relacionado: [[operacao/producao]], [[operacao/runbooks]], [[operacao/retomada]], [[orquestracao-agentes/agentes-e-fases]].
