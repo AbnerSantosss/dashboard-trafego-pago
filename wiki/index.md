@@ -1,6 +1,6 @@
 ---
 tipo: indice
-atualizado: 2026-10-16
+atualizado: 2026-10-19
 tags: [wiki, indice, dashboard, trafego-pago, multiempresa]
 ---
 
@@ -12,7 +12,7 @@ Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde
 
 ## Comece por aqui
 - [[operacao/retomada]] — onde o trabalho parou, CI, próximos passos em ordem, como subir local
-- [[operacao/producao]] — painel no ar: endereços, stack do Portainer, túnel, segredos, atualizar, backup
+- [[operacao/producao]] — painel no ar em `kapanda.lat`: endereços, stack do Portainer, túnel, segredos, atualizar, backup
 
 ## Como usar esta wiki
 - Antes de mexer em qualquer área, leia a página da categoria correspondente.
@@ -48,6 +48,7 @@ Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde
 
 ## Operação
 - [[operacao/producao]] — o que está no ar (endereços, stack `trafego-pasio`, rotas do túnel, segredos gerados no servidor), senha do admin, atualizar, logs, backup, armadilhas e pendências
+- [[operacao/deploy-kapanda]] — plano e execução da passagem para `kapanda.lat` (zona na Cloudflare, rotas do túnel, variáveis da stack, Tag no GTM, agentes)
 - [[operacao/runbooks]] — onboarding de empresa, rotação de segredo (sem carência), reprocessamento, dead-letter, instalação de produção do zero
 - [[operacao/retomada]] — estado atual e próximos passos
 - [[operacao/ambiente-e-seguranca]] — repositório público, segredos, alvos que exigem confirmação, rotina

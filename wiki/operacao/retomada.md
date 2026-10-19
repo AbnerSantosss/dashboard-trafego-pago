@@ -1,6 +1,6 @@
 ---
 tipo: retomada
-atualizado: 2026-10-16
+atualizado: 2026-10-19
 tags: [retomada, estado-atual, proximos-passos, ci, operacao]
 ---
 
@@ -8,7 +8,16 @@ tags: [retomada, estado-atual, proximos-passos, ci, operacao]
 
 Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou, o que está pendente e em que ordem. Atualize ao fim de cada sessão de trabalho relevante.
 
-## Onde paramos (2026-10-16, fim do dia)
+## Onde paramos (2026-10-19)
+- **Domínio `kapanda.lat` (D40)**: o plano e a execução estão em [[operacao/deploy-kapanda]].
+  - Feito: a stack `trafego-pasio` foi redeployada com `WEB_URL=https://kapanda.lat`, `WEBHOOK_URL_PUBLICA=https://api.kapanda.lat` e o novo `ADMIN_EMAIL`. O link de senha do novo admin saiu no log às 17:57, válido por 1 hora.
+  - Feito: zona `kapanda.lat` criada na Cloudflare, com HTTPS sempre, TLS 1.2 e `www` → raiz.
+  - Feito: Tag 42 criada no GTM (workspace 12, ainda sem publicar).
+  - Falta, com o usuário: trocar os nameservers na Hostinger para `eva`/`joel.ns.cloudflare.com` e criar as rotas `kapanda.lat`, `www` e `api` no túnel. O modo automático do Claude Code barra essas duas ações.
+  - Depois: rodar a validação (`validar-kapanda.sh`, os testes estão listados na página), publicar a Tag 42 e conferir o login com o novo admin.
+  - Sem commit: a correção do `{{` em `apps/web/lib/tag-gtm.ts` e o teste. Para chegar à produção, ela precisa de push e de um "Pull and redeploy".
+
+## Até 2026-10-16
 - **Deploy (P7.2) no ar** em `https://pasio.proxserverabner.site` (API em `https://pasio-api.proxserverabner.site`). Stack `trafego-pasio` no Portainer, rotas no túnel `servidor-abner`. Falta: o usuário definir a senha do admin pelo link do log (se passar de 1 hora, reiniciar o contêiner `trafego-pasio-api-1` gera outro), entrar e configurar a Tag do GTM, os webhooks e o Meta Ads com os endereços públicos. Atualizar: Portainer → stack → Pull and redeploy. Backup: volumes `trafego-pasio_pgdata` e `trafego-pasio_segredos`, juntos. Tudo sobre o ambiente no ar (endereços, contêineres, senha do admin, atualizar, logs, backup, armadilhas e pendências) em [[operacao/producao]].
 - **Histórico do deploy** (D39 em [[decisoes-tecnicas/decisoes]], passo a passo em [[operacao/runbooks]], seção Produção):
   - arquivos novos: `Dockerfile`, `.dockerignore`, `docker-compose.prod.yml`, `deploy/producao.env.example`, `apps/api/src/db/producao.ts`, `segredos-do-servidor.ts` e os testes de ambos;

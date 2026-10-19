@@ -314,3 +314,14 @@ Formato: contexto, decisão, motivo, consequências. Correção vale mais que ac
   - testes novos: `producao.test.ts` (3: entradas e idempotência), `segredos-do-servidor.test.ts` (3: leitura dos arquivos, variável definida prevalece, sem pasta nada muda), limite por `cf-connecting-ip` em `auth.test.ts` e repasse do IP em `api.test.ts`. O `logs.test.ts` passou a usar uma rota que loga em info;
   - no servidor: stack `trafego-pasio` (Portainer pelo Git) e rotas `pasio.proxserverabner.site` e `pasio-api.proxserverabner.site` no túnel. Pelos endereços públicos, `/health` ok, `/login` 200 e `/auth/sessao-dev` 404, e a página de nova senha abre pelo link do log;
   - API com 193 testes e 1 pulado, web com 72; lint e typecheck ok. Localmente falham só `seed.test` e `metricas.test`, por causa dos dados fictícios do banco de desenvolvimento.
+
+## D40: domínio próprio kapanda.lat na mesma stack, com a zona na Cloudflare (2026-10-19)
+- Contexto: o usuário pediu o painel em `https://kapanda.lat`, com um novo e-mail de admin e a Tag instalada no GTM do site dele. O domínio está registrado na Hostinger, e o DNS autoritativo era o da própria Hostinger, só com o estacionamento (sem MX nem TXT). Plano e execução em [[operacao/deploy-kapanda]].
+- Decisão:
+  - **Mesma stack, outro domínio**: `trafego-pasio` só troca `WEB_URL` e `WEBHOOK_URL_PUBLICA`, e banco, volumes e segredos ficam como estavam. Uma segunda instância duplicaria dados e segredos sem ganho nenhum. As rotas `pasio.*` seguem no túnel como apelido e podem sair depois.
+  - **Zona inteira na Cloudflare (Free)**, com os nameservers trocados na Hostinger. O túnel só publica nomes de zonas da própria conta, e a configuração parcial por CNAME exige plano pago. A raiz vira CNAME do túnel (achatado pela Cloudflare), e o A de estacionamento sai.
+  - **Rotas**: `kapanda.lat` e `www` → `localhost:3480`, e `api` → `localhost:3481`. O `www` redireciona para a raiz com 301 por Redirect Rule. HTTPS sempre, TLS mínimo 1.2.
+  - **Admin novo pela variável** `ADMIN_EMAIL`, com a senha definida pelo link de 1 hora do log. O admin anterior não é apagado. O e-mail não entra no repositório (público) nem na wiki.
+  - **Tag no GTM** criada pela API num workspace sem outras mudanças e publicada só depois que `api.kapanda.lat` responder. O código da Tag não pode ter `{{`: o GTM lê isso como variável sem fechamento e recusa salvar (400 `INVALID_ARGUMENT`). O gerador monta a string em duas partes, e um teste garante que não sobram duas chaves seguidas.
+  - **Limite do agente**: o modo automático do Claude Code barra mudanças de DNS (nameservers e rotas do túnel), mesmo com autorização no chat. Essas ações ficam com o usuário, no navegador.
+- Verificação: em [[operacao/deploy-kapanda]] (seção Execução).

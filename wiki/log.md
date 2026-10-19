@@ -252,3 +252,15 @@ tags: [log, historico]
   - [[index]] com a página em "Comece por aqui" e em Operação; [[arquitetura/stack]] com a seção Produção; [[operacao/ambiente-e-seguranca]] sem a regra antiga "segredos só nas variáveis do Portainer" e com a seção Produção; [[operacao/runbooks]] e [[operacao/retomada]] apontando para a página nova; nota em D9 de [[decisoes-tecnicas/decisoes]] remetendo a D39;
   - `PLANO-DE-ACAO.md`: P7.2b e P7.2c concluídas com o que foi feito de verdade (sem cloudflared na stack, rotas `pasio` e `pasio-api`); P7.2 no ar, faltando o webhook de produção processar um evento de teste; tabela de fases em [[orquestracao-agentes/agentes-e-fases]].
 - Entregue: wiki e plano coerentes com o deploy, sem segredos nem o e-mail do admin.
+
+## [2026-10-19] update | Deploy em kapanda.lat: stack, Cloudflare e Tag no GTM (D40)
+- Pedido: brief de deploy de produção em `https://kapanda.lat`, que inclui analisar a arquitetura, preservar os serviços da VPS, Portainer, DNS Hostinger/Cloudflare, HTTPS por túnel, validar, documentar e relatar. Também: "crie um plano e um agente orquestrador com subagentes", com o e-mail do admin informado (fica só na variável da stack). Depois: "veja também para deixar instalado no meu GTM" e "pode fazer tudo quero o site no ar".
+- Feito (plano e execução em [[operacao/deploy-kapanda]], decisão D40 em [[decisoes-tecnicas/decisoes]]):
+  - plano com o orquestrador e os agentes `dns-cloudflare`, `portainer` e `gtm`, que rodaram em paralelo, cada um na sua aba;
+  - Portainer: só as 3 variáveis mudaram, "Pull and redeploy" em cerca de 9 minutos, contêineres saudáveis e nenhuma outra stack tocada. O preparo gerou o link de senha do novo admin;
+  - Cloudflare: zona `kapanda.lat` (Free) sem os registros de estacionamento, HTTPS sempre, TLS mínimo 1.2, `www` → raiz com 301;
+  - GTM: Tag 42 "Painel PASIO - Atribuição (kapanda.lat)" em All Pages, workspace 12 do `GTM-KWXQWW6V`, sem publicar;
+  - código: `apps/web/lib/tag-gtm.ts` não gera mais `{{` (o GTM recusava salvar), com teste novo em `tag-gtm.test.ts`;
+  - wiki: [[operacao/producao]] com os endereços `kapanda.lat`, rotas, zona e armadilhas novas; [[operacao/retomada]] e [[index]] apontando para a página do deploy.
+- Barrado: o modo automático do Claude Code recusou trocar os nameservers na Hostinger e criar as rotas no túnel ("DNS / Domain / Cert Changes"), também com a autorização do usuário no chat. Essas duas ações ficaram com o usuário.
+- Entregue: stack no ar com as URLs novas (o endereço antigo continua respondendo), zona e Tag prontas e o link da senha entregue ao usuário. A validação pública e a publicação da Tag vêm quando o DNS virar.
