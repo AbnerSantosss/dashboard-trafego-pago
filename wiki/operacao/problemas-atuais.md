@@ -1,14 +1,20 @@
 ---
 tipo: operacao
-atualizado: 2026-10-19
-tags: [producao, problemas, diagnostico, portainer, deploy, webhooks, meta-ads, kapanda, ghcr, smtp]
+atualizado: 2026-10-20
+tags: [producao, problemas, diagnostico, portainer, deploy, webhooks, meta-ads, kapanda, ghcr, smtp, gtech, lgpd]
 ---
 
 # Problemas atuais
 
 Tudo o que não funciona ou funciona pela metade em produção, com a causa e o que resolve. A arquitetura que esses itens citam está em [[arquitetura/mapa-do-sistema]]. Atualize esta página quando um item for resolvido: marque como resolvido com a data e o que foi feito, sem apagar.
 
-## Situação geral (2026-10-19, por volta das 21:30)
+## Situação geral (2026-10-20, por volta das 19:30)
+- **No ar com o commit `5ef4829`** (autenticação Basic e preset da GTech, D42): CI e Deploy verdes, "Pull and redeploy" às 14:40 com re-pull, `api` e `db` saudáveis, `/health` 200.
+- **Item 1 parcialmente resolvido**: a fonte `gtech` existe em produção com o preset na versão 1. Falta o usuário colar o segredo nos dois webhooks do backoffice da GTech e validar com um jogador de teste ([[ingestao-webhooks/gtech]]).
+- Itens novos: 9 (dados pessoais no bruto da GTech), 10 (`is_demo` não filtrado e outras lacunas do preset) e 11 (banco local que para sozinho).
+- Continuam: teste do SMTP (item 5), limpeza das imagens antigas (item 3) e Meta Ads (item 1).
+
+## Situação geral anterior (2026-10-19, por volta das 21:30)
 - **No ar e saudável, agora com as imagens do GHCR (`e00a616`).** Redeploy feito às 20:38 com autorização do usuário: os quatro contêineres recriados com `ghcr.io/abnersantosss/dashboard-trafego-pago/{api,web}:latest`, `db` e `api` saudáveis, `web` no ar. Validação pública depois do redeploy ok (`/health`, `/login`, apelidos, webhook sem assinatura 400, TLS 1.1 recusado, Tag com 204). O item 2 está resolvido de ponta a ponta; o item 3 só pede uma limpeza única das imagens antigas; o item 5 está ativo (senha de app colada), falta o teste de envio.
 - **Histórico desta noite (antes do redeploy).** Deploy pelo GHCR pronto (D41). O commit `e00a616` está na `main`: o workflow Deploy (run 39342060273, verde) publicou `ghcr.io/abnersantosss/dashboard-trafego-pago/api` e `.../web` (`latest` e `sha-e00a616`), e o compose da stack passou a baixar essas imagens. O primeiro clique em "Pull and redeploy" foi barrado pelo classificador do Claude Code; o usuário autorizou e o redeploy foi feito às 20:38.
 - **SMTP em andamento.** As variáveis SMTP foram salvas na stack (Save settings, sem redeploy), com `SMTP_SENHA` em branco. O usuário colou a senha de app do Gmail e o redeploy a levou para a API (item 5); falta só o teste de envio.
@@ -20,6 +26,8 @@ Tudo o que não funciona ou funciona pela metade em produção, com a causa e o 
 - **Volumes intactos depois da limpeza do servidor feita pelo usuário.** `trafego-pasio_pgdata` e `trafego-pasio_segredos` continuam com a data de criação de 2026-10-16.
 
 ## 1. O painel mostra só visitas (Investimento, Cliques, Cadastro, FTD e Depósitos vazios)
+> **Parcialmente resolvido em 2026-10-20.** A plataforma é a GTech, que só oferece credencial Basic; o receptor passou a aceitar Basic (D42, `5ef4829`, em produção às 14:40). Fonte `gtech` criada às 14:47 e preset `gtech` na versão 1 ativa. **Falta**: o usuário colar o segredo da fonte nos webhooks "Criação de usuário" e "Pagamento de Depósito" do backoffice da GTech, validar com um jogador de teste (critério de aceite da P7.2) e conectar o Meta Ads. Passo a passo em [[ingestao-webhooks/gtech]]. O texto abaixo fica como histórico; o passo 1 de "O que resolve" vale para HMAC, e a GTech usa o modo Basic.
+
 **Sintoma**: na Visão Geral aparecem 69 visitas no canal Meta e o resto fica em 0 ou "–".
 
 **Causa**: não é defeito. Cada número vem de uma entrada diferente, e em produção só a Tag do GTM está ligada (tabela completa em [[arquitetura/mapa-do-sistema]], seção 6):
@@ -94,5 +102,29 @@ Nenhum dos dois foi tocado. Eles disputam CPU e memória com o build (item 2).
 - As rotas antigas `pasio.*` seguem no túnel como apelido; dá para remover quando ninguém mais usar.
 - O CI avisa que as actions `@v4` rodam em Node 20 (obsoleto) e que `ubuntu-latest` muda para Ubuntu 26. Desde 2026-10-19 o workflow Deploy dá os mesmos avisos para `@v4`, `@v3` e `@v6` (só avisos).
 - O Portainer está na 2.39.1 LTS e a 2.45.2 já existe. Atualizar é decisão do dono do servidor, porque afeta todos os projetos.
+- O bloco recolhível "Plataforma que só aceita autenticação Basic" (Configurações → Webhooks, `.cfg-ajuda summary`) não tem setinha de abrir e fechar.
+- A senha de admin do backoffice da GTech foi escrita no chat da sessão de 2026-10-20: trocar depois do teste.
 
-Relacionado: [[operacao/producao]], [[operacao/retomada]], [[operacao/deploy-kapanda]], [[arquitetura/mapa-do-sistema]].
+## 9. Dados pessoais no bruto da GTech (LGPD)
+**Sintoma**: quando os webhooks da GTech começarem a chegar, `webhook_events.payload` vai guardar o JSON inteiro.
+
+**Causa**: o payload da GTech traz e-mail, nome, documento, data de nascimento, `user_token` e `qrcode`. O preset não lê esses campos, mas o receptor grava o bruto como chegou, para poder reprocessar.
+
+**O que resolve** (decisão do usuário, em aberto): mascarar ou descartar esses campos antes de gravar (lista por fonte), ou definir um prazo de retenção dos brutos. Até lá, nada de PII real na wiki, em commits ou em fixtures. Ver D42 em [[decisoes-tecnicas/decisoes]] e [[ingestao-webhooks/gtech]].
+
+## 10. Lacunas do preset da GTech
+- `is_demo` não é filtrado: cadastros de demonstração contariam no painel. Resolve acrescentando a condição ao `ignorar` do preset, se a PASIO quiser.
+- `utm_term`, `utm_content`, `fbp` e `fbc` não têm campo canônico e ficam fora.
+- A GTech não manda `X-Event-Id`: a idempotência é pelo hash do corpo. Um reenvio com corpo diferente contaria duas vezes; a melhoria é usar `event` + `deposit_id` como chave.
+- `amount` como texto `"1.000"` seria lido como mil. Conferir no primeiro depósito real.
+- As regras de canal padrão não reconhecem Google nem TikTok por UTM, e um toque só com `fbp` não conta como Meta.
+- `user_id` igual na Tag do site e na GTech ainda não foi confirmado; sem isso, o cruzamento só funciona pelo `tracker` da GTech.
+
+## 11. Ambiente local: o banco para sozinho
+**Sintoma**: o contêiner local `101-eventospasio-db-1` (compose de desenvolvimento, porta 5460) para sozinho cerca de 1 minuto depois de subir.
+
+**Causa**: não investigada. Não afeta produção.
+
+**Contorno**: subir de novo com `docker compose up -d` antes de rodar testes com banco. Nos testes de 2026-10-20 o ponta a ponta da GTech passou assim.
+
+Relacionado: [[operacao/producao]], [[operacao/retomada]], [[operacao/deploy-kapanda]], [[arquitetura/mapa-do-sistema]], [[ingestao-webhooks/gtech]].

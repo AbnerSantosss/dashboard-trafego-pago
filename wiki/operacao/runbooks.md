@@ -1,7 +1,7 @@
 ---
 tipo: operacao
-atualizado: 2026-10-16
-tags: [runbook, onboarding, segredo, reprocessamento, dead-letter]
+atualizado: 2026-10-20
+tags: [runbook, onboarding, segredo, reprocessamento, dead-letter, basic, preset, gtech]
 ---
 
 # Runbooks
@@ -20,6 +20,28 @@ Esboço; cada runbook ganha passos exatos quando a funcionalidade existir (Fase 
 Configurações → Webhooks → "Rotacionar segredo" (ou "Gerar segredo", quando a fonte não tem segredo utilizável) → confirmar no diálogo (D25) → copiar o segredo novo, exibido uma única vez → atualizar a plataforma emissora.
 
 **Não há período de graça:** o segredo antigo deixa de valer no clique. Até a plataforma receber o novo, os eventos dela são recusados com 401 e aparecem nas entregas da fonte (aba Instalação, passo "regras"). Faça a troca quando a plataforma puder ser atualizada logo em seguida. Ter dois segredos válidos ao mesmo tempo é uma melhoria pendente ([[operacao/retomada]]).
+
+## Conectar uma plataforma que só aceita Basic (ex.: GTech)
+1. Configurações → Webhooks → criar a fonte (ex.: slug `gtech`) e copiar o segredo, que aparece uma vez só. Se ele se perdeu, "Rotacionar segredo" gera outro.
+2. No sistema emissor, para cada evento que interessa: URL `https://api.kapanda.lat/webhooks/pasio/<fonte>`, credencial **BASIC**, Usuário livre (convenção: o slug), Senha = o segredo.
+3. Ativar as regras da fonte (próximo runbook, se houver preset; senão, mapeamento próprio em [[regras-de-tratamento/motor-de-regras]]).
+4. Teste manual: `curl -u <fonte>:<segredo> -H 'content-type: application/json' -d @evento-ficticio.json https://api.kapanda.lat/webhooks/pasio/<fonte>` → 202; o mesmo corpo de novo → 200 `duplicado`; senha errada → 401.
+5. Conferir em Configurações → Instalação os passos "Plataforma enviando eventos" e "Tradução dos eventos".
+
+- Navegador com autofill: confira que o Usuário e a Senha do formulário do emissor não foram trocados pelo login salvo do próprio emissor.
+- Caso real e pendências: [[ingestao-webhooks/gtech]]. Contrato: [[ingestao-webhooks/contrato-webhook]].
+
+## Ativar um preset de regras numa fonte
+Presets ficam em `packages/rules/src/presets/` (hoje só `gtech`). Em produção, o agente não tem acesso ao console; quem roda é o usuário.
+1. Portainer → Containers → `trafego-pasio-api-1` → Console → `/bin/sh` → Connect.
+2. Rodar:
+   ```sh
+   cd /app/apps/api && node --import tsx --import ./src/segredos-do-servidor.ts src/rules/aplicar-preset.ts --empresa pasio --fonte gtech --preset gtech --reprocessar
+   ```
+3. Saída esperada: `preset "gtech" publicado como versão N ativa de pasio/gtech` e quantos brutos foram reprocessados. Rodar de novo sem mudança no preset não cria versão nova.
+4. `--reprocessar` aplica a versão ativa aos brutos já recebidos, então a ordem entre salvar o webhook no emissor e ativar o preset não importa.
+
+Em 2026-10-20 este comando publicou a versão 1 de `pasio/gtech` e reprocessou 0 brutos.
 
 ## Token do Meta Ads
 1. No Gerenciador de Negócios: Configurações do negócio → Usuários do sistema → criar ou escolher um usuário do sistema.
@@ -55,4 +77,4 @@ Arquivos: `Dockerfile` (alvos `api` e `web`), `docker-compose.prod.yml` (segredo
 
 Atualizar: Portainer → stack → **Pull and redeploy** (rebuild das imagens a partir da `main`). Os dados ficam nos volumes `pgdata` e `segredos` da stack, e o backup leva **os dois**: sem a chave de cifra, os segredos de webhook e os tokens do Meta gravados no banco não abrem. Apagar o volume `segredos` com o banco já criado deixa a API sem acesso a ele.
 
-Relacionado: [[ingestao-webhooks/contrato-webhook]], [[arquitetura/stack]], [[operacao/producao]].
+Relacionado: [[ingestao-webhooks/contrato-webhook]], [[ingestao-webhooks/gtech]], [[arquitetura/stack]], [[operacao/producao]].

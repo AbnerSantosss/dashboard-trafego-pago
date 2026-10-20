@@ -1,7 +1,7 @@
 ---
 tipo: especificacao
-atualizado: 2026-10-16
-tags: [multiempresa, tenant, configuracao, apresentacao, logo, pasio, instalacao, responsividade]
+atualizado: 2026-10-20
+tags: [multiempresa, tenant, configuracao, apresentacao, logo, pasio, instalacao, responsividade, basic, gtech]
 ---
 
 # Configuração por empresa
@@ -9,7 +9,7 @@ tags: [multiempresa, tenant, configuracao, apresentacao, logo, pasio, instalacao
 Cada empresa (tenant) tem quatro áreas de configuração, acessíveis a quem tem papel `admin` nela. Telas em `apps/web/app/(admin)/` (Fase 5).
 
 ## 1. Webhooks (fontes) — P5.1
-Criar fonte → gera URL `POST /webhooks/{empresa}/{fonte}` e segredo (mostrado uma vez). Ações: rotacionar segredo, ativar/desativar, ver últimos eventos e erros, reenviar. Ver [[ingestao-webhooks/contrato-webhook]].
+Criar fonte → gera URL `POST /webhooks/{empresa}/{fonte}` e segredo (mostrado uma vez). Ações: rotacionar segredo, ativar/desativar, ver últimos eventos e erros, reenviar. Ver [[ingestao-webhooks/contrato-webhook]]. Plataformas que só aceitam Basic (como a GTech, [[ingestao-webhooks/gtech]]): seção "Plataformas só com autenticação Basic" no fim desta página.
 
 ## 2. Regras de tratamento — P5.2
 Editor de mapeamento por fonte com simulação e versionamento; lista ordenada de regras de canal; painel de dead-letter com reprocessamento. Ver [[regras-de-tratamento/motor-de-regras]].
@@ -110,3 +110,16 @@ Remover membro, cancelar convite, rotacionar ou gerar segredo e remover logo pas
 - Cada uma começa com um passo a passo numerado (`Guia.tsx`, textos em `guias.tsx`) e depois mostra o painel de configuração.
 - Para mudar um texto do guia, edite `guias.tsx`. O exemplo de envio assinado continua na Visão geral, no passo da plataforma.
 - Desktop: as Configurações usam a mesma moldura e escala do painel (D33).
+
+## Plataformas só com autenticação Basic (2026-10-20, D42)
+O receptor aceita `Authorization: Basic` com a senha = segredo da fonte ([[ingestao-webhooks/contrato-webhook]]). A interface explica isso em três lugares:
+- **Webhooks** (`webhooks/PainelWebhooks.tsx`): a caixa do segredo, que aparece uma vez, ganhou a linha "Plataforma só com autenticação Basic (ex.: GTech): usuário `<slug>`, senha = este segredo". Abaixo da tabela de fontes há o bloco recolhível `<details className="cfg-ajuda">` "Plataforma que só aceita autenticação Basic (ex.: GTech)", com a tabela Fonte | URL | Tipo de credencial | Usuário | Senha de cada fonte (a coluna Senha só diz "Segredo da fonte", nunca mostra o valor, e pede um segredo novo quando a fonte não tem um utilizável). Teste em `apps/web/testes/webhooks-basic.test.tsx`.
+- **Guia da aba Webhooks** (`guias.tsx`): um passo cita o Basic.
+- **Instalação** (`instalacao/page.tsx`): no passo da plataforma, depois do exemplo HMAC, o exemplo `curl -u "slug-da-fonte:$SEGREDO_DA_FONTE"`, e a explicação do 401 inclui "senha Basic".
+
+Primeiro uso real: a fonte `gtech` em produção ([[ingestao-webhooks/gtech]]).
+
+### Armadilhas
+- O guia e a Instalação dizem "usuário = slug da fonte", mas é só convenção: o receptor não confere o usuário. O bloco recolhível já diz isso ("O usuário pode ser qualquer um; sugerimos o slug").
+- O `summary` do bloco `.cfg-ajuda` não tem setinha de abrir e fechar; ajuste visual pendente.
+- Rotacionar o segredo derruba na hora o emissor que usa o antigo, também no modo Basic.

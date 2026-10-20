@@ -297,3 +297,32 @@ tags: [log, historico]
   - wiki: [[operacao/producao]] (seções "Atualizar" e "E-mail (SMTP)", rollback, runs, GitOps da Business), [[operacao/problemas-atuais]] (itens 2, 3 e 5 marcados), [[operacao/retomada]] (estado e próximos passos), [[arquitetura/stack]], [[arquitetura/mapa-do-sistema]] e nota em [[operacao/deploy-kapanda]].
 - Barrado e depois liberado: o classificador do Claude Code recusou o primeiro clique em "Pull and redeploy" (deploy em produção). O usuário colou a senha de app em `SMTP_SENHA` e autorizou; o redeploy foi feito às 20:38 e levou cerca de 3 minutos (primeiro download das imagens).
 - Entregue: produção rodando as imagens do GHCR (`e00a616`), os quatro contêineres recriados e saudáveis, validação pública ok depois do redeploy, SMTP configurado. Falta o usuário testar "esqueci a senha" e limpar as imagens antigas (lista em [[operacao/retomada]]).
+
+## [2026-10-20] update | Webhooks GTech: autenticação Basic, preset de regras, fonte em produção e backoffice (D42)
+- Pedido: validar o painel com a GTech demo (cassino, documentação de webhook e GTM de teste), depois focar no webhook; "crie agentes paralelos" para corrigir o que faltava, "sim pra tudo" (commit, push, deploy, criar a fonte e configurar os webhooks depois que o segredo fosse colado) e "entrei" (backoffice aberto).
+- Feito:
+  - diagnóstico: o receptor só aceitava HMAC e a GTech só oferece credencial BASIC, então todo envio dela daria 400. Os nomes de campo da GTech também não batiam com o mapeamento padrão;
+  - três agentes em paralelo, cada um na sua área. API: modo Basic no receptor (`assinatura.ts`, `credencialInvalida()` com 401), testes, `apps/api/docs/webhooks.md` e `openapi.json`. Regras: operadores `coalesce`, `map`, `not_in`, `match` em lista e `ignorar` em `packages/rules`, preset `gtech` com fixtures fictícias e o script `apps/api/src/rules/aplicar-preset.ts`. Web: ajuda Basic e dica do usuário em `PainelWebhooks.tsx`, com teste;
+  - eu: guias e aba Instalação com o Basic, e o teste ponta a ponta `apps/api/src/e2e/gtech.test.ts`;
+  - commit `5ef4829` (21 arquivos) com CI e Deploy verdes; redeploy às 14:40 com re-pull; fonte `gtech` criada às 14:47; o usuário rodou o preset no console da API (versão 1 ativa, 0 brutos reprocessados);
+  - backoffice da GTech: modal "Criação de usuário" preenchido com Nome, URL, BASIC e Usuário `gtech`, sem salvar, esperando o segredo. O autofill do Chrome punha o login de admin nos campos e foi corrigido à mão;
+  - explicação do caminho do clique até o painel (entrada "doc" abaixo);
+  - decisão D42 em [[decisoes-tecnicas/decisoes]].
+- Entregue: receptor aceitando Basic em produção, preset da GTech ativo e a fonte pronta para receber. Falta o usuário colar o segredo nos dois webhooks da GTech ("Criação de usuário" e "Pagamento de Depósito") e validar com um jogador de teste. Passo a passo em [[ingestao-webhooks/gtech]] e [[operacao/retomada]].
+
+## [2026-10-20] doc | Página "Do Clique ao Painel" (artifact e versão animada em Downloads)
+- Pedido: explicar numa página o caminho dos dados (Tag do GTM no site e webhooks da GTech até o painel); depois "coloque o resumo no na minha pasta de donwloads utilize o "...\18 - Hyperframes" para estrilizar e animar (não criar video)".
+- Feito:
+  - página explicativa publicada como artifact: https://claude.ai/artifact/GppYvHyDpeVeTifHPm5n9T (mapa das duas trilhas, jornada simulada com KPIs, quem leva o crédito, como chega o envio, dados, cuidados, estado e glossário; só dados fictícios);
+  - versão restilizada e animada salva em `C:\Users\binho\Downloads\do-clique-ao-painel.html` (cerca de 250 KB, abre offline): paleta e grão do hf-kit, Anton e Montserrat embutidas em base64, GSAP 3.15 inline, animações por seção com IntersectionObserver, tema claro/escuro, `prefers-reduced-motion` e impressão completas;
+  - conferida no Chrome em desktop e a 390 px (sem estouro lateral; KPIs certos com cliques rápidos); varredura sem segredos nem PII real;
+  - nenhum CLI do HyperFrames rodado e a wiki do 18 - Hyperframes não foi alterada.
+- Entregue: o link do artifact e o arquivo em Downloads.
+
+## [2026-10-20] doc | Wiki da sessão GTech registrada e conectada
+- Pedido: "salve tudo na wiki deixe tudo registrado da seção e conectado".
+- Feito:
+  - página nova [[ingestao-webhooks/gtech]]: estado, a plataforma, configuração no backoffice, eventos e mapeamento, ponta a ponta, como validar, dados pessoais, questões abertas e as páginas explicativas;
+  - atualizadas e ligadas a ela: [[ingestao-webhooks/contrato-webhook]], [[regras-de-tratamento/motor-de-regras]], [[decisoes-tecnicas/decisoes]] (D42 em produção), [[operacao/runbooks]] (plataforma só com Basic e ativar preset), [[administracao-multiempresa/configuracao-por-empresa]] (ajuda Basic em Webhooks), [[operacao/producao]] (fontes de webhook e redeploys), [[arquitetura/mapa-do-sistema]], [[operacao/problemas-atuais]] (item 1 parcial e itens novos 9 a 11), [[operacao/retomada]] (onde paramos e próximos passos) e [[index]];
+  - sem segredos, sem a senha do backoffice e sem dados pessoais reais: só nomes de campo e exemplos fictícios.
+- Entregue: a sessão de 2026-10-20 registrada na wiki, com todas as páginas tocadas apontando para [[ingestao-webhooks/gtech]].

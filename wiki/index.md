@@ -1,6 +1,6 @@
 ---
 tipo: indice
-atualizado: 2026-10-19
+atualizado: 2026-10-20
 tags: [wiki, indice, dashboard, trafego-pago, multiempresa]
 ---
 
@@ -11,9 +11,10 @@ Painel de resultados de aquisição (investimento, FTDs, CPA, depósitos, ROAS, 
 Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde D15). Painel interativo do plano: https://claude.ai/artifact/KcEDCoT1Qws3MjLLHMFgY6
 
 ## Comece por aqui
-- [[operacao/retomada]] — onde o trabalho parou, CI, próximos passos em ordem, como subir local
-- [[operacao/producao]] — painel no ar em `kapanda.lat`: endereços, stack do Portainer, túnel, segredos, atualizar, backup
-- [[operacao/problemas-atuais]] — o que não funciona em produção, por quê e o que resolve (painel só com visitas, redeploy que falha, sobras de imagem, SMTP)
+- [[operacao/retomada]] — onde o trabalho parou, CI, próximos passos em ordem (hoje: webhooks da GTech no backoffice), como subir local
+- [[operacao/producao]] — painel no ar em `kapanda.lat`: endereços, stack do Portainer, túnel, segredos, fontes de webhook, atualizar, backup
+- [[operacao/problemas-atuais]] — o que não funciona em produção, por quê e o que resolve (painel só com visitas, GTech pela metade, LGPD do bruto, lacunas do preset, sobras de imagem, SMTP)
+- [[ingestao-webhooks/gtech]] — a plataforma da PASIO: backoffice, autenticação Basic, preset, fluxo ponta a ponta, validação e pendências
 - [[arquitetura/mapa-do-sistema]] — o sistema inteiro numa página: Cloudflare, túnel, VPS, contêineres, módulos, rotas, fluxos e a origem de cada número do painel
 
 ## Como usar esta wiki
@@ -37,10 +38,11 @@ Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde
 - [[design-system/dados-de-referencia]] — valores exatos da imagem usados como fixture
 
 ## Ingestão por webhooks
-- [[ingestao-webhooks/contrato-webhook]] — endpoint, assinatura, idempotência, respostas, fila
+- [[ingestao-webhooks/contrato-webhook]] — endpoint, autenticação (HMAC ou Basic), idempotência, respostas, fila
+- [[ingestao-webhooks/gtech]] — plataforma GTech: backoffice, autenticação Basic, preset, fluxo ponta a ponta, validação e pendências
 
 ## Regras de tratamento
-- [[regras-de-tratamento/motor-de-regras]] — mapeamento JSONPath, classificação de canal, versionamento
+- [[regras-de-tratamento/motor-de-regras]] — mapeamento JSONPath, operadores (`coalesce`, `map`, `not_in`, `ignorar`), presets por plataforma, classificação de canal, versionamento
 - [[regras-de-tratamento/metricas-e-kpis]] — definição de cada KPI, funil e taxa
 
 ## Administração multiempresa
@@ -53,7 +55,7 @@ Documento-mestre: `PLANO-DE-ACAO.md` na raiz (8 fases; fases 5–7 enxutas desde
 - [[operacao/problemas-atuais]] — problemas em aberto em produção, com sintoma, causa e solução
 - [[operacao/producao]] — o que está no ar (endereços, stack `trafego-pasio`, rotas do túnel, segredos gerados no servidor), senha do admin, atualizar, logs, backup, armadilhas e pendências
 - [[operacao/deploy-kapanda]] — plano e execução da passagem para `kapanda.lat` (zona na Cloudflare, rotas do túnel, variáveis da stack, Tag no GTM, agentes)
-- [[operacao/runbooks]] — onboarding de empresa, rotação de segredo (sem carência), reprocessamento, dead-letter, instalação de produção do zero
+- [[operacao/runbooks]] — onboarding de empresa, rotação de segredo (sem carência), plataforma só com Basic, ativar preset de regras, token do Meta Ads, reprocessamento, dead-letter, instalação de produção do zero
 - [[operacao/retomada]] — estado atual e próximos passos
 - [[operacao/ambiente-e-seguranca]] — repositório público, segredos, alvos que exigem confirmação, rotina
 

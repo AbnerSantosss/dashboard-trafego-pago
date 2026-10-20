@@ -1,14 +1,37 @@
 ---
 tipo: retomada
-atualizado: 2026-10-19
-tags: [retomada, estado-atual, proximos-passos, ci, operacao, deploy, ghcr, smtp]
+atualizado: 2026-10-20
+tags: [retomada, estado-atual, proximos-passos, ci, operacao, deploy, ghcr, smtp, gtech, webhooks, basic, preset]
 ---
 
 # Retomada: comece por aqui
 
 Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou, o que está pendente e em que ordem. Atualize ao fim de cada sessão de trabalho relevante.
 
-## Onde paramos (2026-10-19, à noite, por volta das 21:30)
+## Onde paramos (2026-10-20, por volta das 19:30)
+Integração com a GTech, a plataforma de cassino da PASIO. Tudo sobre ela em [[ingestao-webhooks/gtech]].
+- **Commit `5ef4829` na `main`** (autenticação Basic no receptor, operadores novos e preset `gtech` no motor de regras, ajuda Basic em Configurações → Webhooks, D42). CI e Deploy verdes.
+- **Redeploy às 14:40** (Pull and redeploy com re-pull), com a autorização do usuário. `api` e `db` saudáveis, `/health` 200.
+- **Fonte `gtech` criada em produção às 14:47** (Configurações → Webhooks).
+- **Preset aplicado pelo usuário** no console do `trafego-pasio-api-1`: versão 1 ativa de `pasio/gtech`, 0 brutos reprocessados. O comando está em [[operacao/runbooks]], "Ativar um preset de regras numa fonte".
+- **Webhooks no backoffice da GTech: pendentes.** Ficou aberto o modal "Criação de usuário" (latam.gtech.uy/admin → Personalizar → Webhook) com Nome `kapanda`, URL `https://api.kapanda.lat/webhooks/pasio/gtech`, credencial BASIC, Usuário `gtech` e Senha vazia. A senha é o segredo da fonte, que só o usuário pode copiar. Cuidado com o autofill do Chrome, que põe o login de admin da GTech nesses campos.
+- **Páginas explicativas** do caminho do clique até o painel: artifact https://claude.ai/artifact/GppYvHyDpeVeTifHPm5n9T e o arquivo `do-clique-ao-painel.html` na pasta Downloads do usuário.
+- Os MCPs `gtm` (timeout) e `voicestudio` (conexão recusada) não conectaram nesta sessão. A Tag do GTM não foi mexida.
+- Uma sessão paralela (282dd0cd) começou a ver o Meta Ads da PASIO, sem nada feito.
+
+### Próximos passos, em ordem (usuário, salvo indicação)
+1. Configurações → Webhooks → GTech → **Rotacionar segredo** → Copiar.
+2. Colar na Senha do modal "Criação de usuário" da GTech, conferir que o Usuário é `gtech` (não o e-mail do admin) e salvar.
+3. Criar o webhook "Pagamento de Depósito" igual (mesma URL, Usuário e Senha).
+4. Validar: abrir o cassino demo com `?utm_source=teste&utm_campaign=teste`, criar um jogador de teste e fazer um depósito. Conferir em Configurações → Instalação os passos "Plataforma enviando eventos" e "Tradução dos eventos", e no painel o cadastro e o FTD.
+5. Conferir se o `user_id` da Tag do site é o mesmo da GTech.
+6. Decidir a LGPD (dados pessoais no bruto) e o filtro de `is_demo` ([[operacao/problemas-atuais]], itens 9 e 10).
+7. Trocar a senha de admin do backoffice da GTech.
+8. Testar o SMTP ("esqueci a senha" em `https://kapanda.lat/login`).
+9. Remover as imagens antigas no Portainer (Images).
+10. Conectar o Meta Ads (token de usuário do sistema, [[operacao/runbooks]]).
+
+## Antes (2026-10-19, à noite, por volta das 21:30)
 - **Deploy pelo GHCR (D41), commit `e00a616` na `main`, push feito.** O workflow `.github/workflows/deploy.yml` constrói `api` e `web` no GitHub Actions e publica em `ghcr.io/abnersantosss/dashboard-trafego-pago/{api,web}` (`latest` e `sha-xxxxxxx`). O `docker-compose.prod.yml` usa essas imagens com `pull_policy: always`, sem `build`. Primeiro run (39342060273) verde; pacotes públicos, sem registry no Portainer. O job `redeploy` só avisou, porque não há secret `PORTAINER_WEBHOOK_URL` (o webhook de stack do Portainer é da Business Edition). Detalhes em [[operacao/producao]], seção "Atualizar".
 - **Redeploy feito às 20:38 (UTC do servidor), com autorização do usuário.** Os quatro contêineres foram recriados com `ghcr.io/abnersantosss/dashboard-trafego-pago/api:latest` e `.../web:latest`; `db` e `api` saudáveis, `web` no ar, `segredos` com saída 0. O redeploy levou cerca de 3 minutos (primeiro download das imagens, 2,6 GB); os próximos levam segundos. Validação pública depois: `/health` 200, `/login` 200, apelidos `pasio.*` 200, webhook sem assinatura 400, TLS 1.1 recusado, Tag coletando com 204.
 - **SMTP ativo**: o usuário colou a senha de app em `SMTP_SENHA` antes do redeploy. Ainda não houve envio de teste. Seção "E-mail (SMTP)" de [[operacao/producao]].

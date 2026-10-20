@@ -1,7 +1,7 @@
 ---
 tipo: referencia
-atualizado: 2026-10-19
-tags: [producao, deploy, portainer, cloudflare, tunel, docker, segredos, backup, kapanda, gtm, ghcr, github-actions, smtp]
+atualizado: 2026-10-20
+tags: [producao, deploy, portainer, cloudflare, tunel, docker, segredos, backup, kapanda, gtm, ghcr, github-actions, smtp, gtech, webhooks]
 ---
 
 # Produção
@@ -13,7 +13,7 @@ Tudo o que existe no ar e como mexer nele. Decisões em [[decisoes-tecnicas/deci
 |---|---|
 | Painel | `https://kapanda.lat` (`www` redireciona para a raiz) |
 | API | `https://api.kapanda.lat` (saúde em `/health`) |
-| Webhooks | `https://api.kapanda.lat/webhooks/pasio/{fonte}` ([[ingestao-webhooks/contrato-webhook]]) |
+| Webhooks | `https://api.kapanda.lat/webhooks/pasio/{fonte}` ([[ingestao-webhooks/contrato-webhook]]); GTech em `.../pasio/gtech` ([[ingestao-webhooks/gtech]]) |
 | Coleta da Tag do GTM | `https://api.kapanda.lat/t/pasio/clk` |
 | Endereços antigos (apelido) | `https://pasio.proxserverabner.site` e `https://pasio-api.proxserverabner.site`, mesmos contêineres |
 | DNS | zona `kapanda.lat` na Cloudflare (Free), nameservers `eva` e `joel.ns.cloudflare.com`; o registro do domínio continua na Hostinger |
@@ -21,6 +21,13 @@ Tudo o que existe no ar e como mexer nele. Decisões em [[decisoes-tecnicas/deci
 | Túnel | Cloudflare → Networking → Tunnels → `servidor-abner` (cloudflared roda no host) |
 
 As abas Instalação, Tag e Webhooks de Configurações montam as URLs a partir de `WEBHOOK_URL_PUBLICA`, por isso mostram o endereço público da API.
+
+## Fontes de webhook em produção
+| Fonte | Desde | Autenticação | Regras | Situação |
+|---|---|---|---|---|
+| `gtech` (GTech) | 2026-10-20, 14:47 | Basic (usuário `gtech`, senha = segredo da fonte) | preset `gtech`, versão 1 ativa | webhooks no backoffice da GTech ainda não salvos; nenhum evento recebido |
+
+Detalhes, validação e pendências em [[ingestao-webhooks/gtech]]. Ativar preset: [[operacao/runbooks]].
 
 ## Stack `trafego-pasio`
 Criada no Portainer pelo Git (Stacks → Add stack → Repository):
@@ -77,6 +84,8 @@ O servidor não compila mais. O caminho é: **push na `main` → GitHub Actions 
 4. Portainer → Stacks → `trafego-pasio` → **Pull and redeploy**. Com `pull_policy: always`, a stack baixa a imagem da tag e recria `api` e `web` em segundos ("Re-pull image" ligado ou não, tanto faz).
 5. O preparo aplica as migrações novas sozinho na subida da API. Conferir em Containers que `api` e `web` têm horário novo e imagem `ghcr.io/...`, depois `https://api.kapanda.lat/health` e o login.
 
+**Redeploys feitos por este caminho**: 2026-10-19 às 20:38 (`e00a616`, primeiro com o GHCR, cerca de 3 minutos pelo download inicial) e 2026-10-20 às 14:40 (`5ef4829`, autenticação Basic e preset da GTech, com "Re-pull image"; `api` e `db` saudáveis e `/health` 200).
+
 **Onde ver os runs**: `gh run list --workflow deploy.yml` e `gh run view <id>` (ou `--log-failed`), ou a aba Actions do repositório. As imagens publicadas aparecem em Packages do repositório no GitHub.
 
 **Rollback**: na stack, criar a variável `IMAGEM_TAG` com a tag de um commit bom (`sha-` mais os 7 primeiros caracteres, como aparece no GHCR), Save settings e "Pull and redeploy". Para voltar ao normal, apagar a variável (ou pôr `latest`) e redeployar. Migrações já aplicadas não são desfeitas pelo rollback.
@@ -118,11 +127,12 @@ Problemas em aberto, com causa e solução: [[operacao/problemas-atuais]].
 - [x] Senha do admin definida pelo link do log; o usuário entrou no painel (2026-10-19). Conferir se a senha salva não foi a sugerida pelo Chrome.
 - [x] Tag do GTM: Tag 42 publicada na versão 12 do contêiner `GTM-KWXQWW6V` (2026-10-19). Já envia visitas: 69 no canal Meta entre a publicação e as 20:10.
 - [x] "Pull and redeploy" com a correção do `{{`: stack no `d0dec89` às 20:07 de 2026-10-19, na terceira tentativa. Validação pública com 18 de 18 ok.
-- [ ] Configurar com os endereços públicos: fontes de webhook e conta do Meta Ads.
+- [ ] Configurar com os endereços públicos: fontes de webhook e conta do Meta Ads. **Em andamento (2026-10-20)**: fonte `gtech` criada e com o preset na versão 1; faltam os dois webhooks no backoffice da GTech ([[ingestao-webhooks/gtech]]) e o Meta Ads.
 - [ ] Opcional: tirar as rotas `pasio.*` do túnel quando ninguém mais usar o endereço antigo.
 - [ ] Critério de aceite da P7.2: um webhook de produção processar um evento de teste e aparecer no painel.
-- [ ] Primeiro "Pull and redeploy" com as imagens do GHCR (D41): a stack ainda roda os contêineres do `d0dec89` construídos na VPS. Depois, remover em Images as antigas `trafego-pasio-api`, `trafego-pasio-web` e as `<none>`.
-- [ ] SMTP: variáveis salvas em 2026-10-19; falta colar `SMTP_SENHA` (senha de app do Gmail), redeployar e testar "esqueci a senha".
+- [x] Primeiro "Pull and redeploy" com as imagens do GHCR (D41): feito em 2026-10-19 às 20:38.
+- [ ] Remover em Images as antigas `trafego-pasio-api`, `trafego-pasio-web` e as `<none>` (nunca `docker system prune --volumes`).
+- [ ] SMTP: senha de app colada e redeploy feito em 2026-10-19; falta testar "esqueci a senha".
 - [ ] Opcional: redeploy automático pela API do Portainer (token como secret do GitHub).
 - [ ] Opcional: rotina de backup agendada dos dois volumes.
 

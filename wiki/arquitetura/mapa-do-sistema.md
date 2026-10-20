@@ -1,7 +1,7 @@
 ---
 tipo: arquitetura
-atualizado: 2026-10-19
-tags: [arquitetura, producao, infraestrutura, fluxos, rotas, cloudflare, portainer, kapanda, mapa]
+atualizado: 2026-10-20
+tags: [arquitetura, producao, infraestrutura, fluxos, rotas, cloudflare, portainer, kapanda, mapa, gtech, basic]
 ---
 
 # Mapa do sistema
@@ -14,7 +14,7 @@ O sistema inteiro numa página: quem fala com quem, onde cada peça roda e de on
  ─────────────────                           ─────────────────
  Site pasion.bet (GTM-KWXQWW6V, Tag 42)       navegador
    └─ POST api.kapanda.lat/t/pasio/clk          └─ https://kapanda.lat
- Plataforma / afiliados (webhooks)                  │
+ Plataforma GTech / afiliados (webhooks)            │
    └─ POST api.kapanda.lat/webhooks/pasio/{fonte}   │
  Meta Ads (Graph API)  ◄── a API busca o gasto      │
                           de hora em hora           │
@@ -88,8 +88,8 @@ Volumes: `trafego-pasio_pgdata` (dados) e `trafego-pasio_segredos` (senhas e cha
 | `server.ts`, `app.ts`, `env.ts` | sobe o Fastify, registra rotas, CORS (só `WEB_URL`), rate-limit por `cf-connecting-ip`, relógio do Meta (1 h) |
 | `segredos-do-servidor.ts` | lê `/run/segredos` e preenche senhas, `AUTH_SECRET`, chave de cifra e URLs do banco |
 | `db/` | esquema Drizzle, migrações, `comTenant` (RLS), preparo de produção, seed e dados fictícios (só local) |
-| `rotas/webhooks.ts`, `webhooks/` | recepção com HMAC, idempotência, fila pg-boss e worker que aplica as regras |
-| `rules/` | carrega a versão ativa da regra da fonte |
+| `rotas/webhooks.ts`, `webhooks/` | recepção com HMAC ou Basic (D42), idempotência, fila pg-boss e worker que aplica as regras |
+| `rules/` | carrega a versão ativa da regra da fonte; `aplicar-preset.ts` publica um preset de `packages/rules/src/presets/` numa fonte |
 | `metricas/`, `rotas/metricas.ts` | agregação diária e `/metricas/visao-geral` |
 | `atribuicao/` | coleta da Tag do GTM (`/t/:empresa/clk`), toques e visitas |
 | `custos/` | gasto manual, contas do Meta Ads e sincronização de hora em hora |
@@ -110,7 +110,9 @@ Volumes: `trafego-pasio_pgdata` (dados) e `trafego-pasio_segredos` (senhas e cha
 `/` (Visão Geral), `/leads`, `/relatorios`, `/gestao-de-custos`, `/configuracoes` com as abas `apresentacao`, `gastos`, `instalacao`, `meta-ads`, `perfil`, `tag`, `usuarios` e `webhooks`; e as públicas `/login`, `/redefinir` e `/convite`. O `middleware.ts` manda para `/login` quem não tem o cookie `sessao`.
 
 ## 5. Fluxos
-**Webhook (cadastro, FTD, depósito, clique, gasto)**: `POST /webhooks/pasio/{fonte}` → assinatura HMAC com o segredo da fonte, janela de 5 min e id do evento → grava o bruto em `webhook_events` e responde 202 → pg-boss → regra ativa da fonte → evento canônico em `events` → agregação em `metrics_daily`. Falha de regra fica com status `erro` e pode ser reprocessada. Contrato: [[ingestao-webhooks/contrato-webhook]].
+**Webhook (cadastro, FTD, depósito, clique, gasto)**: `POST /webhooks/pasio/{fonte}` → assinatura HMAC com o segredo da fonte, janela de 5 min e id do evento, **ou** `Authorization: Basic` com a senha = segredo da fonte (D42, para plataformas sem HMAC) → grava o bruto em `webhook_events` e responde 202 → pg-boss → regra ativa da fonte → evento canônico em `events` → agregação em `metrics_daily`. Falha de regra fica com status `erro` e pode ser reprocessada. Contrato: [[ingestao-webhooks/contrato-webhook]].
+
+**GTech (desde 2026-10-20)**: a plataforma de cassino manda `USER_CREATED` e `DEPOSIT_PAYMENT` com Basic para `/webhooks/pasio/gtech`; o preset `gtech` gera `cadastro`, `ftd` ou `deposito` com `lead_key` = `user_id`. A origem vem do `tracker` da GTech ou, sem ele, do último toque da Tag com o mesmo `user_id`. Página: [[ingestao-webhooks/gtech]]; explicação ilustrada no artifact "Do Clique ao Painel" (https://claude.ai/artifact/GppYvHyDpeVeTifHPm5n9T).
 
 **Tag do GTM (visitas e atribuição)**: a Tag 42 roda em todas as páginas do site e envia `page_view` por `sendBeacon` para `/t/pasio/clk`. Cada envio vira um toque em `attribution_touches`; a primeira página da sessão (`cv: 1`) também vira um evento `visita`, agregado alguns segundos depois. Responde 204.
 
@@ -131,7 +133,7 @@ Volumes: `trafego-pasio_pgdata` (dados) e `trafego-pasio_segredos` (senhas e cha
 | Base contatada | webhook `clique` com `base=true` ou fonte de envio | 0: nenhuma fonte |
 | Cliques | webhook `clique` | 0: nenhuma fonte (a sincronização do Meta traz só o gasto) |
 | Visitas ao site | Tag do GTM (`cv: 1`) ou webhook `visita` | **funcionando**: 69 visitas no canal Meta pela Tag |
-| Cadastros, FTDs, valor do FTD, depósitos | webhooks da plataforma | 0: nenhuma fonte de webhook criada em produção |
+| Cadastros, FTDs, valor do FTD, depósitos | webhooks da plataforma | 0: nenhuma fonte de webhook criada em produção. **Em 2026-10-20**: fonte `gtech` criada com o preset ativo; falta salvar os webhooks no backoffice da GTech ([[ingestao-webhooks/gtech]]) |
 | Canal | classificador da regra ou UTM do toque | Meta (pelas UTMs das visitas) |
 
 Por isso o painel mostra só as visitas: o resto depende das fontes de webhook e da conta do Meta Ads, que ainda não foram configuradas em produção. Ver [[operacao/problemas-atuais]].
@@ -142,5 +144,6 @@ Por isso o painel mostra só as visitas: o resto depende das fontes de webhook e
 - Web e API escutam só em `127.0.0.1`; quem vem de fora passa pela Cloudflare.
 - CORS da API só para `https://kapanda.lat`; rate-limit por visitante (login 10/min, Tag 120/min).
 - Repositório público: nenhum segredo nem o e-mail do admin no código, na wiki ou no log ([[operacao/ambiente-e-seguranca]]).
+- Webhook Basic: senha comparada em tempo constante, cabeçalho `authorization` fora do log e do banco. O bruto da GTech traz dados pessoais e fica inteiro em `webhook_events.payload` (LGPD em aberto, [[operacao/problemas-atuais]]).
 
-Relacionado: [[operacao/producao]], [[operacao/problemas-atuais]], [[operacao/deploy-kapanda]], [[decisoes-tecnicas/decisoes]] (D39, D40, D41).
+Relacionado: [[operacao/producao]], [[operacao/problemas-atuais]], [[operacao/deploy-kapanda]], [[ingestao-webhooks/gtech]], [[decisoes-tecnicas/decisoes]] (D39, D40, D41, D42).

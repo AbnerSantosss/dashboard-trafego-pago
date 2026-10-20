@@ -1,6 +1,6 @@
 ---
 tipo: decisao
-atualizado: 2026-10-19
+atualizado: 2026-10-20
 tags: [adr, decisoes]
 ---
 
@@ -349,3 +349,24 @@ Formato: contexto, decisão, motivo, consequências. Correção vale mais que ac
   - o CI avisa que as actions `@v4`, `@v3` e `@v6` rodam em Node 20 forçadas para Node 24 e que `ubuntu-latest` migra para Ubuntu 26 a partir de 2026-10-19 (só avisos);
   - **pendente**: o "Pull and redeploy" da stack com as imagens do GHCR. Ele foi barrado pelo classificador do Claude Code (deploy em produção) e fica com o usuário ([[operacao/retomada]]).
 - Substitui, em D39, o trecho "Stack pelo repositório Git (`docker-compose.prod.yml` com `build:`) … `pull_policy: build`": a stack continua criada pelo Git, mas o compose não tem mais `build:`.
+
+## D42: webhook com autenticação Basic e preset de regras da GTech (2026-10-20)
+- Contexto: validar o painel com a plataforma demo da GTech (`latam.gtech.uy`). O backoffice da GTech só permite credencial **BASIC** (Usuário e Senha) no webhook; não assina com HMAC nem manda `X-Timestamp`/`X-Event-Id`. O receptor só aceitava HMAC (D13), e o motor de regras não conseguia trocar `R$` por `BRL`, ignorar o depósito pendente nem ler campos que mudaram de nome entre versões da documentação. Commit `5ef4829`.
+- Decisão:
+  - **Dois modos na mesma rota**: com `X-Timestamp` ou `X-Signature`, HMAC como antes; sem eles, `Authorization: Basic` com a **senha = segredo da fonte** e usuário livre (convenção: slug da fonte). Comparação em tempo constante; mesma resposta 401 `assinatura_invalida` para senha errada, Basic malformado e fonte sem segredo; sem janela de tempo; idempotência por `X-Event-Id` ou hash do corpo; `authorization` nunca gravado.
+  - **Motor**: operadores `coalesce`, `map`, `not_in`, `match` em lista e o bloco `ignorar` ([[regras-de-tratamento/motor-de-regras]]).
+  - **Preset `gtech`** em `packages/rules/src/presets/`: `USER_CREATED` → cadastro; `DEPOSIT_PAYMENT` pago → `ftd` se `approved_deposits == 1`, senão `deposito`; `DEPOSIT_CREATED` ignorado; `R$` → BRL; `lead_key` = `user_id`; UTMs de `tracker`; `affiliate_id` = `tracker.afp`.
+  - **Primeiro depósito gera só `ftd`**, porque `agregar.ts` já soma o FTD em Depósitos; gerar os dois dobraria o valor.
+  - **Script `aplicar-preset.ts`** publica o preset numa fonte (versão nova só se o conteúdo mudou) e opcionalmente reprocessa os brutos.
+  - Configurações → Webhooks e Instalação explicam o modo Basic (tabela Fonte | URL | Tipo de credencial | Usuário | Senha e exemplo `curl -u`).
+- Alternativas descartadas:
+  - **proxy que converte Basic em HMAC**: mais uma peça para manter, sem ganho de segurança (o segredo é o mesmo);
+  - **segredo na URL** (`?token=`): fica em logs de proxy e do túnel;
+  - **gerar `ftd` e `deposito` no primeiro depósito**: conta o valor em dobro em Depósitos.
+- Consequências:
+  - o Basic não tem proteção contra replay por tempo; a idempotência pelo hash do corpo cobre o reenvio idêntico. Exige HTTPS (o túnel da Cloudflare força);
+  - status não pago e evento desconhecido vão para erro/dead-letter de propósito, para aparecerem;
+  - **LGPD (em aberto)**: o bruto da GTech traz e-mail, nome, documento, data de nascimento, `user_token` e `qrcode`, e fica inteiro em `webhook_events.payload`. Mascarar ou remover antes de gravar é decisão do usuário;
+  - não mapeados: `is_demo` (não filtrado), `utm_term`, `utm_content`, `fbp`, `fbc` (sem campo canônico).
+- Verificação: testes de unidade e de rota do modo Basic, preset com fixtures fictícias, `aplicar-preset.test.ts` e o ponta a ponta `apps/api/src/e2e/gtech.test.ts` (4 POSTs Basic → worker → visão geral com 1 cadastro, 1 FTD de 20 e Depósitos 70,5; reenvio 200; senha errada 401). Lint, typecheck, build e todas as suítes verdes antes do push.
+- Em produção (2026-10-20): redeploy às 14:40, fonte `gtech` criada às 14:47 e preset na versão 1 ativa. Os dois webhooks no backoffice da GTech dependem do usuário colar o segredo. Estado e passos em [[ingestao-webhooks/gtech]].
