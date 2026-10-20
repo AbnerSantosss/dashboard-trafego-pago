@@ -183,6 +183,96 @@ describe('aplicarRegras: operadores', () => {
   });
 });
 
+describe('aplicarRegras: coalesce, not_in, map e ignorar', () => {
+  const base = { version: 1, moeda_padrao: 'BRL', fuso: FUSO };
+  const conjunto: ConjuntoDeRegras = {
+    ...base,
+    regras: [
+      {
+        match: [
+          { path: '$.event', coalesce: ['$.evento'], equals: 'pago' },
+          { path: '$.n', not_in: [1, '1'] },
+        ],
+        type: 'deposito',
+        fields: {
+          occurred_at: { path: '$.pago_em', coalesce: ['$.criado_em'] },
+          value: { path: '$.v' },
+          currency: { path: '$.moeda', trim: true, map: { R$: 'BRL', US$: 'USD' } },
+        },
+      },
+    ],
+    ignorar: [{ path: '$.event', coalesce: ['$.evento'], equals: 'pendente' }],
+  };
+
+  it('coalesce usa o primeiro caminho não vazio, no match e no campo', () => {
+    const [e] = aplicarRegras(
+      { evento: 'pago', n: 2, criado_em: '2024-05-10T12:00:00Z', v: '0.10', moeda: ' R$ ' },
+      conjunto,
+    ).eventos;
+    expect(e!.occurred_at.toISOString()).toBe('2024-05-10T12:00:00.000Z');
+    expect(e!.value).toBe(0.1);
+    expect(e!.currency).toBe('BRL');
+    const [e2] = aplicarRegras(
+      { event: 'pago', evento: 'outro', pago_em: '2024-05-11T00:00:00Z', criado_em: 'x' },
+      conjunto,
+    ).eventos;
+    expect(e2!.occurred_at.toISOString()).toBe('2024-05-11T00:00:00.000Z');
+  });
+
+  it('not_in recusa os valores da lista e deixa passar o ausente', () => {
+    const p = { event: 'pago', pago_em: '2024-05-10T12:00:00Z' };
+    expect(aplicarRegras(p, conjunto).eventos).toHaveLength(1);
+    expect(aplicarRegras({ ...p, n: 3 }, conjunto).eventos).toHaveLength(1);
+    expect(() => aplicarRegras({ ...p, n: 1 }, conjunto)).toThrow(/Nenhum bloco/);
+    expect(() => aplicarRegras({ ...p, n: '1' }, conjunto)).toThrow(/Nenhum bloco/);
+  });
+
+  it('map troca só o que está na tabela; o resto passa como veio', () => {
+    const p = { event: 'pago', pago_em: '2024-05-10T12:00:00Z' };
+    expect(aplicarRegras({ ...p, moeda: 'US$' }, conjunto).eventos[0]!.currency).toBe('USD');
+    expect(aplicarRegras({ ...p, moeda: 'eur' }, conjunto).eventos[0]!.currency).toBe('EUR');
+    expect(aplicarRegras({ ...p, moeda: 'toString' }, conjunto).eventos[0]!.currency).toBe(
+      'TOSTRING',
+    );
+  });
+
+  it('ignorar devolve zero eventos com aviso, sem erro', () => {
+    const r = aplicarRegras({ evento: 'pendente' }, conjunto);
+    expect(r.eventos).toEqual([]);
+    expect(r.avisos.join(' ')).toMatch(/ignorado/);
+  });
+
+  it('validarConjunto aceita os operadores novos e recusa formas erradas', () => {
+    const ok = validarConjunto(conjunto);
+    expect(ok.ok).toBe(true);
+    if (ok.ok) expect(ok.conjunto.ignorar).toEqual(conjunto.ignorar);
+    const r = validarConjunto({
+      ...base,
+      regras: [
+        {
+          type: 'ftd',
+          match: { path: '$.a', not_in: 1, coalesce: 'b' },
+          fields: { occurred_at: { const: 'x', coalesce: ['$.c'], map: ['R$'] } },
+        },
+      ],
+      ignorar: { path: '$.a' },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      const t = r.erros.join('\n');
+      for (const trecho of [
+        '"not_in" deve ser uma lista',
+        '"coalesce" deve ser uma lista de JSONPaths',
+        '"coalesce" exige "path"',
+        '"map" deve ser um objeto',
+        '"ignorar" deve ser uma lista',
+      ]) {
+        expect(t).toContain(trecho);
+      }
+    }
+  });
+});
+
 describe('classificarCanal', () => {
   const base = (p: Partial<EventoCanonico>): EventoCanonico => ({
     type: 'clique',
@@ -241,7 +331,7 @@ describe('validarConjunto', () => {
         '"version"',
         '"type" deve ser um de',
         'JSONPath começando com "$"',
-        'use "equals", "in", "exists" ou "regex"',
+        'use "equals", "in", "not_in", "exists" ou "regex"',
         'falta "fields.occurred_at"',
         'formato "x" inválido',
         '"divide" deve ser um número diferente de 0',

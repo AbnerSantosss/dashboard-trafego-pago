@@ -109,7 +109,8 @@ export const GUIA_WEBHOOKS: PassoGuia[] = [
         <Link className="inst-link" href="/configuracoes/instalacao">
           Visão geral
         </Link>
-        , no passo da plataforma.
+        , no passo da plataforma. Se a plataforma só aceitar credencial <strong>Basic</strong> (ex.:
+        GTech), use usuário = slug da fonte e senha = segredo.
       </p>
     ),
   },
@@ -126,9 +127,9 @@ export const GUIA_WEBHOOKS: PassoGuia[] = [
     titulo: 'Confira a chegada',
     texto: (
       <p>
-        Resposta <strong>202</strong> é recebido; <strong>401</strong> é assinatura ou horário
-        errado; <strong>404</strong> é fonte desativada ou endereço errado. Os últimos envios
-        aparecem em Visão geral.
+        Resposta <strong>202</strong> é recebido; <strong>401</strong> é assinatura, horário ou
+        senha Basic errados; <strong>404</strong> é fonte desativada ou endereço errado. Os últimos
+        envios aparecem em Visão geral.
       </p>
     ),
   },

@@ -11,6 +11,7 @@ import {
   type ConjuntoDeRegras,
   type EventoCanonico,
   type MapeamentoCampo,
+  type Match,
   type Regra,
   type RegraDeCanal,
   type ResultadoRegras,
@@ -39,17 +40,32 @@ function consultar(payload: unknown, path: string): unknown {
 
 const vazio = (v: unknown) => v === undefined || v === null || v === '';
 
+/** `path` e, se vier vazio, cada caminho de `coalesce` em ordem: o primeiro não vazio vence. */
+function consultarComAlternativas(
+  payload: unknown,
+  path: string,
+  coalesce: string[] | undefined,
+): unknown {
+  let v = consultar(payload, path);
+  for (const p of coalesce ?? []) {
+    if (!vazio(v)) break;
+    v = consultar(payload, p);
+  }
+  return v;
+}
+
 function casaCondicao(payload: unknown, c: CondicaoMatch): boolean {
-  const v = consultar(payload, c.path);
+  const v = consultarComAlternativas(payload, c.path, c.coalesce);
   if (c.exists !== undefined && c.exists === vazio(v)) return false;
   if (c.equals !== undefined && v !== c.equals) return false;
   if (c.in && !c.in.includes(v)) return false;
+  if (c.not_in && c.not_in.includes(v)) return false;
   if (c.regex !== undefined && (vazio(v) || !new RegExp(c.regex).test(String(v)))) return false;
   return true;
 }
 
-function casaBloco(payload: unknown, regra: Regra): boolean {
-  const conds = Array.isArray(regra.match) ? regra.match : [regra.match];
+function casaMatch(payload: unknown, match: Match): boolean {
+  const conds = Array.isArray(match) ? match : [match];
   return conds.every((c) => casaCondicao(payload, c));
 }
 
@@ -67,11 +83,12 @@ function paraNumero(v: unknown, nomeCampo: string): number {
 }
 
 /**
- * Extrai e transforma um campo. Ordem: path/const → default → regex → trim → lower →
- * multiply → divide. `format` (datas) é aplicado por quem chama.
+ * Extrai e transforma um campo. Ordem: path/const → coalesce → default → regex → trim → lower →
+ * map → multiply → divide. `format` (datas) é aplicado por quem chama.
  */
 function extrair(payload: unknown, m: MapeamentoCampo, nome: string): unknown {
-  let v: unknown = m.path !== undefined ? consultar(payload, m.path) : m.const;
+  let v: unknown =
+    m.path !== undefined ? consultarComAlternativas(payload, m.path, m.coalesce) : m.const;
   if (vazio(v) && m.default !== undefined) v = m.default;
   if (vazio(v)) return undefined;
   if (typeof v === 'object') {
@@ -86,6 +103,7 @@ function extrair(payload: unknown, m: MapeamentoCampo, nome: string): unknown {
   }
   if (m.trim) v = String(v).trim();
   if (m.lower) v = String(v).toLowerCase();
+  if (m.map && Object.hasOwn(m.map, String(v))) v = m.map[String(v)];
   if (m.multiply !== undefined) v = paraNumero(v, nome) * m.multiply;
   if (m.divide !== undefined) {
     if (m.divide === 0) throw new ErroDeRegra(`Campo "${nome}": divide não pode ser 0.`);
@@ -171,17 +189,25 @@ function montarEvento(
 
 /**
  * Aplica o conjunto ao payload. Cada bloco que casa gera um evento (vários por payload é
- * intencional). Lança `ErroDeRegra` com motivo legível se nada casar ou se um campo não converter.
+ * intencional). Payload que casa com `ignorar` devolve zero eventos sem erro. Lança
+ * `ErroDeRegra` com motivo legível se nada casar ou se um campo não converter.
  */
 export function aplicarRegras(payload: unknown, conjunto: ConjuntoDeRegras): ResultadoRegras {
   if (payload === null || typeof payload !== 'object') {
     throw new ErroDeRegra('O payload precisa ser um objeto JSON.');
   }
+  const ignorado = (conjunto.ignorar ?? []).findIndex((m) => casaMatch(payload, m));
+  if (ignorado >= 0) {
+    return {
+      eventos: [],
+      avisos: [`Payload ignorado por "ignorar[${ignorado}]"; nenhum evento gerado.`],
+    };
+  }
   const avisos: string[] = [];
   const canais = conjunto.canais ?? CANAIS_PADRAO;
   const eventos: EventoCanonico[] = [];
   conjunto.regras.forEach((regra, i) => {
-    if (casaBloco(payload, regra)) {
+    if (casaMatch(payload, regra.match)) {
       eventos.push(montarEvento(payload, regra, conjunto, canais, i, avisos));
     }
   });
@@ -199,6 +225,7 @@ export function aplicarRegras(payload: unknown, conjunto: ConjuntoDeRegras): Res
 
 const OPERADORES_CAMPO = [
   'path',
+  'coalesce',
   'const',
   'format',
   'divide',
@@ -207,8 +234,9 @@ const OPERADORES_CAMPO = [
   'trim',
   'default',
   'regex',
+  'map',
 ];
-const OPERADORES_MATCH = ['path', 'equals', 'in', 'exists', 'regex'];
+const OPERADORES_MATCH = ['path', 'coalesce', 'equals', 'in', 'not_in', 'exists', 'regex'];
 const CONDICOES_CANAL = ['utm_medium_in', 'utm_source_in', 'referrer_contem', 'campo_presente'];
 
 const ehObjeto = (v: unknown): v is Record<string, unknown> =>
@@ -232,6 +260,18 @@ function pathOk(p: unknown, onde: string, erros: string[]): void {
   }
 }
 
+function coalesceOk(c: Record<string, unknown>, onde: string, erros: string[]): void {
+  if (c.coalesce === undefined) return;
+  if (c.path === undefined) erros.push(`${onde}: "coalesce" exige "path".`);
+  if (
+    !Array.isArray(c.coalesce) ||
+    c.coalesce.length === 0 ||
+    c.coalesce.some((p) => typeof p !== 'string' || !p.startsWith('$'))
+  ) {
+    erros.push(`${onde}: "coalesce" deve ser uma lista de JSONPaths começando com "$".`);
+  }
+}
+
 function validarMatch(m: unknown, onde: string, erros: string[]): void {
   const lista = Array.isArray(m) ? m : [m];
   if (lista.length === 0) erros.push(`${onde}: "match" vazio.`);
@@ -245,7 +285,11 @@ function validarMatch(m: unknown, onde: string, erros: string[]): void {
     for (const k of Object.keys(c)) {
       if (!OPERADORES_MATCH.includes(k)) erros.push(`${o}: operador desconhecido "${k}".`);
     }
-    if (c.in !== undefined && !Array.isArray(c.in)) erros.push(`${o}: "in" deve ser uma lista.`);
+    coalesceOk(c, o, erros);
+    for (const k of ['in', 'not_in'] as const) {
+      if (c[k] !== undefined && !Array.isArray(c[k]))
+        erros.push(`${o}: "${k}" deve ser uma lista.`);
+    }
     if (c.exists !== undefined && typeof c.exists !== 'boolean') {
       erros.push(`${o}: "exists" deve ser true ou false.`);
     }
@@ -253,10 +297,11 @@ function validarMatch(m: unknown, onde: string, erros: string[]): void {
     if (
       c.equals === undefined &&
       c.in === undefined &&
+      c.not_in === undefined &&
       c.exists === undefined &&
       c.regex === undefined
     ) {
-      erros.push(`${o}: use "equals", "in", "exists" ou "regex".`);
+      erros.push(`${o}: use "equals", "in", "not_in", "exists" ou "regex".`);
     }
   });
 }
@@ -277,6 +322,10 @@ function validarCampo(nome: string, m: unknown, onde: string, erros: string[]): 
     erros.push(`${o}: use "path" ou "const", não os dois.`);
   }
   if (m.path !== undefined) pathOk(m.path, o, erros);
+  coalesceOk(m, o, erros);
+  if (m.map !== undefined && !ehObjeto(m.map)) {
+    erros.push(`${o}: "map" deve ser um objeto { "de": "para" }.`);
+  }
   if (m.format !== undefined && !(FORMATOS_DATA as readonly unknown[]).includes(m.format)) {
     erros.push(`${o}: formato "${String(m.format)}" inválido (use ${FORMATOS_DATA.join(', ')}).`);
   }
@@ -369,6 +418,10 @@ export function validarConjunto(
     });
   }
   if (json.canais !== undefined) validarCanais(json.canais, erros);
+  if (json.ignorar !== undefined) {
+    if (!Array.isArray(json.ignorar)) erros.push('"ignorar" deve ser uma lista de "match".');
+    else json.ignorar.forEach((m: unknown, i) => validarMatch(m, `ignorar[${i}]`, erros));
+  }
   const moeda = json.moeda_padrao ?? padroes.moeda_padrao ?? 'BRL';
   if (typeof moeda !== 'string' || !/^[A-Za-z]{3}$/.test(moeda)) {
     erros.push('"moeda_padrao" deve ser um código de 3 letras (ex.: BRL).');
@@ -385,5 +438,6 @@ export function validarConjunto(
     fuso: fuso as string,
   };
   if (json.canais !== undefined) conjunto.canais = json.canais as RegraDeCanal[];
+  if (json.ignorar !== undefined) conjunto.ignorar = json.ignorar as Match[];
   return { ok: true, conjunto };
 }

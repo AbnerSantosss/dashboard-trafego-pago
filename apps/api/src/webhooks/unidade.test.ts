@@ -1,7 +1,15 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { hashSegredo } from '../db/seed.js';
-import { assinar, assinaturaConfere, chaveEvento, timestampNaJanela } from './assinatura.js';
+import {
+  assinar,
+  assinaturaConfere,
+  chaveEvento,
+  decodificarBasic,
+  ehBasic,
+  senhaConfere,
+  timestampNaJanela,
+} from './assinatura.js';
 import { lerConfigWebhooks } from './config.js';
 import { lerMapaSegredos, obterSegredoDeMapa, segredoConfereComHash } from './segredos.js';
 
@@ -26,6 +34,46 @@ describe('assinatura', () => {
   it('chave de evento', () => {
     expect(chaveEvento(' e1 ', 'x')).toBe('e1');
     expect(chaveEvento(undefined, 'x')).toMatch(/^sha256:[0-9a-f]{64}$/);
+  });
+});
+
+describe('basic', () => {
+  const b64 = (t: string) => Buffer.from(t, 'utf8').toString('base64');
+
+  it('reconhece o esquema sem diferenciar maiúsculas', () => {
+    expect(ehBasic('Basic abc')).toBe(true);
+    expect(ehBasic('basic abc')).toBe(true);
+    expect(ehBasic('Basic')).toBe(true);
+    expect(ehBasic('Bearer abc')).toBe(false);
+    expect(ehBasic('Basicx abc')).toBe(false);
+    expect(ehBasic(undefined)).toBe(false);
+  });
+
+  it('decodifica usuario:senha; a senha pode ter ":"', () => {
+    expect(decodificarBasic(`Basic ${b64('gtech:s3gr:edo')}`)).toEqual({
+      usuario: 'gtech',
+      senha: 's3gr:edo',
+    });
+    expect(decodificarBasic(`BASIC  ${b64(':so-senha')}`)).toEqual({
+      usuario: '',
+      senha: 'so-senha',
+    });
+  });
+
+  it('malformado → null', () => {
+    expect(decodificarBasic('Basic')).toBeNull();
+    expect(decodificarBasic('Basic !!!')).toBeNull();
+    expect(decodificarBasic('Basic abc')).toBeNull(); // base64 com tamanho inválido
+    expect(decodificarBasic(`Basic ${b64('sem-dois-pontos')}`)).toBeNull();
+    expect(decodificarBasic(`Basic ${b64('usuario:')}`)).toBeNull();
+    expect(decodificarBasic(`Basic ${b64('a:b')} extra`)).toBeNull();
+  });
+
+  it('senha em tempo constante, inclusive com tamanhos diferentes', () => {
+    expect(senhaConfere('segredo-teste', 'segredo-teste')).toBe(true);
+    expect(senhaConfere('segredo-teste', 'segredo-testE')).toBe(false);
+    expect(senhaConfere('segredo-teste', 'curto')).toBe(false);
+    expect(senhaConfere('segredo-teste', 'segredo-teste-mais-longo')).toBe(false);
   });
 });
 

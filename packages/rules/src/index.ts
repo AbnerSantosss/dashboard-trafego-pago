@@ -11,3 +11,12 @@ export {
   type OpcoesAgregacao,
 } from './agregar.js';
 export { diaNoFuso, lerData, localParaUtc } from './tempo.js';
+export {
+  conjuntoGtech,
+  EVENTOS_GTECH,
+  IGNORAR_GTECH,
+  mapeamentoGtech,
+  REGRAS_GTECH,
+} from './presets/gtech.js';
+/** Presets por plataforma: slug do preset → conteúdo de `rules.mapping`. */
+export { PRESETS } from './presets/index.js';

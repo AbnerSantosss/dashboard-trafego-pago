@@ -4,7 +4,11 @@ Contrato acordado em `wiki/ingestao-webhooks/contrato-webhook.md`. Código em `s
 
 ## Recebimento: `POST /webhooks/{empresa}/{fonte}`
 
-`empresa` e `fonte` são slugs. Corpo JSON livre, até 1 MB, `Content-Type: application/json`.
+`empresa` e `fonte` são slugs. Corpo JSON livre, até 1 MB, `Content-Type: application/json` (com ou sem `; charset=utf-8`). Assinatura e idempotência usam sempre o corpo bruto, como chegou.
+
+A requisição se autentica de um de dois modos, os dois com o **segredo da fonte**.
+
+### Modo HMAC (padrão)
 
 | Cabeçalho | Obrigatório | Conteúdo |
 |---|---|---|
@@ -12,16 +16,33 @@ Contrato acordado em `wiki/ingestao-webhooks/contrato-webhook.md`. Código em `s
 | `X-Signature` | sim | HMAC-SHA256 **hex** de `X-Timestamp + "." + corpo bruto`, chave = segredo da fonte |
 | `X-Event-Id` | não | Chave de idempotência por fonte; sem ele, `sha256:<hex do corpo>` |
 
-Ordem das verificações: cabeçalhos → empresa/fonte → timestamp → assinatura (tempo constante) → JSON → idempotência.
+### Modo Basic (plataformas que só oferecem credencial BASIC, ex.: GTech/Globaltech)
+
+Usado **só quando não vem `X-Timestamp` nem `X-Signature`**. Se vier qualquer um dos dois, vale o modo HMAC, mesmo que haja `Authorization`.
+
+| Cabeçalho | Obrigatório | Conteúdo |
+|---|---|---|
+| `Authorization` | sim | `Basic base64(usuario:senha)` (RFC 7617) |
+| `X-Event-Id` | não | Igual ao HMAC; sem ele, `sha256:<hex do corpo>` (cobre reenvio idêntico) |
+
+No backoffice da plataforma, configure:
+
+- **Usuário**: qualquer valor, não é validado. Sugestão: o slug da fonte (ex.: `gtech`).
+- **Senha**: o segredo da fonte (o mesmo que seria a chave do HMAC).
+- **URL**: `https://<api>/webhooks/<empresa>/<fonte>`.
+
+A senha é comparada em tempo constante (SHA-256 dos dois lados + `timingSafeEqual`, então tamanhos diferentes não vazam pelo tempo). Neste modo não há janela de tempo nem proteção contra replay além da idempotência: o reenvio do mesmo corpo vira 200 duplicado. Prefira HMAC quando a plataforma suportar.
+
+Ordem das verificações: cabeçalhos (e formato do Basic) → empresa/fonte → timestamp (só HMAC) → assinatura ou senha (tempo constante) → JSON → idempotência.
 
 | Código | Corpo | Quando |
 |---|---|---|
 | 202 | `{ id, status: "recebido" }` | Gravado em `webhook_events` e enfileirado |
 | 200 | `{ id, duplicado: true }` | Mesmo `event_key` já recebido nesta fonte; nada é reprocessado |
-| 400 | `cabecalho_ausente` | Falta `X-Timestamp` ou `X-Signature` |
-| 400 | `json_invalido` | Corpo assinado, mas não é JSON |
-| 401 | `timestamp_fora_da_janela` | `X-Timestamp` fora da janela ou malformado |
-| 401 | `assinatura_invalida` | HMAC não confere (ou o servidor não tem segredo utilizável para a fonte) |
+| 400 | `cabecalho_ausente` | Sem `X-Timestamp`/`X-Signature` e sem `Authorization: Basic`, ou só um dos dois cabeçalhos HMAC |
+| 400 | `json_invalido` | Corpo autenticado, mas não é JSON |
+| 401 | `timestamp_fora_da_janela` | `X-Timestamp` fora da janela ou malformado (só HMAC) |
+| 401 | `assinatura_invalida` | HMAC não confere, senha Basic errada, Basic malformado (base64 inválido, sem `:` ou senha vazia) ou servidor sem segredo utilizável para a fonte. Mesma mensagem em todos os casos |
 | 404 | `nao_encontrado` | Empresa ou fonte desconhecida ou inativa (mesma mensagem nos três casos) |
 | 413 | `corpo_grande` | Acima de 1 MB |
 | 415 | `tipo_conteudo_invalido` | `Content-Type` diferente de JSON |
@@ -34,7 +55,7 @@ const ts = Math.floor(Date.now() / 1000).toString();
 const sig = createHmac('sha256', segredo).update(`${ts}.${corpo}`).digest('hex');
 ```
 
-O que é gravado: `payload` (jsonb), `event_key`, status `recebido` e os cabeçalhos `content-type`, `user-agent`, `x-event-id`, `x-timestamp`, `x-request-id`, `x-forwarded-for`. `X-Signature` e `Authorization` nunca são gravados nem logados. Log por evento: `tenant`, `fonte`, `eventKey`, `resultado` (sem corpo).
+O que é gravado: `payload` (jsonb), `event_key`, status `recebido` e os cabeçalhos `content-type`, `user-agent`, `x-event-id`, `x-timestamp`, `x-request-id`, `x-forwarded-for`. `X-Signature` e `Authorization` nunca são gravados nem logados (ficam fora dessa lista e estão no `redact` do logger em `src/app.ts`). Log por evento: `tenant`, `fonte`, `eventKey`, `resultado` (sem corpo).
 
 Idempotência: índice único `(tenant_id, source_id, event_key)`; o mesmo `X-Event-Id` em fontes ou empresas diferentes são eventos distintos.
 
@@ -82,6 +103,6 @@ Payloads sintéticos: `$.event` (`ad_spend`, `click`, `page_view`, `signup`, `fi
 
 ## Testes
 
-- `src/rotas/webhooks.test.ts`: contrato da rota (fila em memória).
+- `src/rotas/webhooks.test.ts`: contrato da rota (fila em memória), inclusive o modo Basic com um `USER_CREATED` fictício da GTech.
 - `src/webhooks/worker.test.ts`, `fila.test.ts` (pg-boss real via `DATABASE_ADMIN_URL`), `unidade.test.ts`.
 - `src/webhooks/g2.test.ts`: gate G2 (isolamento entre empresas).

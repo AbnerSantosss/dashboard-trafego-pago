@@ -1,7 +1,7 @@
 /**
  * Ingestão de webhooks (P3.1) e rotas administrativas da fonte (P3.6).
  *
- * - `POST /webhooks/:empresa/:fonte`: público, autenticado por HMAC (ver docs/webhooks.md).
+ * - `POST /webhooks/:empresa/:fonte`: público, autenticado por HMAC ou Basic (ver docs/webhooks.md).
  * - `POST /webhooks/:empresa/:fonte/reprocessar`: admin, enfileira o reprocessamento.
  * - `GET  /webhooks/:empresa/:fonte/entregas`: analista, últimas entregas sob RLS.
  */
@@ -11,7 +11,14 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { comTenant, sources, tenants, webhookEvents } from '../db/client.js';
 import { ErroApi, schemaRespostaErro } from '../erros.js';
-import { assinaturaConfere, chaveEvento, timestampNaJanela } from '../webhooks/assinatura.js';
+import {
+  assinaturaConfere,
+  chaveEvento,
+  decodificarBasic,
+  ehBasic,
+  senhaConfere,
+  timestampNaJanela,
+} from '../webhooks/assinatura.js';
 import type { Fila } from '../webhooks/fila.js';
 import type { FonteResolvida, ObterSegredo } from '../webhooks/segredos.js';
 
@@ -78,6 +85,9 @@ function cabecalho(request: FastifyRequest, nome: string): string | undefined {
 }
 
 const naoEncontrado = () => ErroApi.de('nao_encontrado', 'Empresa ou fonte não encontrada.');
+/** Mesmo erro para HMAC errado, senha Basic errada ou malformada e fonte sem segredo. */
+const credencialInvalida = () =>
+  ErroApi.de('assinatura_invalida', 'Assinatura do webhook não confere.');
 
 /** Resolve empresa (global) e fonte ativa (RLS da empresa). `null` se qualquer uma faltar. */
 async function resolverFonte(
@@ -142,11 +152,13 @@ export const rotasWebhookRecebimento: FastifyPluginAsyncZod<OpcoesWebhooks> = as
       },
       schema: {
         tags: ['webhooks'],
-        summary: 'Recebe um webhook assinado',
+        summary: 'Recebe um webhook autenticado (HMAC ou Basic)',
         description:
-          'Corpo JSON livre (até 1 MB). Cabeçalhos: X-Timestamp (epoch s, janela ±5 min), ' +
-          'X-Signature (HMAC-SHA256 hex de `timestamp + "." + corpo bruto` com o segredo da fonte) ' +
-          'e X-Event-Id (opcional; sem ele a idempotência usa o SHA-256 do corpo). ' +
+          'Corpo JSON livre (até 1 MB). Autenticação HMAC: X-Timestamp (epoch s, janela ±5 min) e ' +
+          'X-Signature (HMAC-SHA256 hex de `timestamp + "." + corpo bruto` com o segredo da fonte). ' +
+          'Alternativa, só sem X-Timestamp/X-Signature: Authorization: Basic base64(usuario:senha), ' +
+          'usuário livre e senha = segredo da fonte (sem janela de tempo). ' +
+          'X-Event-Id é opcional; sem ele a idempotência usa o SHA-256 do corpo. ' +
           '202 = aceito e enfileirado; 200 = duplicado.',
         params: schemaParamsWebhook,
         response: {
@@ -172,18 +184,35 @@ export const rotasWebhookRecebimento: FastifyPluginAsyncZod<OpcoesWebhooks> = as
       const corpo = typeof request.body === 'string' ? request.body : '';
       const timestamp = cabecalho(request, 'x-timestamp');
       const assinatura = cabecalho(request, 'x-signature');
-      if (!timestamp || !assinatura) {
+      const authorization = cabecalho(request, 'authorization');
+      // HMAC sempre que vier X-Timestamp ou X-Signature; Basic só sem nenhum dos dois.
+      const modoHmac = timestamp !== undefined || assinatura !== undefined;
+      if (!modoHmac && !ehBasic(authorization)) {
+        throw rejeitar(
+          ErroApi.de(
+            'cabecalho_ausente',
+            'Envie X-Timestamp e X-Signature (HMAC) ou Authorization: Basic.',
+            { ausentes: ['X-Timestamp', 'X-Signature'] },
+          ),
+        );
+      }
+      if (modoHmac && (!timestamp || !assinatura)) {
         throw rejeitar(
           ErroApi.de('cabecalho_ausente', 'Envie os cabeçalhos X-Timestamp e X-Signature.', {
             ausentes: [!timestamp && 'X-Timestamp', !assinatura && 'X-Signature'].filter(Boolean),
           }),
         );
       }
+      // Basic malformado é credencial inválida: 401 com o mesmo código, antes de olhar o banco.
+      const basic = modoHmac ? null : decodificarBasic(authorization!);
+      if (!modoHmac && !basic) {
+        throw rejeitar(credencialInvalida(), { modo: 'basic', motivo: 'malformado' });
+      }
 
       const alvo = await resolverFonte(app.db, empresa, fonte);
       if (!alvo) throw rejeitar(naoEncontrado());
 
-      if (!timestampNaJanela(timestamp, opcoes.janelaSegundos, agora())) {
+      if (modoHmac && !timestampNaJanela(timestamp!, opcoes.janelaSegundos, agora())) {
         throw rejeitar(
           ErroApi.de(
             'timestamp_fora_da_janela',
@@ -195,8 +224,13 @@ export const rotasWebhookRecebimento: FastifyPluginAsyncZod<OpcoesWebhooks> = as
       const segredo = await opcoes.obterSegredo(alvo);
       if (!segredo)
         log.warn('fonte sem segredo utilizável no servidor (secret_enc ou WEBHOOK_SEGREDOS)');
-      if (!segredo || !assinaturaConfere(segredo, timestamp, corpo, assinatura)) {
-        throw rejeitar(ErroApi.de('assinatura_invalida', 'Assinatura do webhook não confere.'));
+      const autenticado =
+        !!segredo &&
+        (modoHmac
+          ? assinaturaConfere(segredo, timestamp!, corpo, assinatura!)
+          : senhaConfere(segredo, basic!.senha));
+      if (!autenticado) {
+        throw rejeitar(credencialInvalida(), { modo: modoHmac ? 'hmac' : 'basic' });
       }
 
       let payload: unknown;

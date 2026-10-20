@@ -49,6 +49,11 @@ await fetch(ENDERECO_DA_FONTE, {
   body: corpo,
 });`;
 
+const EXEMPLO_BASIC = `curl -X POST "$ENDERECO_DA_FONTE" \\
+  -u "slug-da-fonte:$SEGREDO_DA_FONTE" \\
+  -H "Content-Type: application/json" \\
+  -d @evento.json`;
+
 const EXEMPLO_EVENTO = `{
   "id": "dep-918273",
   "event": "first_deposit",
@@ -223,12 +228,18 @@ export default async function Instalacao() {
         </table>
         <h3 className="inst-subtitulo">Exemplo de envio (Node.js)</h3>
         <Copiavel valor={EXEMPLO_ASSINATURA} rotulo="Exemplo de envio assinado" bloco />
+        <p className="inst-nota">
+          Plataforma que só aceita credencial <strong>Basic</strong> (ex.: GTech): no lugar dos
+          cabeçalhos acima, use usuário = slug da fonte e senha = segredo. Sem janela de horário;
+          reenviar o mesmo corpo não duplica a contagem.
+        </p>
+        <Copiavel valor={EXEMPLO_BASIC} rotulo="Exemplo de envio com Basic" bloco />
         <h3 className="inst-subtitulo">Exemplo de evento</h3>
         <Copiavel valor={EXEMPLO_EVENTO} rotulo="Exemplo de evento" bloco />
         <p className="inst-nota">
           Respostas: <strong>202</strong> recebido, <strong>200</strong> repetido (ignorado),{' '}
-          <strong>401</strong> assinatura ou horário inválido, <strong>404</strong> fonte desativada
-          ou endereço errado.
+          <strong>401</strong> assinatura, horário ou senha Basic inválidos, <strong>404</strong>{' '}
+          fonte desativada ou endereço errado.
         </p>
       </>
     ),

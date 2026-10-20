@@ -28,7 +28,63 @@ function SegredoUmaVez({ segredo, slug }: { segredo: string; slug: string | unde
         </button>
       </div>
       <p className="cfg-aviso">{AVISO_SEGREDO}</p>
+      <p className="cfg-dica">
+        Plataforma só com autenticação Basic (ex.: GTech): usuário{' '}
+        <code>{slug ?? 'o slug da fonte'}</code>, senha = este segredo.
+      </p>
     </div>
+  );
+}
+
+/**
+ * Como ligar plataformas que só oferecem credencial BASIC no backoffice (ex.: GTech).
+ * A senha é o próprio segredo da fonte; aqui ele só é referenciado, nunca exibido.
+ */
+function AjudaBasic({ fontes }: { fontes: Fonte[] }) {
+  return (
+    <details className="cfg-ajuda">
+      <summary>Plataforma que só aceita autenticação Basic (ex.: GTech)</summary>
+      <div className="cfg-bloco">
+        <p className="cfg-dica">
+          No backoffice da plataforma, escolha o tipo de credencial <strong>BASIC</strong> em vez da
+          assinatura. A senha é o segredo da fonte (o mesmo da assinatura, mostrado uma vez ao criar
+          ou gerar). O usuário pode ser qualquer um; sugerimos o slug.
+        </p>
+        {fontes.length > 0 && (
+          <table className="cfg-tabela">
+            <thead>
+              <tr>
+                <th>Fonte</th>
+                <th>URL</th>
+                <th>Tipo de credencial</th>
+                <th>Usuário</th>
+                <th>Senha</th>
+              </tr>
+            </thead>
+            <tbody>
+              {fontes.map((f) => (
+                <tr key={f.id}>
+                  <td data-rotulo="Fonte">{f.nome}</td>
+                  <td data-rotulo="URL">
+                    <code className="cfg-url">{f.url}</code>
+                  </td>
+                  <td data-rotulo="Tipo de credencial">BASIC</td>
+                  <td data-rotulo="Usuário">
+                    <code>{f.slug}</code>
+                  </td>
+                  <td data-rotulo="Senha">
+                    Segredo da fonte
+                    {!f.segredoUtilizavel && (
+                      <span className="cfg-dica"> (gere um segredo novo)</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </details>
   );
 }
 
@@ -157,6 +213,8 @@ export function PainelWebhooks({ fontes }: { fontes: Fonte[] }) {
           Nova fonte
         </button>
       )}
+
+      <AjudaBasic fontes={fontes} />
     </div>
   );
 }

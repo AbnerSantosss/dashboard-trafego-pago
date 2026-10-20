@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { App } from '../app.js';
@@ -14,6 +15,61 @@ import {
 } from '../webhooks/teste-util.js';
 
 const disponivel = await bancoDisponivel('rotas/webhooks.test');
+
+/** USER_CREATED no formato observado da GTech, com valores fictícios. */
+const USER_CREATED_FICTICIO = {
+  event: 'USER_CREATED',
+  user_id: 90001,
+  user_token: 'tok-ficticio-123',
+  name: 'Jogador Teste',
+  email: 'jogador.teste@example.com',
+  user_birth_date: '1990-01-01',
+  referral_code: 'REFFICTICIO',
+  username: 'jogadorteste',
+  phone: null,
+  document: null,
+  active: true,
+  is_demo: false,
+  created_at: '2026-10-20T13:29:25.123-03:00',
+  domain: 'latam.gtech.uy',
+  tracker: {
+    utm_source: 'facebook',
+    utm_campaign: 'campanha-teste',
+    utm_term: null,
+    utm_content: null,
+    placement: null,
+    utm_medium: 'cpc',
+    fbp: 'fb.1.1700000000000.123456789',
+    fbc: null,
+    user_agent: 'Mozilla/5.0 (teste)',
+    afp: null,
+    shareCode: null,
+    source_id: null,
+    event_id: null,
+    campaign_id: null,
+  },
+};
+
+/** Requisição como a GTech envia: só `Authorization: Basic`, charset no Content-Type, sem UA. */
+function requisicaoBasic(
+  empresa: string,
+  fonte: string,
+  o: { corpo?: string | object; usuario?: string; senha?: string; authorization?: string } = {},
+) {
+  const corpo = typeof o.corpo === 'string' ? o.corpo : JSON.stringify(o.corpo ?? { a: 1 });
+  const credencial = Buffer.from(`${o.usuario ?? fonte}:${o.senha ?? ''}`, 'utf8').toString(
+    'base64',
+  );
+  return {
+    method: 'POST' as const,
+    url: `/webhooks/${empresa}/${fonte}`,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      authorization: o.authorization ?? `Basic ${credencial}`,
+    } as Record<string, string>,
+    payload: corpo,
+  };
+}
 
 describe.skipIf(!disponivel)('POST /webhooks/:empresa/:fonte', () => {
   let c: Cenario;
@@ -142,6 +198,117 @@ describe.skipIf(!disponivel)('POST /webhooks/:empresa/:fonte', () => {
     expect(res.statusCode).toBe(401);
     expect(res.json().erro.codigo).toBe('assinatura_invalida');
     await app3.close();
+  });
+
+  describe('modo Basic (GTech)', () => {
+    const basic = (o: Parameters<typeof requisicaoBasic>[2] = {}) =>
+      requisicaoBasic(f.tenantSlug, f.slug, { senha: f.segredo, ...o });
+
+    it('USER_CREATED com Basic correto → 202, chave sha256 do corpo bruto, sem Authorization', async () => {
+      // Corpo com acento e charset=utf-8: a chave é o SHA-256 dos bytes recebidos.
+      const corpo = JSON.stringify({ ...USER_CREATED_FICTICIO, name: 'Jogador Tésté' });
+      const res = await app.inject(basic({ corpo }));
+      expect(res.statusCode).toBe(202);
+      const { id } = res.json();
+      const [linha] = await comTenant(db, f.tenantId, (tx) =>
+        tx.select().from(webhookEvents).where(eq(webhookEvents.id, id)),
+      );
+      const sha = 'sha256:' + createHash('sha256').update(corpo, 'utf8').digest('hex');
+      expect(linha).toMatchObject({ eventKey: sha, status: 'recebido' });
+      expect(linha!.payload).toMatchObject({ event: 'USER_CREATED', name: 'Jogador Tésté' });
+      expect(linha!.headers).toMatchObject({ 'content-type': 'application/json; charset=utf-8' });
+      expect(linha!.headers).not.toHaveProperty('authorization');
+      expect(fila.processar).toContainEqual({ tenantId: f.tenantId, webhookEventId: id });
+
+      // Reenvio idêntico → 200 duplicado, sem reenfileirar.
+      const antes = fila.processar.length;
+      const dup = await app.inject(basic({ corpo }));
+      expect(dup.statusCode).toBe(200);
+      expect(dup.json()).toEqual({ id, duplicado: true });
+      expect(fila.processar.length).toBe(antes);
+    });
+
+    it('usuário é livre; X-Event-Id, se vier, é a chave', async () => {
+      const req = basic({
+        usuario: 'qualquer-coisa',
+        corpo: { event: 'USER_CREATED', user_id: 1 },
+      });
+      const res = await app.inject({
+        ...req,
+        headers: { ...req.headers, 'x-event-id': 'gtech-evt-1' },
+      });
+      expect(res.statusCode).toBe(202);
+      const [linha] = await comTenant(db, f.tenantId, (tx) =>
+        tx.select().from(webhookEvents).where(eq(webhookEvents.id, res.json().id)),
+      );
+      expect(linha!.eventKey).toBe('gtech-evt-1');
+    });
+
+    it('senha errada → 401 assinatura_invalida', async () => {
+      for (const senha of ['outra-senha', f.segredo + 'x', f.segredo.slice(1)]) {
+        const res = await app.inject(basic({ senha }));
+        expect(res.statusCode).toBe(401);
+        expect(res.json().erro).toMatchObject({
+          codigo: 'assinatura_invalida',
+          mensagem: 'Assinatura do webhook não confere.',
+        });
+      }
+    });
+
+    it('Basic malformado → 401 assinatura_invalida', async () => {
+      for (const authorization of [
+        'Basic',
+        'Basic !!!nao-base64',
+        `Basic ${Buffer.from('sem-dois-pontos').toString('base64')}`,
+        `Basic ${Buffer.from('usuario:').toString('base64')}`,
+      ]) {
+        const res = await app.inject(basic({ authorization }));
+        expect(res.statusCode).toBe(401);
+        expect(res.json().erro.codigo).toBe('assinatura_invalida');
+      }
+    });
+
+    it('Authorization de outro esquema e sem HMAC → 400 cabecalho_ausente', async () => {
+      const res = await app.inject(basic({ authorization: 'Bearer abc' }));
+      expect(res.statusCode).toBe(400);
+      expect(res.json().erro.codigo).toBe('cabecalho_ausente');
+    });
+
+    it('sem janela de tempo: o relógio do servidor não importa', async () => {
+      const { app: app4 } = await appWebhooks([f], { agora: () => 0 });
+      const res = await app4.inject(basic({ corpo: { event: 'USER_CREATED', user_id: 2 } }));
+      expect(res.statusCode).toBe(202);
+      await app4.close();
+    });
+
+    it('fonte desconhecida → 404; fonte sem segredo no servidor → 401', async () => {
+      const res = await app.inject(requisicaoBasic(f.tenantSlug, 'nao-existe', { senha: 'x' }));
+      expect(res.statusCode).toBe(404);
+      const { app: app5 } = await appWebhooks([]);
+      const r2 = await app5.inject(basic());
+      expect(r2.statusCode).toBe(401);
+      expect(r2.json().erro.codigo).toBe('assinatura_invalida');
+      await app5.close();
+    });
+
+    it('com X-Timestamp/X-Signature presentes vale o HMAC, mesmo com Basic correto', async () => {
+      const authorization = basic().headers.authorization!;
+      const errada = envio({ segredo: 'outro-segredo' });
+      const r1 = await app.inject({ ...errada, headers: { ...errada.headers, authorization } });
+      expect(r1.statusCode).toBe(401);
+      const certa = envio();
+      const r2 = await app.inject({ ...certa, headers: { ...certa.headers, authorization } });
+      expect(r2.statusCode).toBe(202);
+    });
+
+    it('HMAC com charset=utf-8 continua aceito', async () => {
+      const req = envio({ corpo: { event: 'signup', nome: 'Ação' } });
+      const res = await app.inject({
+        ...req,
+        headers: { ...req.headers, 'content-type': 'application/json; charset=utf-8' },
+      });
+      expect(res.statusCode).toBe(202);
+    });
   });
 
   it('GET entregas (analista) lista sob RLS; POST reprocessar exige admin', async () => {

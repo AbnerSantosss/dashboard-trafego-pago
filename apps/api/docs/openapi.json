@@ -5457,11 +5457,11 @@
     },
     "/webhooks/{empresa}/{fonte}": {
       "post": {
-        "summary": "Recebe um webhook assinado",
+        "summary": "Recebe um webhook autenticado (HMAC ou Basic)",
         "tags": [
           "webhooks"
         ],
-        "description": "Corpo JSON livre (até 1 MB). Cabeçalhos: X-Timestamp (epoch s, janela ±5 min), X-Signature (HMAC-SHA256 hex de `timestamp + \".\" + corpo bruto` com o segredo da fonte) e X-Event-Id (opcional; sem ele a idempotência usa o SHA-256 do corpo). 202 = aceito e enfileirado; 200 = duplicado.",
+        "description": "Corpo JSON livre (até 1 MB). Autenticação HMAC: X-Timestamp (epoch s, janela ±5 min) e X-Signature (HMAC-SHA256 hex de `timestamp + \".\" + corpo bruto` com o segredo da fonte). Alternativa, só sem X-Timestamp/X-Signature: Authorization: Basic base64(usuario:senha), usuário livre e senha = segredo da fonte (sem janela de tempo). X-Event-Id é opcional; sem ele a idempotência usa o SHA-256 do corpo. 202 = aceito e enfileirado; 200 = duplicado.",
         "parameters": [
           {
             "schema": {
