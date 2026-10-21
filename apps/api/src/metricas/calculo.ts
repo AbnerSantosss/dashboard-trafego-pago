@@ -115,8 +115,8 @@ export interface EntradaCalculo {
   apresentacao: Apresentacao;
   atualizadoEm: string | null;
   /**
-   * Redepósitos (eventos `deposito`) no período, com os mesmos filtros; null se a empresa nunca
-   * teve um. Com null, ou com o funil vindo do canal reservado, a etapa não aparece.
+   * Redepósitos (eventos `deposito`) no período, com os mesmos filtros. Sem o valor, ou com o
+   * funil vindo do canal reservado (demo, D11), a etapa não aparece.
    */
   redepositos?: number | null;
 }

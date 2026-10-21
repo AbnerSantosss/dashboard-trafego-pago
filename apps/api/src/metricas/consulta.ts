@@ -8,7 +8,7 @@
  *   where day between <início da comparação> and <fim do período>
  *     and (left(channel, 2) = '__' or campaign = <campanha>)   -- só com filtro de campanha
  *   group by day, channel
- * Redepósitos (etapa opcional do funil) são contados em `events`, em `contarRedepositos`.
+ * Redepósitos (sexta etapa do funil) são contados em `events`, em `contarRedepositos`.
  * O resto (filtro de canal, KPIs, sparklines, funil, tabela) é calculado em `calculo.ts`.
  */
 import { and, between, eq, max, ne, or, sql, type SQL } from 'drizzle-orm';
@@ -214,17 +214,15 @@ export async function consultarVisaoGeral(
 
 /**
  * Redepósitos do período (eventos `deposito`, dia no fuso da empresa, sem canais `__`), com os
- * mesmos filtros de canal e campanha da lista da etapa. null se a empresa nunca teve um.
+ * mesmos filtros de canal e campanha da lista da etapa. Zero enquanto a GTech não mandar nenhum.
  */
 async function contarRedepositos(
   tx: Tx,
   q: QueryNormalizada,
   periodo: Periodo,
   fuso: string,
-): Promise<number | null> {
+): Promise<number> {
   const ehRedeposito = eq(events.type, 'deposito');
-  const [algum] = await tx.select({ id: events.id }).from(events).where(ehRedeposito).limit(1);
-  if (!algum) return null;
   const dia = sql`(${events.occurredAt} at time zone ${fuso})::date`;
   const filtros: SQL[] = [
     ehRedeposito,

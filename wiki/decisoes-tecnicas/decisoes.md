@@ -379,6 +379,7 @@ Formato: contexto, decisão, motivo, consequências. Correção vale mais que ac
   - `packages/graficos/src/funil.tsx` desenha 6 trapézios só quando recebe a sexta etapa.
 - Alternativas descartadas: somar o valor dos redepósitos no funil (o valor já está no card Depósitos); mostrar a etapa zerada em toda empresa (polui quem não manda depósito).
 - Consequências: a demo e o CI visual ficam iguais (diff 5,19%, limite 5,5%); a etapa aparece na PASIO assim que o primeiro `deposito` chegar da GTech.
+- **Revisão (2026-10-21, à tarde)**: em produção o funil parava no FTD porque nenhum `deposito` tinha chegado (o webhook "Pagamento de Depósito" da GTech ainda não existe), e o usuário leu isso como painel desatualizado. Escolha dele: **mostrar sempre**. `contarRedepositos` não devolve mais `null`; nas empresas reais a etapa aparece com 0 até o primeiro depósito. A demo (canal reservado) segue com 5 etapas.
 
 ## D44: pacote de segurança a partir da base "Segurança Sass" (2026-10-21)
 - Contexto: antes do deploy do Redepósito, o usuário pediu para aplicar o que faz sentido da base `Especialistas\Segurança Sass`. A lista foi filtrada pelo que vale para este painel (poucos usuários, API atrás do túnel da Cloudflare, repositório público).

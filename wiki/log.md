@@ -368,3 +368,8 @@ tags: [log, historico]
   - item 5 de [[operacao/problemas-atuais]] resolvido; [[operacao/producao]] e [[operacao/retomada]] atualizados.
 - Entregue: e-mail de convite e de redefinição pronto em produção; falta o usuário confirmar a chegada de um e-mail real.
 
+## [2026-10-21] feature | Redepósito aparece sempre no funil (zerado até o primeiro depósito)
+- Pedido: "não está atualizado", "só tem até o FTD"; escolha "Mostrar sempre".
+- Feito: `contarRedepositos` (`apps/api/src/metricas/consulta.ts`) sempre devolve a contagem; teste novo de dia sem depósito com a etapa zerada; revisão anotada na D43 de [[decisoes-tecnicas/decisoes]].
+- Entregue: funil com 6 etapas nas empresas reais; a demo segue com 5.
+

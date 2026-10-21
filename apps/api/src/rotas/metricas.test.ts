@@ -235,9 +235,13 @@ describe.skipIf(!disponivel)('GET /metricas/visao-geral', () => {
     // Com o canal reservado no período o funil segue com 5 etapas (demo, D11).
     const mes = (await get('/metricas/visao-geral?de=2025-01-01&ate=2025-01-24', tokenB)).json();
     expect(mes.funil).toHaveLength(5);
-    // Empresa sem nenhum evento deposito: sem a etapa.
+    // Seed da PASIO com canal reservado no período: também 5 etapas.
     const pasio = (await get('/metricas/visao-geral?de=2024-05-01&ate=2024-05-24')).json();
     expect(pasio.funil).toHaveLength(5);
+    // Dia sem nenhum depósito e sem canal reservado: a etapa aparece zerada.
+    const vazio = (await get('/metricas/visao-geral?de=2025-01-12&ate=2025-01-12', tokenB)).json();
+    expect(vazio.funil.map((e: { id: string }) => e.id)).toContain('redeposito');
+    expect(vazio.funil[5]).toEqual({ id: 'redeposito', valor: 0, taxaPct: null });
   });
 
   it('cache: segunda chamada igual não consulta o banco; limpar invalida', async () => {
