@@ -100,6 +100,31 @@ describe('datas e CSV', () => {
       'desempenho-por-canal_2024-05-01_2024-05-24.csv',
     );
   });
+  it('CSV neutraliza fórmula no nome do canal com um apóstrofo na frente', () => {
+    const canais = ['=HYPERLINK("x")', '+1+1', '-2+3', '@SOMA(A1)', '\tx', '\rx'];
+    const csv = gerarCsv(
+      canais.map((c) => linha(c)),
+      null,
+    );
+    const corpo = csv.slice(1).split('\r\n').slice(1);
+    expect(corpo[0]!.startsWith(`"'=HYPERLINK(""x"")";`)).toBe(true);
+    expect(corpo[1]!.startsWith("'+1+1;")).toBe(true);
+    expect(corpo[2]!.startsWith("'-2+3;")).toBe(true);
+    expect(corpo[3]!.startsWith("'@SOMA(A1);")).toBe(true);
+    expect(corpo[4]!.startsWith("'\tx;")).toBe(true);
+    expect(corpo[5]!.startsWith(`"'\rx";`)).toBe(true);
+  });
+  it('CSV não põe apóstrofo em número negativo nem em texto comum', () => {
+    const csv = gerarCsv(
+      [linha('-12,5', { investimento: -12.5, roas: -0.5 }), linha('Meta')],
+      linha('t'),
+    );
+    const corpo = csv.slice(1).split('\r\n').slice(1);
+    expect(corpo[0]!.startsWith('-12,5;-12,50;')).toBe(true);
+    expect(corpo[0]!.endsWith(';-0,50')).toBe(true);
+    expect(corpo[1]!.startsWith('Meta;')).toBe(true);
+    expect(csv).not.toContain("'");
+  });
 });
 
 describe('atalhos de período', () => {

@@ -6,6 +6,7 @@
  */
 import type { ApresentacaoPatch, MePatch, Papel } from '@trafego/contratos';
 import { revalidatePath } from 'next/cache';
+import QRCode from 'qrcode';
 import { api } from '@/lib/api';
 import { gravarSessao, lerSessaoDoCookie } from '@/lib/sessao';
 import {
@@ -135,6 +136,85 @@ export async function salvarPerfil(_anterior: EstadoAcao, fd: FormData): Promise
   return { ok: true, mensagem: novaSenha ? 'Perfil e senha salvos.' : 'Perfil salvo.' };
 }
 
+/** 6 dígitos do app autenticador, sem os espaços que a pessoa digitar; null se não for isso. */
+function codigoDoApp(fd: FormData): string | null {
+  const c = texto(fd, 'codigo').replace(/\s+/g, '');
+  return /^\d{6}$/.test(c) ? c : null;
+}
+
+/**
+ * Verificação em duas etapas do próprio usuário, escolhida por `intencao`:
+ * `iniciar` (senhaAtual) devolve o segredo e o QR (SVG gerado aqui, em base64) só no estado desta
+ * resposta; `ativar` (codigo) e `desativar` (senhaAtual + codigo) recarregam o perfil.
+ * Segredo, URI e código nunca são logados.
+ */
+export async function acaoDuasEtapas(_anterior: EstadoAcao, fd: FormData): Promise<EstadoAcao> {
+  const intencao = texto(fd, 'intencao');
+  const falha = (mensagem: string): EstadoAcao => ({ ok: false, mensagem });
+  const outra = (r: { mensagem: string }) =>
+    falha(`Não foi possível concluir agora. ${r.mensagem}`);
+
+  if (intencao === 'iniciar') {
+    const senhaAtual = texto(fd, 'senhaAtual');
+    if (!senhaAtual) return falha('Informe a senha atual.');
+    const r = await api().iniciarDuasEtapas(senhaAtual);
+    if (!r.ok) {
+      if (r.status === 403) return falha('A senha atual está incorreta.');
+      if (r.status === 409) {
+        revalidatePath('/configuracoes/perfil');
+        return falha('A verificação em duas etapas já está ativa.');
+      }
+      return outra(r);
+    }
+    // Sem QR (falha improvável da biblioteca), a tela mostra só o segredo para digitar no app.
+    let qrSvgBase64 = '';
+    try {
+      const svg = await QRCode.toString(r.dados.uri, { type: 'svg', margin: 1 });
+      qrSvgBase64 = Buffer.from(svg, 'utf8').toString('base64');
+    } catch {
+      qrSvgBase64 = '';
+    }
+    return { ok: true, mensagem: '', duasEtapas: { segredo: r.dados.segredo, qrSvgBase64 } };
+  }
+
+  if (intencao === 'ativar') {
+    const codigo = codigoDoApp(fd);
+    if (!codigo) return falha('Digite os 6 dígitos que aparecem no app.');
+    const r = await api().ativarDuasEtapas(codigo);
+    if (!r.ok) {
+      if (r.status === 403)
+        return falha(
+          'Código incorreto. Confira se o horário do celular está certo e tente de novo.',
+        );
+      if (r.status === 409)
+        return falha('Esta ativação não vale mais (venceu ou já foi feita). Comece de novo.');
+      return outra(r);
+    }
+    revalidatePath('/configuracoes/perfil');
+    return { ok: true, mensagem: 'Verificação em duas etapas ativada.' };
+  }
+
+  if (intencao === 'desativar') {
+    const senhaAtual = texto(fd, 'senhaAtual');
+    if (!senhaAtual) return falha('Informe a senha atual.');
+    const codigo = codigoDoApp(fd);
+    if (!codigo) return falha('Digite os 6 dígitos que aparecem no app.');
+    const r = await api().desativarDuasEtapas(senhaAtual, codigo);
+    if (!r.ok) {
+      if (r.status === 403) return falha('Senha atual ou código incorreto.');
+      if (r.status === 409) {
+        revalidatePath('/configuracoes/perfil');
+        return falha('A verificação em duas etapas já está desativada.');
+      }
+      return outra(r);
+    }
+    revalidatePath('/configuracoes/perfil');
+    return { ok: true, mensagem: 'Verificação em duas etapas desativada.' };
+  }
+
+  return falha('Ação desconhecida.');
+}
+
 const PAPEIS: readonly Papel[] = ['admin', 'analista', 'leitor'];
 const papelDe = (v: string): Papel =>
   (PAPEIS as readonly string[]).includes(v) ? (v as Papel) : 'leitor';
@@ -159,11 +239,12 @@ export async function acaoUsuarios(_anterior: EstadoAcao, fd: FormData): Promise
     const r = await api().convidar(email, papelDe(texto(fd, 'papel')));
     if (!r.ok) return falha(r);
     revalidatePath('/configuracoes/usuarios');
+    const { motivoEmail } = r.dados;
     return {
       ok: true,
       mensagem: r.dados.emailEnviado
         ? `Convite enviado para ${r.dados.convite.email}.`
-        : `Convite criado, mas o e-mail não foi enviado. Mande o link abaixo para ${r.dados.convite.email}.`,
+        : `Convite criado, mas o e-mail não foi enviado. ${motivoEmail ?? 'A API não informou o motivo.'} Mande o link abaixo para ${r.dados.convite.email}.`,
       link: r.dados.link,
       emailEnviado: r.dados.emailEnviado,
     };

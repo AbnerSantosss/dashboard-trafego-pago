@@ -21,6 +21,7 @@ export const schemaMe = z.object({
   }),
   empresas: z.array(schemaEmpresa),
   empresaAtiva: z.uuid().nullable().describe('Claim tenant do token, se houver'),
+  duasEtapas: z.boolean().describe('Verificação em duas etapas ativa'),
 });
 
 export const schemaTrocaEmpresa = z.object({
@@ -51,13 +52,21 @@ export const rotasAuth: FastifyPluginAsyncZod = async (app) => {
     async (request) => {
       const { id } = request.usuario!;
       const [linha] = await app.db
-        .select({ id: users.id, email: users.email, nome: users.nome, sobrenome: users.sobrenome })
+        .select({
+          id: users.id,
+          email: users.email,
+          nome: users.nome,
+          sobrenome: users.sobrenome,
+          totpAtivoEm: users.totpAtivoEm,
+        })
         .from(users)
         .where(eq(users.id, id))
         .limit(1);
       if (!linha) throw ErroApi.de('token_invalido', 'Usuário do token não existe.');
+      const { totpAtivoEm, ...usuario } = linha;
       return {
-        usuario: linha,
+        usuario,
+        duasEtapas: totpAtivoEm !== null,
         empresas: await listarEmpresas(app.db, id),
         empresaAtiva: request.user.tenant ?? null,
       };
@@ -74,7 +83,7 @@ export const rotasAuth: FastifyPluginAsyncZod = async (app) => {
         description:
           'Devolve um novo token com a claim tenant apontando para a empresa informada (slug ou id).',
         security: seguranca,
-        body: z.object({ empresa: z.string().min(1).describe('Slug ou id da empresa') }),
+        body: z.object({ empresa: z.string().min(1).max(100).describe('Slug ou id da empresa') }),
         response: {
           200: schemaTrocaEmpresa,
           400: schemaRespostaErro,

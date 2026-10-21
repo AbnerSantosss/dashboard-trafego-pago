@@ -16,6 +16,13 @@ import { canalDoToque } from './toques.js';
 
 /** Limite de corpo da tag: 16 KB. */
 const LIMITE_TAG = 16 * 1024;
+/** A tag roda em sites de terceiros: qualquer origem, só POST e nunca com credenciais. */
+const CORS_TAG = {
+  origin: '*',
+  credentials: false,
+  methods: 'POST',
+  allowedHeaders: 'content-type',
+};
 
 const texto = z
   .union([z.string(), z.number()])
@@ -97,7 +104,7 @@ export const rotasAtribuicao: FastifyPluginAsyncZod<OpcoesAtribuicao> = async (a
     '/t/:empresa/clk',
     {
       bodyLimit: LIMITE_TAG,
-      config: { rateLimit: { max: 120, timeWindow: '1 minute' } },
+      config: { rateLimit: { max: 120, timeWindow: '1 minute' }, cors: CORS_TAG },
       schema: {
         tags: ['atribuicao'],
         summary: 'Recebe um toque da tag de atribuição do GTM (público)',
@@ -111,7 +118,6 @@ export const rotasAtribuicao: FastifyPluginAsyncZod<OpcoesAtribuicao> = async (a
       },
     },
     async (request, reply) => {
-      reply.header('access-control-allow-origin', '*');
       const [t] = await app.db
         .select({ id: tenants.id, fuso: tenants.fuso })
         .from(tenants)
@@ -169,13 +175,9 @@ export const rotasAtribuicao: FastifyPluginAsyncZod<OpcoesAtribuicao> = async (a
     },
   );
 
-  // Preflight de quem usar fetch com outro content-type.
-  app.options('/t/:empresa/clk', async (_request, reply) =>
-    reply
-      .header('access-control-allow-origin', '*')
-      .header('access-control-allow-methods', 'POST')
-      .header('access-control-allow-headers', 'content-type')
-      .code(204)
-      .send(),
+  // Preflight de quem usar fetch com outro content-type: o @fastify/cors responde com CORS_TAG
+  // antes deste handler.
+  app.options('/t/:empresa/clk', { config: { cors: CORS_TAG } }, async (_request, reply) =>
+    reply.code(204).send(),
   );
 };

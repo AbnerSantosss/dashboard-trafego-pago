@@ -125,10 +125,22 @@ describe('validarLogo', () => {
     expect(validarLogo('image/svg+xml', b64(svg))).toMatch(/^data:image\/svg\+xml;base64,/);
   });
 
+  it('SVG com referência interna e imagem embutida passa', () => {
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">' +
+      '<defs><path id="p"/></defs><use xlink:href="#p"/><image href="data:image/png;base64,AA=="/></svg>';
+    expect(validarLogo('image/svg+xml', b64(svg))).toMatch(/^data:image\/svg\+xml;base64,/);
+  });
+
   it.each([
     '<svg><script>alert(1)</script></svg>',
     '<svg onload="x()"></svg>',
+    '<svg/onload="x()"></svg>',
     '<svg><a href="javascript:x()"/></svg>',
+    '<svg><a href="&#106;avascript:x()"/></svg>',
+    '<svg><image href="https://rastreio.exemplo/x.png"/></svg>',
+    '<svg><a><set attributeName="href" to="x"/></a></svg>',
+    '<!DOCTYPE svg [<!ENTITY e "x">]><svg/>',
     '<svg><foreignObject/></svg>',
     '<html><svg/></html>',
   ])('SVG perigoso ou sem raiz → logo_invalido: %s', (svg) => {

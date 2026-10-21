@@ -28,9 +28,21 @@ export interface EstadoAcao {
   /** Só no convite: link de aceite, para copiar se o e-mail não chegar. */
   link?: string;
   emailEnviado?: boolean;
+  /** Só na segunda etapa do login: o desafio venceu ou sumiu, e é preciso entrar de novo. */
+  expirou?: boolean;
+  /**
+   * Só ao iniciar a verificação em duas etapas: segredo em base32 e o QR (SVG em base64) para o
+   * app autenticador. Ficam só no estado desta resposta, como o segredo de webhook.
+   */
+  duasEtapas?: { segredo: string; qrSvgBase64: string };
 }
 
 export const ESTADO_INICIAL: EstadoAcao = { ok: true, mensagem: '' };
+
+/** Segredo base32 em grupos de 4 ("JBSW Y3DP ..."), mais fácil de digitar no app autenticador. */
+export function agruparSegredo(segredo: string): string {
+  return (segredo.replace(/\s+/g, '').match(/.{1,4}/g) ?? []).join(' ');
+}
 
 export function formatarBytes(n: number): string {
   if (n < 1024) return `${n} B`;

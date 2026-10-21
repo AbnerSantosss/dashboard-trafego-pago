@@ -111,8 +111,12 @@ export function PainelUsuarios({ membros, convites, euId }: UsuariosResposta & {
         </button>
       </form>
 
+      {/* Convite criado sem e-mail também é falha: aparece como erro, com o motivo. */}
       {estado.mensagem && (
-        <p className={estado.ok ? 'cfg-sucesso' : 'cfg-erro'} role="status">
+        <p
+          className={estado.ok && estado.emailEnviado !== false ? 'cfg-sucesso' : 'cfg-erro'}
+          role="status"
+        >
           {estado.mensagem}
         </p>
       )}

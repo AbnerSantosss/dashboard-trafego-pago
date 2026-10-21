@@ -11,6 +11,7 @@ import { emitirToken } from '../auth/plugin.js';
 import {
   comTenant,
   criarDb,
+  events,
   memberships,
   metricsDaily,
   presentation,
@@ -73,6 +74,22 @@ describe.skipIf(!disponivel)('GET /metricas/visao-geral', () => {
           linha('2025-01-10', 'Google', '100.00', 2),
           linha('2025-01-11', 'Google', '50.00', 1),
           linha('2025-01-11', '__secreto__', null, 0),
+        ]);
+      // Redepósitos: 3 no Google em 10/01 e 1 em canal reservado (não entra).
+      const deposito = (channel: string) => ({
+        tenantId: empresaB.id,
+        type: 'deposito' as const,
+        occurredAt: new Date('2025-01-10T15:00:00Z'),
+        value: '50.00',
+        channel,
+      });
+      await tx
+        .insert(events)
+        .values([
+          deposito('Google'),
+          deposito('Google'),
+          deposito('Google'),
+          deposito('__secreto__'),
         ]);
     });
     tokenB = emitirToken(app, { sub: usuarioB, email, tenant: empresaB.id });
@@ -199,6 +216,28 @@ describe.skipIf(!disponivel)('GET /metricas/visao-geral', () => {
     expect(pasio.total.investimento).toBeNull();
     expect(pasio.opcoes.canais).not.toContain('Google');
     expect(pasio.opcoes.canais).not.toContain('__funil__');
+  });
+
+  it('redepósito vira a sexta etapa do funil quando não há canal reservado', async () => {
+    const dia = (await get('/metricas/visao-geral?de=2025-01-10&ate=2025-01-10', tokenB)).json();
+    expect(dia.funil.map((e: { id: string }) => e.id)).toEqual([
+      'base',
+      'cliques',
+      'visitas',
+      'cadastro',
+      'ftd',
+      'redeposito',
+    ]);
+    expect(dia.funil[5].valor).toBe(3);
+    // Taxa sobre os 2 FTDs do dia: pode passar de 100%.
+    expect(r1(dia.funil[5].taxaPct)).toBe(150);
+
+    // Com o canal reservado no período o funil segue com 5 etapas (demo, D11).
+    const mes = (await get('/metricas/visao-geral?de=2025-01-01&ate=2025-01-24', tokenB)).json();
+    expect(mes.funil).toHaveLength(5);
+    // Empresa sem nenhum evento deposito: sem a etapa.
+    const pasio = (await get('/metricas/visao-geral?de=2024-05-01&ate=2024-05-24')).json();
+    expect(pasio.funil).toHaveLength(5);
   });
 
   it('cache: segunda chamada igual não consulta o banco; limpar invalida', async () => {

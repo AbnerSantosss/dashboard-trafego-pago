@@ -41,6 +41,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Dependências de produção sem vulnerabilidade alta
+        run: pnpm audit --prod --audit-level high
       - name: Papéis e migrações do banco
         run: |
           psql "$DATABASE_ADMIN_URL" -v ON_ERROR_STOP=1 -f docker/initdb/01-papeis.sql

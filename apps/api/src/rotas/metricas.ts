@@ -14,8 +14,8 @@ export const schemaVisaoGeralQuery = z.object({
   de: dataIso.optional(),
   ate: dataIso.optional(),
   comparar: z.enum(['anterior', 'nenhum']).default('anterior'),
-  canal: z.string().min(1).default('todos'),
-  campanha: z.string().min(1).default('todas'),
+  canal: z.string().min(1).max(200).default('todos'),
+  campanha: z.string().min(1).max(300).default('todas'),
 });
 
 const periodo = z.object({ de: z.string(), ate: z.string() });
@@ -62,7 +62,7 @@ export const schemaVisaoGeralResposta = z.object({
   ),
   funil: z.array(
     z.object({
-      id: z.enum(['base', 'cliques', 'visitas', 'cadastro', 'ftd']),
+      id: z.enum(['base', 'cliques', 'visitas', 'cadastro', 'ftd', 'redeposito']),
       valor: z.number(),
       taxaPct: numeroOuNulo,
     }),

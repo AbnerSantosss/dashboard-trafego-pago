@@ -72,6 +72,26 @@ describe('lib/api', () => {
     });
   });
 
+  it('tempo esgotado vira mensagem em português; numa escrita, avisa que pode ter sido feita', async () => {
+    const fetch = vi.fn(async () => {
+      throw new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+    });
+    const cli = criarClienteApi(config, {
+      fetch: fetch as unknown as F,
+      sessao: async () => ({ token: 'tok', empresa: 'pasio' }),
+    });
+    expect(await cli.visaoGeral({})).toEqual({
+      ok: false,
+      mensagem: 'A API não respondeu em 4 s (tempo esgotado).',
+    });
+    expect(await cli.convidar('pessoa@empresa.com', 'leitor')).toEqual({
+      ok: false,
+      mensagem:
+        'A API não respondeu em 4 s (tempo esgotado). A ação pode ter sido concluída mesmo ' +
+        'assim: recarregue a página para conferir.',
+    });
+  });
+
   it('repassa o IP do visitante (cf-connecting-ip) nas rotas com e sem login', async () => {
     const fetch = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
       void url;
@@ -89,5 +109,78 @@ describe('lib/api', () => {
       expect((init!.headers as Record<string, string>)['cf-connecting-ip']).toBe('203.0.113.7');
     }
     expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('em produção, sem cookie de sessão, falha como não autenticada sem sessão provisória', async () => {
+    const cfg = lerConfig({
+      NODE_ENV: 'production',
+      AUTH_SECRET: SEGREDO,
+      WEB_USUARIO_ID: '11111111-1111-4111-8111-111111111111',
+    });
+    const fetch = vi.fn(async () => resposta(200, {}));
+    const cli = criarClienteApi(cfg, { fetch: fetch as unknown as F, sessao: async () => ({}) });
+    expect(await cli.visaoGeral({})).toEqual({
+      ok: false,
+      mensagem: 'Sessão ausente. Entre de novo.',
+      status: 401,
+    });
+    expect(await cli.convidar('pessoa@empresa.com', 'leitor')).toMatchObject({ status: 401 });
+    await expect(cli.obterToken()).rejects.toThrow('produção');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('em produção, com cookie de sessão, usa o token do cookie', async () => {
+    const cfg = lerConfig({ NODE_ENV: 'production' });
+    const fetch = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+      void url;
+      void init;
+      return resposta(200, {});
+    });
+    const cli = criarClienteApi(cfg, {
+      fetch: fetch as unknown as F,
+      sessao: async () => ({ token: 'tok', empresa: 'pasio' }),
+    });
+    expect((await cli.visaoGeral({})).ok).toBe(true);
+    const h = fetch.mock.calls[0]![1]!.headers as Record<string, string>;
+    expect(h.authorization).toBe('Bearer tok');
+  });
+
+  it('sair manda POST /auth/sair com o token dado, sem corpo, e aceita 204', async () => {
+    const fetch = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+      void url;
+      void init;
+      return new Response(null, { status: 204 });
+    });
+    const cli = criarClienteApi(config, {
+      fetch: fetch as unknown as F,
+      sessao: async () => ({ token: 'outro', empresa: 'pasio' }),
+      ip: async () => undefined,
+    });
+    expect(await cli.sair('tok-do-cookie')).toEqual({ ok: true, dados: null });
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const [url, init] = fetch.mock.calls[0]!;
+    expect(String(url)).toBe('http://api.teste/auth/sair');
+    expect(init!.method).toBe('POST');
+    expect(init!.body).toBeUndefined();
+    const h = init!.headers as Record<string, string>;
+    expect(h.authorization).toBe('Bearer tok-do-cookie');
+    expect(h['content-type']).toBeUndefined();
+  });
+
+  it('sair com a API fora devolve a falha sem lançar; no mock nem chama', async () => {
+    const fora = vi.fn(async () => {
+      throw new TypeError('fetch failed');
+    });
+    const cli = criarClienteApi(config, { fetch: fora as unknown as F, ip: async () => undefined });
+    expect(await cli.sair('tok')).toEqual({
+      ok: false,
+      mensagem: 'API indisponível: fetch failed',
+    });
+    const fetch = vi.fn();
+    const mock = criarClienteApi(lerConfig({ WEB_MOCK_API: '1' }), {
+      fetch: fetch as unknown as F,
+    });
+    expect(await mock.sair('tok')).toEqual({ ok: true, dados: null });
+    expect(fetch).not.toHaveBeenCalled();
   });
 });

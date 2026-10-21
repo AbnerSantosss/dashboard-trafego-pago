@@ -5,7 +5,7 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 process.env.WEB_MOCK_API = '1';
 
 const { revalidatePath } = await import('next/cache');
-const { acaoGastos, acaoMeta, acaoWebhook, salvarApresentacao } =
+const { acaoGastos, acaoMeta, acaoUsuarios, acaoWebhook, salvarApresentacao } =
   await import('@/app/(admin)/configuracoes/acoes');
 const v = await import('@/app/(admin)/configuracoes/validacao');
 const { adminMock } = await import('@/lib/mock');
@@ -174,5 +174,40 @@ describe('actions com WEB_MOCK_API=1', () => {
     expect(alt.segredo).toBeUndefined();
     const f = await api().fontes();
     expect(f.ok && f.dados.fontes[0]?.ativo).toBe(false);
+  });
+
+  it('convite sem e-mail: a mensagem traz o motivo da API e o link para copiar', async () => {
+    const convite = {
+      id: '11111111-1111-4111-8111-111111111111',
+      email: 'pessoa@empresa.com',
+      papel: 'leitor' as const,
+      expiraEm: '2026-10-28T00:00:00.000Z',
+      criadoEm: '2026-10-21T00:00:00.000Z',
+    };
+    const espiao = vi.spyOn(api(), 'convidar').mockResolvedValue({
+      ok: true,
+      dados: {
+        convite,
+        link: 'https://kapanda.lat/convite?token=abc',
+        emailEnviado: false,
+        motivoEmail: 'O servidor de e-mail smtp.gmail.com:465 não respondeu em 8 s.',
+      } as never,
+    });
+    try {
+      const r = await acaoUsuarios(
+        v.ESTADO_INICIAL,
+        fd({ intencao: 'convidar', email: convite.email, papel: 'leitor' }),
+      );
+      expect(r).toMatchObject({
+        ok: true,
+        emailEnviado: false,
+        link: 'https://kapanda.lat/convite?token=abc',
+        mensagem:
+          'Convite criado, mas o e-mail não foi enviado. O servidor de e-mail smtp.gmail.com:465 ' +
+          'não respondeu em 8 s. Mande o link abaixo para pessoa@empresa.com.',
+      });
+    } finally {
+      espiao.mockRestore();
+    }
   });
 });

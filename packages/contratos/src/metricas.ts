@@ -11,7 +11,7 @@
  */
 
 export type KpiId = 'investimento' | 'ftds' | 'cpa' | 'depositos' | 'roas';
-export type EtapaFunilId = 'base' | 'cliques' | 'visitas' | 'cadastro' | 'ftd';
+export type EtapaFunilId = 'base' | 'cliques' | 'visitas' | 'cadastro' | 'ftd' | 'redeposito';
 
 export interface Periodo {
   /** AAAA-MM-DD */
@@ -81,6 +81,10 @@ export interface VisaoGeralResposta {
   atualizadoEm: string | null;
   apresentacao: Apresentacao;
   kpis: KpiMetrica[];
+  /**
+   * Base → Cliques → Visitas → Cadastro → FTD e, se a empresa já teve depósito depois do FTD,
+   * Redepósito (quantidade de eventos `deposito`; taxa sobre FTD, pode passar de 100%).
+   */
   funil: EtapaFunilMetrica[];
   canais: LinhaCanalMetrica[];
   /** Soma dos canais visíveis; cpa/roas recalculados sobre as somas. */

@@ -179,6 +179,14 @@
 .lg-voltar {
   align-self: center;
 }
+a.lg-link {
+  text-decoration: none;
+}
+/* Código do app autenticador: dígitos de largura igual e um respiro entre eles. */
+.conta-cartao .lg-codigo {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2em;
+}
 .lg-entrar {
   display: flex;
   align-items: center;

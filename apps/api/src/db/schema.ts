@@ -92,6 +92,13 @@ export const users = pgTable('users', {
   sobrenome: text('sobrenome').notNull().default(''),
   /** scrypt `s1$<sal>$<hash>` (base64url). Null = ainda não definiu senha (convite ou seed). */
   senhaHash: text('senha_hash'),
+  /** "Sair" grava a hora: tokens emitidos antes dela deixam de valer (auth/plugin.ts). */
+  sessoesDesde: timestamp('sessoes_desde', { withTimezone: true }),
+  /** Verificação em duas etapas (conta/totp.ts): segredo cifrado; sem `totpAtivoEm`, é pendente. */
+  totpSegredoEnc: text('totp_segredo_enc'),
+  totpAtivoEm: timestamp('totp_ativo_em', { withTimezone: true }),
+  /** Último passo de 30 s aceito: o mesmo código não vale duas vezes. */
+  totpUltimoPasso: integer('totp_ultimo_passo'),
   createdAt: criadoEm(),
   updatedAt: atualizadoEm(),
 });

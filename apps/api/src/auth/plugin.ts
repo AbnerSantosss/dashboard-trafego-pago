@@ -147,6 +147,8 @@ export interface OpcoesAuth {
   databaseUrl: string;
   /** Db pronto (testes); se omitido, é criado a partir de `databaseUrl` e fechado no onClose. */
   db?: Db;
+  /** Recusa token sem a claim `sv` (produção: só o login por senha emite tokens). */
+  exigirVersaoSenha?: boolean;
 }
 
 async function pluginAuth(app: FastifyInstance, opcoes: OpcoesAuth): Promise<void> {
@@ -187,15 +189,23 @@ async function pluginAuth(app: FastifyInstance, opcoes: OpcoesAuth): Promise<voi
     }
     const claims = schemaClaims.safeParse(bruto);
     if (!claims.success) throw ErroApi.de('token_invalido', 'Token com claims inválidas.');
-    if (claims.data.sv) {
-      const [u] = await db
-        .select({ senhaHash: users.senhaHash })
-        .from(users)
-        .where(eq(users.id, claims.data.sub))
-        .limit(1);
-      if (!u || versaoSenha(u.senhaHash) !== claims.data.sv) {
-        throw ErroApi.de('token_invalido', 'Sessão encerrada: a senha foi trocada.');
-      }
+    if (!claims.data.sv && opcoes.exigirVersaoSenha) {
+      throw ErroApi.de('token_invalido', 'Token inválido.');
+    }
+    const [u] = await db
+      .select({ senhaHash: users.senhaHash, sessoesDesde: users.sessoesDesde })
+      .from(users)
+      .where(eq(users.id, claims.data.sub))
+      .limit(1);
+    if (!u) throw ErroApi.de('token_invalido', 'Token inválido.');
+    if (claims.data.sv && versaoSenha(u.senhaHash) !== claims.data.sv) {
+      throw ErroApi.de('token_invalido', 'Sessão encerrada: a senha foi trocada.');
+    }
+    // "Sair" encerra todas as sessões abertas até aquele segundo, inclusive (iat é em segundos):
+    // um token do mesmo segundo do sair também cai; só um login no mesmo segundo pagaria por isso.
+    const emitidoEm = (bruto as { iat?: number }).iat ?? 0;
+    if (u.sessoesDesde && emitidoEm <= Math.floor(u.sessoesDesde.getTime() / 1000)) {
+      throw ErroApi.de('token_invalido', 'Sessão encerrada: você saiu da conta.');
     }
     request.usuario = { id: claims.data.sub, email: claims.data.email };
   };

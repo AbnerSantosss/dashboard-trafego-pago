@@ -8,6 +8,7 @@
  *   where day between <início da comparação> and <fim do período>
  *     and (left(channel, 2) = '__' or campaign = <campanha>)   -- só com filtro de campanha
  *   group by day, channel
+ * Redepósitos (etapa opcional do funil) são contados em `events`, em `contarRedepositos`.
  * O resto (filtro de canal, KPIs, sparklines, funil, tabela) é calculado em `calculo.ts`.
  */
 import { and, between, eq, max, ne, or, sql, type SQL } from 'drizzle-orm';
@@ -19,7 +20,14 @@ import type {
   VisaoGeralQuery,
   VisaoGeralResposta,
 } from '@trafego/contratos';
-import { metricsDaily, presentation, tenants, webhookEvents, type Tx } from '../db/client.js';
+import {
+  events,
+  metricsDaily,
+  presentation,
+  tenants,
+  webhookEvents,
+  type Tx,
+} from '../db/client.js';
 import { ErroApi } from '../erros.js';
 import { calcularVisaoGeral, ORDEM_KPIS, type SomaDiaCanal } from './calculo.js';
 import {
@@ -189,6 +197,7 @@ export async function consultarVisaoGeral(
   const [ultimo] = await tx
     .select({ em: sql<string | null>`max(${webhookEvents.processedAt})` })
     .from(webhookEvents);
+  const redepositos = await contarRedepositos(tx, q, periodo, apresentacao.timezone);
 
   return calcularVisaoGeral({
     periodo,
@@ -199,5 +208,34 @@ export async function consultarVisaoGeral(
     campanhas: campanhas.map((c) => c.campanha),
     apresentacao,
     atualizadoEm: ultimo?.em ? new Date(ultimo.em).toISOString() : null,
+    redepositos,
   });
+}
+
+/**
+ * Redepósitos do período (eventos `deposito`, dia no fuso da empresa, sem canais `__`), com os
+ * mesmos filtros de canal e campanha da lista da etapa. null se a empresa nunca teve um.
+ */
+async function contarRedepositos(
+  tx: Tx,
+  q: QueryNormalizada,
+  periodo: Periodo,
+  fuso: string,
+): Promise<number | null> {
+  const ehRedeposito = eq(events.type, 'deposito');
+  const [algum] = await tx.select({ id: events.id }).from(events).where(ehRedeposito).limit(1);
+  if (!algum) return null;
+  const dia = sql`(${events.occurredAt} at time zone ${fuso})::date`;
+  const filtros: SQL[] = [
+    ehRedeposito,
+    sql`${dia} between ${periodo.de}::date and ${periodo.ate}::date`,
+    sql`left(${events.channel}, 2) <> '__'`,
+  ];
+  if (q.canal !== 'todos') filtros.push(eq(events.channel, q.canal));
+  if (q.campanha !== 'todas') filtros.push(eq(events.campaign, q.campanha));
+  const [linha] = await tx
+    .select({ n: sql<string>`count(*)` })
+    .from(events)
+    .where(and(...filtros));
+  return num(linha?.n);
 }

@@ -132,12 +132,14 @@ function filtroEtapa(etapa: EtapaLista): SQL {
       return sql`${events.type} = 'cadastro'`;
     case 'ftd':
       return sql`${events.type} = 'ftd'`;
+    case 'redeposito':
+      return sql`${events.type} = 'deposito'`;
     case 'depositos':
       return sql`${events.type} in ('ftd', 'deposito')`;
   }
 }
 
-const ETAPAS_COM_VALOR: ReadonlySet<EtapaLista> = new Set(['ftd', 'depositos']);
+const ETAPAS_COM_VALOR: ReadonlySet<EtapaLista> = new Set(['ftd', 'redeposito', 'depositos']);
 
 /** `%`, `_` e `\` da busca valem como texto, não como curinga do `ilike`. */
 function padraoBusca(busca: string): string {
@@ -169,9 +171,21 @@ function paraEvento(e: Evento): EventoLead {
 }
 
 /** Chaves cujo valor nunca aparece na ficha (o resto do corpo do webhook vai como veio). */
-const CHAVE_SENSIVEL = /senha|password|passwd|token|secret|segredo|cart[aã]o|card|cvv/i;
+const CHAVE_SENSIVEL =
+  /senha|password|passwd|token|secret|segredo|cart[aã]o|card|cvv|cpf|cnpj|documento|document|pix|cookie|authorization|api[_-]?key|(^|[_.-])(rg|pin|auth)($|[_.-])/i;
+/** Dados de contato: aparecem só em parte, o bastante para o time reconhecer o lead. */
+const CHAVE_CONTATO = /telefone|phone|celular|whatsapp|e-?mail/i;
 
-/** Copia o corpo do webhook trocando valores de chaves sensíveis por `••••`. */
+function mascararContato(x: unknown): unknown {
+  if (typeof x !== 'string' && typeof x !== 'number') return x;
+  const s = String(x);
+  const arroba = s.indexOf('@');
+  if (arroba > 0) return `${s[0]}•••${s.slice(arroba)}`;
+  const digitos = s.replace(/\D/g, '');
+  return digitos.length > 4 ? `••••${digitos.slice(-4)}` : '••••';
+}
+
+/** Copia o corpo do webhook trocando valores sensíveis por `••••` (contato fica em parte). */
 export function mascararPayload(v: unknown, nivel = 0): unknown {
   if (nivel > 20) return '…';
   if (Array.isArray(v)) return v.map((x) => mascararPayload(x, nivel + 1));
@@ -179,7 +193,11 @@ export function mascararPayload(v: unknown, nivel = 0): unknown {
     return Object.fromEntries(
       Object.entries(v as Record<string, unknown>).map(([k, x]) => [
         k,
-        CHAVE_SENSIVEL.test(k) ? '••••' : mascararPayload(x, nivel + 1),
+        CHAVE_SENSIVEL.test(k)
+          ? '••••'
+          : CHAVE_CONTATO.test(k)
+            ? mascararContato(x)
+            : mascararPayload(x, nivel + 1),
       ]),
     );
   }

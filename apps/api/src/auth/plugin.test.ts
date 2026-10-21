@@ -96,17 +96,6 @@ describe('autenticação por JWT (sem banco)', () => {
     expect(res.statusCode).toBe(401);
     expect(res.json().erro.codigo).toBe('token_invalido');
   });
-
-  it('token válido → 200 com request.usuario', async () => {
-    const token = emitirToken(app, { sub: UM_UUID, email: 'a@teste.local' });
-    const res = await app.inject({
-      method: 'GET',
-      url: '/teste/protegida',
-      headers: { authorization: `Bearer ${token}` },
-    });
-    expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ id: UM_UUID, email: 'a@teste.local' });
-  });
 });
 
 const disponivel = await bancoDisponivel('auth/plugin.test');
@@ -119,6 +108,7 @@ describe.skipIf(!disponivel)('papéis por empresa e isolamento (com banco)', () 
   beforeAll(async () => {
     c = await criarCenario(['leitor', 'admin']);
     app = await appComBanco();
+    app.get('/teste/protegida', { preHandler: app.autenticar }, async (req) => req.usuario);
     app.get('/teste/admin', { preHandler: app.exigirPapel('admin') }, async (req) => ({
       empresa: req.empresa,
     }));
@@ -144,6 +134,23 @@ describe.skipIf(!disponivel)('papéis por empresa e isolamento (com banco)', () 
       url,
       headers: { authorization: `Bearer ${token}`, ...(tenant ? { 'x-tenant': tenant } : {}) },
     });
+
+  it('token válido → 200 com request.usuario', async () => {
+    const res = await pedir('/teste/protegida');
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ id: c.usuario.id, email: c.usuario.email });
+  });
+
+  it('token bem assinado de usuário que não existe → 401 token_invalido', async () => {
+    const fantasma = emitirToken(app, { sub: UM_UUID, email: 'a@teste.local' });
+    const res = await app.inject({
+      method: 'GET',
+      url: '/teste/protegida',
+      headers: { authorization: `Bearer ${fantasma}` },
+    });
+    expect(res.statusCode).toBe(401);
+    expect(res.json().erro.codigo).toBe('token_invalido');
+  });
 
   it('exigirPapel(admin) em T1 (leitor) → 403 acesso_negado', async () => {
     const res = await pedir('/teste/admin', c.t1.slug);

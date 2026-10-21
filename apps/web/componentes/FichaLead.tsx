@@ -36,6 +36,7 @@ export const COLETIVO: Record<string, string> = {
   visitas: 'visitas',
   cadastro: 'cadastros',
   ftd: 'FTDs',
+  redeposito: 'redepósitos',
   depositos: 'depósitos',
 };
 
@@ -46,6 +47,7 @@ export const ROTULO_ETAPA: Record<string, string> = {
   visitas: 'Visitas ao site',
   cadastro: 'Cadastro',
   ftd: 'FTD',
+  redeposito: 'Redepósito',
   depositos: 'Depósitos',
 };
 

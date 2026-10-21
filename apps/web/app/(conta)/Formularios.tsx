@@ -1,15 +1,22 @@
 'use client';
 import type { ConvitePublico } from '@trafego/contratos';
+import Link from 'next/link';
 import { useActionState, useState } from 'react';
 import { Icone } from '@/componentes/Nos';
 import { ESTADO_INICIAL, type EstadoAcao } from '../(admin)/configuracoes/validacao';
-import { aceitarConvite, entrar, recuperar, redefinir } from './acoes';
+import { aceitarConvite, confirmarCodigo, entrar, recuperar, redefinir } from './acoes';
 
 function Mensagem({ estado }: { estado: EstadoAcao }) {
   if (!estado.mensagem) return null;
   return (
     <p className={estado.ok ? 'cfg-sucesso' : 'cfg-erro'} role="status">
       {estado.mensagem}
+      {estado.expirou && (
+        <>
+          {' '}
+          <Link href="/login">Ir para o login</Link>
+        </>
+      )}
     </p>
   );
 }
@@ -206,6 +213,44 @@ export function FormConvite({ token, convite }: { token: string; convite: Convit
           {pendente ? 'Aceitando…' : 'Aceitar convite'}
         </button>
       </div>
+    </form>
+  );
+}
+
+/**
+ * Segunda etapa do login: o código de 6 dígitos do app autenticador. O desafio fica no cookie
+ * httpOnly; este formulário só manda o código. Espaços são aceitos ("123 456").
+ */
+export function FormCodigo() {
+  const [estado, enviar, pendente] = useActionState(confirmarCodigo, ESTADO_INICIAL);
+  return (
+    <form action={enviar} className="cfg-form lg-form">
+      <label className="cfg-campo lg-campo">
+        <span className="cfg-rotulo">Código do app</span>
+        <span className="lg-caixa">
+          <Icone nome="cadeado" className="lg-ic" />
+          <input
+            className="cfg-input lg-input lg-codigo"
+            name="codigo"
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            pattern="\s*(?:[0-9]\s*){6}"
+            maxLength={12}
+            title="6 dígitos"
+            placeholder="000 000"
+            required
+            autoFocus
+          />
+        </span>
+      </label>
+      <Mensagem estado={estado} />
+      <button type="submit" className="lg-entrar" disabled={pendente} aria-busy={pendente}>
+        {pendente ? 'Confirmando…' : 'Confirmar'}
+      </button>
+      <Link href="/login" className="lg-link lg-voltar">
+        Voltar ao login
+      </Link>
     </form>
   );
 }

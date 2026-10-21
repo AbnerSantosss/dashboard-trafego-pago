@@ -109,6 +109,7 @@ describe.skipIf(!disponivel)('tag de atribuição', () => {
     });
     expect(r.statusCode).toBe(204);
     expect(r.headers['access-control-allow-origin']).toBe('*');
+    expect(r.headers['access-control-allow-credentials']).toBeUndefined();
 
     const toques = await comTenant(db, tenantId, (tx) => tx.select().from(attributionTouches));
     expect(toques).toHaveLength(1);

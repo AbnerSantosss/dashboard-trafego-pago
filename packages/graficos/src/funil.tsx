@@ -52,12 +52,45 @@ export const TRAPEZIOS: readonly Trapezio[] = [
   ],
 ];
 
+/**
+ * Seis etapas (com Redepósito) no mesmo card: mesma altura total (y 332 a 635), vão de 5 px e
+ * bordas sobre as mesmas retas dos cinco trapézios medidos.
+ */
+const ALTURA_6 = (635 - 332 - 5 * 5) / 6;
+const topo6 = (i: number) => 332 + i * (ALTURA_6 + 5);
+const esquerda = (y: number) => Math.round((206.3 + 0.406 * (y - 332)) * 10) / 10;
+const direita = (y: number) => Math.round((532.4 - 0.403 * (y - 332)) * 10) / 10;
+export const TRAPEZIOS_6: readonly Trapezio[] = Array.from({ length: 6 }, (_, i) => {
+  const a = Math.round(topo6(i) * 10) / 10;
+  const b = Math.round((topo6(i) + ALTURA_6) * 10) / 10;
+  return [
+    [esquerda(a), a],
+    [direita(a), a],
+    [direita(b), b],
+    [esquerda(b), b],
+  ] as const;
+});
+
 /** Card do funil no protótipo: left 194, width 444; trapézios de y 332 a 635. */
 export const VIEWBOX = { x: 194, y: 322, largura: 444, altura: 322 } as const;
 
 /** Cores medidas: centro e bordas (degradê horizontal 0 → 12% → 88% → 100%). */
-export const COR_FUNIL = ['#0068FD', '#0078FD', '#00B0DD', '#00C793', '#00C980'] as const;
-export const COR_FUNIL_BORDA = ['#1C82FF', '#2290FF', '#1CC0EA', '#1AD7A6', '#1AD995'] as const;
+export const COR_FUNIL = [
+  '#0068FD',
+  '#0078FD',
+  '#00B0DD',
+  '#00C793',
+  '#00C980',
+  '#00CB6A',
+] as const;
+export const COR_FUNIL_BORDA = [
+  '#1C82FF',
+  '#2290FF',
+  '#1CC0EA',
+  '#1AD7A6',
+  '#1AD995',
+  '#1ADC84',
+] as const;
 
 /** Linhas de base das taxas/legendas e altura dos conectores, por etapa. */
 const TAXA_Y = [
@@ -67,6 +100,40 @@ const TAXA_Y = [
   { pct: 538, leg: 558, con: 545 },
   { pct: 597, leg: 618, con: 604 },
 ] as const;
+
+interface Geometria {
+  trapezios: readonly Trapezio[];
+  taxaY: readonly { pct: number; leg: number; con: number | null }[];
+  /** Deslocamento da linha de base a partir do topo da barra e tamanho da fonte. */
+  rotulo: { dy: number; tam: number };
+  valor: { dy: number; tam: number };
+  taxaTam: number;
+  legendaTam: number;
+  legendaBaseTam: number;
+}
+
+const GEO_5: Geometria = {
+  trapezios: TRAPEZIOS,
+  taxaY: TAXA_Y,
+  rotulo: { dy: 21.5, tam: 13 },
+  valor: { dy: 45, tam: 19 },
+  taxaTam: 15.5,
+  legendaTam: 11,
+  legendaBaseTam: 9.5,
+};
+
+const GEO_6: Geometria = {
+  trapezios: TRAPEZIOS_6,
+  taxaY: TRAPEZIOS_6.map((_, i) => {
+    const topo = topo6(i);
+    return { pct: topo + 10, leg: topo + 27, con: i === 0 ? null : topo + 19 };
+  }),
+  rotulo: { dy: 17, tam: 11.5 },
+  valor: { dy: 37.5, tam: 16.5 },
+  taxaTam: 14,
+  legendaTam: 10,
+  legendaBaseTam: 9,
+};
 
 const X_PONTO = 525.5;
 const COR_CONECTOR = '#4A5D6E';
@@ -110,9 +177,9 @@ const fmtInteiro = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
 const CONTAGEM_MS = 440;
 
 /**
- * Funil de Aquisição (seção 2.5 da spec): até cinco trapézios com degradê, rótulo e valor
- * centralizados, taxa e legenda à direita ligadas por conector. Etapas além da quinta são
- * ignoradas (a geometria medida só tem cinco).
+ * Funil de Aquisição (seção 2.5 da spec): cinco trapézios com degradê, rótulo e valor
+ * centralizados, taxa e legenda à direita ligadas por conector. Com uma sexta etapa (Redepósito)
+ * usa a geometria de seis no mesmo card; etapas além da sexta são ignoradas.
  *
  * Movimento: as barras se desenham por CSS (CSS_MOVIMENTO, a partir do primeiro paint, sem JS) e os
  * valores contam por requestAnimationFrame junto com a barra da etapa. Quando os dados mudam, as
@@ -129,7 +196,8 @@ export function Funil({
 }: FunilProps) {
   const base = `funil-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const ref = useRef<SVGSVGElement>(null);
-  const visiveis = etapas.slice(0, TRAPEZIOS.length);
+  const geo = etapas.length > TRAPEZIOS.length ? GEO_6 : GEO_5;
+  const visiveis = etapas.slice(0, geo.trapezios.length);
   /** Valores já mostrados por etapa; null antes da montagem. */
   const anteriores = useRef<Map<string, number> | null>(null);
   /** Textos finais do render mais recente (o que a limpeza escreve). */
@@ -229,8 +297,8 @@ export function Funil({
           ))}
         </defs>
         {visiveis.map((e, i) => {
-          const t = TRAPEZIOS[i]!;
-          const ty = TAXA_Y[i]!;
+          const t = geo.trapezios[i]!;
+          const ty = geo.taxaY[i]!;
           const topo = t[0][1];
           const xb = ty.con === null ? 0 : bordaDireita(t, ty.con);
           const d = pathArredondado(t, 5);
@@ -297,9 +365,9 @@ export function Funil({
               <text
                 data-parte="texto"
                 x={370}
-                y={topo + 21.5}
+                y={topo + geo.rotulo.dy}
                 textAnchor="middle"
-                fontSize={13}
+                fontSize={geo.rotulo.tam}
                 fill="currentColor"
                 fillOpacity={0.9}
               >
@@ -308,9 +376,9 @@ export function Funil({
               <text
                 data-parte="valor"
                 x={369}
-                y={topo + 45}
+                y={topo + geo.valor.dy}
                 textAnchor="middle"
-                fontSize={19}
+                fontSize={geo.valor.tam}
                 fontWeight={700}
                 fill="currentColor"
                 style={{ fontVariantNumeric: 'tabular-nums' }}
@@ -321,7 +389,7 @@ export function Funil({
                 data-parte="texto"
                 x={543}
                 y={ty.pct + 11}
-                fontSize={15.5}
+                fontSize={geo.taxaTam}
                 fontWeight={600}
                 fill="currentColor"
               >
@@ -331,7 +399,7 @@ export function Funil({
                 data-parte="texto"
                 x={540.5}
                 y={ty.leg + 9}
-                fontSize={i === 0 ? 9.5 : 11}
+                fontSize={i === 0 ? geo.legendaBaseTam : geo.legendaTam}
                 fill={COR_LEGENDA}
               >
                 {e.legenda}

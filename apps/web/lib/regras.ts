@@ -391,8 +391,17 @@ const CASAS_CSV: Record<ColunaDado, number> = {
   roas: 2,
 };
 
+/** Número escrito como texto (ex. "-12,5"): o Excel lê como número, não como fórmula. */
+const NUMERO_TEXTO = /^[-+]?\d+(?:[.,]\d+)?$/;
+
+/**
+ * Campo de texto do CSV (nome do canal, cabeçalho). Começando com `=`, `+`, `-`, `@`, tab ou CR, o
+ * Excel e o Sheets executariam o texto como fórmula (injeção de CSV): o `'` na frente o mantém
+ * como texto. Os valores numéricos saem por `numeroCsv` e não passam por aqui.
+ */
 function campoCsv(s: string): string {
-  return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  const seguro = /^[=+\-@\t\r]/.test(s) && !NUMERO_TEXTO.test(s) ? `'${s}` : s;
+  return /[";\n\r]/.test(seguro) ? `"${seguro.replace(/"/g, '""')}"` : seguro;
 }
 
 /**

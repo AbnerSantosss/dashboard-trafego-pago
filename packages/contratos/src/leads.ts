@@ -7,10 +7,19 @@
  */
 
 /**
- * Etapas com lista por pessoa. As cinco primeiras são os ids de `VisaoGeralResposta.funil`;
- * `depositos` (FTD e depósitos seguintes) vem da coluna Depósitos da tabela de canais.
+ * Etapas com lista por pessoa. As seis primeiras são os ids de `VisaoGeralResposta.funil`
+ * (`redeposito` = depósitos pagos depois do FTD); `depositos` (FTD e depósitos seguintes) vem da
+ * coluna Depósitos da tabela de canais.
  */
-export const ETAPAS_LISTA = ['base', 'cliques', 'visitas', 'cadastro', 'ftd', 'depositos'] as const;
+export const ETAPAS_LISTA = [
+  'base',
+  'cliques',
+  'visitas',
+  'cadastro',
+  'ftd',
+  'redeposito',
+  'depositos',
+] as const;
 export type EtapaLista = (typeof ETAPAS_LISTA)[number];
 
 export type TipoEventoLead = 'clique' | 'visita' | 'cadastro' | 'ftd' | 'deposito' | 'gasto';

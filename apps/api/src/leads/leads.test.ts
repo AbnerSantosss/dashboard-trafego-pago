@@ -29,6 +29,35 @@ describe('mascararPayload', () => {
       lista: [{ secret: '••••', ok: true }],
     });
   });
+
+  it('mascara documento e credencial e deixa só parte do contato', () => {
+    const saida = mascararPayload({
+      cpf: '123.456.789-00',
+      user_rg: '12345',
+      pix_key: 'chave',
+      Authorization: 'Basic abc',
+      pin: '1234',
+      shipping: 'mantém',
+      author: 'mantém',
+      email: 'jogador@exemplo.com',
+      telefone: '+55 (11) 98765-4321',
+      phone: '123',
+      emailEnviado: true,
+    });
+    expect(saida).toEqual({
+      cpf: '••••',
+      user_rg: '••••',
+      pix_key: '••••',
+      Authorization: '••••',
+      pin: '••••',
+      shipping: 'mantém',
+      author: 'mantém',
+      email: 'j•••@exemplo.com',
+      telefone: '••••4321',
+      phone: '••••',
+      emailEnviado: true,
+    });
+  });
 });
 
 describe.skipIf(!disponivel)('GET /empresas/atual/eventos e /leads/:leadKey', () => {

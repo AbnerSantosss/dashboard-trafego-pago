@@ -5,6 +5,7 @@
 import { derivar, taxasDoFunil } from '@trafego/rules';
 import type {
   Apresentacao,
+  EtapaFunilId,
   EtapaFunilMetrica,
   KpiId,
   KpiMetrica,
@@ -113,6 +114,11 @@ export interface EntradaCalculo {
   campanhas: string[];
   apresentacao: Apresentacao;
   atualizadoEm: string | null;
+  /**
+   * Redepósitos (eventos `deposito`) no período, com os mesmos filtros; null se a empresa nunca
+   * teve um. Com null, ou com o funil vindo do canal reservado, a etapa não aparece.
+   */
+  redepositos?: number | null;
 }
 
 /** Ordena por `presentation.channels[].ordem` e depois alfabeticamente. */
@@ -160,8 +166,12 @@ export function calcularVisaoGeral(e: EntradaCalculo): VisaoGeralResposta {
   const reservadas = atuais.filter((l) => ehCanalReservado(l.canal));
   const f = reservadas.length > 0 ? somarTodas(reservadas) : total;
   const valoresFunil = [f.base, f.cliques, f.visitas, f.cadastros, f.ftds];
+  const idsFunil: EtapaFunilId[] = ['base', 'cliques', 'visitas', 'cadastro', 'ftd'];
+  if (reservadas.length === 0 && e.redepositos != null) {
+    valoresFunil.push(e.redepositos);
+    idsFunil.push('redeposito');
+  }
   const taxas = taxasDoFunil(valoresFunil);
-  const idsFunil = ['base', 'cliques', 'visitas', 'cadastro', 'ftd'] as const;
   const funil: EtapaFunilMetrica[] = idsFunil.map((id, i) => {
     const taxa = taxas[i] ?? null;
     return { id, valor: valoresFunil[i] ?? 0, taxaPct: taxa === null ? null : taxa * 100 };

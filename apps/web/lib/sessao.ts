@@ -72,6 +72,51 @@ export async function jaEntrouAntes(): Promise<boolean> {
   }
 }
 
+/**
+ * Desafio da verificação em duas etapas: a senha conferiu e falta o código do app. Fica só neste
+ * cookie httpOnly (nunca em URL) pelos mesmos 5 min que a API dá ao desafio. `empresa` é o id da
+ * empresa do convite aceito, para a sessão abrir nela como no aceite sem segunda etapa.
+ */
+export const COOKIE_DESAFIO = 'duas_etapas';
+export const VALIDADE_DESAFIO_S = 5 * 60;
+
+export interface DesafioCookie {
+  desafio: string;
+  empresa?: string;
+}
+
+export async function gravarDesafio(d: DesafioCookie): Promise<void> {
+  const { cookies } = await import('next/headers');
+  (await cookies()).set(COOKIE_DESAFIO, JSON.stringify(d), {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: VALIDADE_DESAFIO_S,
+  });
+}
+
+/** Desafio pendente, ou null sem cookie (ou com um cookie que não é o nosso). */
+export async function lerDesafio(): Promise<DesafioCookie | null> {
+  try {
+    const { cookies } = await import('next/headers');
+    const bruto = (await cookies()).get(COOKIE_DESAFIO)?.value;
+    if (!bruto) return null;
+    const v = JSON.parse(bruto) as Partial<DesafioCookie>;
+    if (typeof v.desafio !== 'string' || !v.desafio) return null;
+    return typeof v.empresa === 'string' && v.empresa
+      ? { desafio: v.desafio, empresa: v.empresa }
+      : { desafio: v.desafio };
+  } catch {
+    return null;
+  }
+}
+
+export async function apagarDesafio(): Promise<void> {
+  const { cookies } = await import('next/headers');
+  (await cookies()).delete(COOKIE_DESAFIO);
+}
+
 export async function apagarSessao(): Promise<void> {
   const { cookies } = await import('next/headers');
   const c = await cookies();

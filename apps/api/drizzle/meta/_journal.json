@@ -50,6 +50,20 @@
       "when": 1792137038686,
       "tag": "0006_custos_meta_ads",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792591728700,
+      "tag": "0007_sessoes_desde",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792592796129,
+      "tag": "0008_duas_etapas",
+      "breakpoints": true
     }
   ]
 }

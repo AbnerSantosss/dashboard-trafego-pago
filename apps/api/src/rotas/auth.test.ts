@@ -37,7 +37,7 @@ describe('GET /ready com banco fora', () => {
 });
 
 describe('CORS e rate limit', () => {
-  it('CORS libera só WEB_URL, com credenciais', async () => {
+  it('CORS libera só WEB_URL, sem credenciais (o token vai no header)', async () => {
     const app = await appComBanco();
     const res = await app.inject({
       method: 'OPTIONS',
@@ -49,7 +49,7 @@ describe('CORS e rate limit', () => {
       },
     });
     expect(res.headers['access-control-allow-origin']).toBe('http://localhost:3000');
-    expect(res.headers['access-control-allow-credentials']).toBe('true');
+    expect(res.headers['access-control-allow-credentials']).toBeUndefined();
     const outro = await app.inject({
       method: 'GET',
       url: '/health',

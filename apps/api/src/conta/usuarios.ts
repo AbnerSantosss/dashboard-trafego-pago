@@ -7,7 +7,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { invites, memberships, ROLES, users } from '../db/client.js';
 import { ErroApi, schemaRespostaErro } from '../erros.js';
-import { htmlComBotao, type EnviadorEmail } from './email.js';
+import { enviarComPrazo, htmlComBotao, type EnviadorEmail } from './email.js';
 import { gerarTokenConvite, sha256 } from './senha.js';
 
 /** Validade do convite: 7 dias. */
@@ -112,7 +112,9 @@ export const rotasUsuarios: FastifyPluginAsyncZod<OpcoesUsuarios> = async (app, 
         summary: 'Convida um e-mail para a empresa ativa',
         description:
           'Cria o convite (7 dias) e envia o link por e-mail. O link também volta na resposta, ' +
-          'para o admin copiar se o e-mail não chegar. Um novo convite substitui o pendente.',
+          'para o admin copiar se o e-mail não chegar. Um novo convite substitui o pendente. ' +
+          'A resposta não espera o SMTP mais que 2,5 s: sem envio confirmado, `emailEnviado` ' +
+          'vem false e `motivoEmail` diz o que aconteceu.',
         security: seguranca,
         headers: cabecalhos,
         body: z.object({
@@ -120,7 +122,15 @@ export const rotasUsuarios: FastifyPluginAsyncZod<OpcoesUsuarios> = async (app, 
           papel: z.enum(ROLES).default('leitor'),
         }),
         response: {
-          201: z.object({ convite: schemaConvite, link: z.string(), emailEnviado: z.boolean() }),
+          201: z.object({
+            convite: schemaConvite,
+            link: z.string(),
+            emailEnviado: z.boolean(),
+            motivoEmail: z
+              .string()
+              .optional()
+              .describe('Só quando o e-mail não saiu: o que aconteceu, em português'),
+          }),
           ...erros,
         },
       },
@@ -152,17 +162,24 @@ export const rotasUsuarios: FastifyPluginAsyncZod<OpcoesUsuarios> = async (app, 
         return c!;
       });
       const link = `${opcoes.webUrl}/convite?token=${encodeURIComponent(token)}`;
-      const emailEnviado = await opcoes.email.enviar({
-        para: email,
-        assunto: `Convite para o painel ${empresa.nome}`,
-        texto: `Você foi convidado para acompanhar o painel ${empresa.nome}. Abra o link para criar seu acesso (vale 7 dias): ${link}`,
-        html: htmlComBotao(
-          `Convite para o painel ${empresa.nome}`,
-          'Você foi convidado para acompanhar o painel. O link vale por 7 dias.',
-          'Criar meu acesso',
-          link,
-        ),
-      });
+      // O convite já está gravado: o e-mail não pode segurar a resposta (o web desiste em 4 s).
+      // Se o SMTP demorar ou falhar, a resposta diz o motivo e o admin copia o link.
+      const envio = await enviarComPrazo(
+        opcoes.email,
+        {
+          para: email,
+          assunto: `Convite para o painel ${empresa.nome}`,
+          texto: `Você foi convidado para acompanhar o painel ${empresa.nome}. Abra o link para criar seu acesso (vale 7 dias): ${link}`,
+          html: htmlComBotao(
+            `Convite para o painel ${empresa.nome}`,
+            'Você foi convidado para acompanhar o painel. O link vale por 7 dias.',
+            'Criar meu acesso',
+            link,
+          ),
+        },
+        request.log,
+      );
+      if (!envio.enviado) request.log.warn({ motivo: envio.motivo }, 'convite sem e-mail');
       return reply.code(201).send({
         convite: {
           id: convite.id,
@@ -172,7 +189,8 @@ export const rotasUsuarios: FastifyPluginAsyncZod<OpcoesUsuarios> = async (app, 
           criadoEm: convite.createdAt.toISOString(),
         },
         link,
-        emailEnviado,
+        emailEnviado: envio.enviado,
+        ...(envio.enviado ? {} : { motivoEmail: envio.motivo }),
       });
     },
   );

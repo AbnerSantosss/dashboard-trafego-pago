@@ -93,11 +93,17 @@ export function montarConteudo(
 }
 
 /** Etapas no formato do componente Funil. */
+/** Etapas que não existem na imagem de referência (só aparecem com dados reais). */
+const ROTULO_FUNIL_EXTRA: Record<string, string> = { redeposito: 'Redepósito' };
+
 export function etapasFunil(dados: VisaoGeralResposta | null): EtapaFunilProps[] {
   if (!dados) return [];
   return dados.funil.map((e, i) => ({
     id: e.id,
-    rotulo: referencia.funil.etapas.find((r) => r.id === e.id)?.rotulo ?? e.id,
+    rotulo:
+      referencia.funil.etapas.find((r) => r.id === e.id)?.rotulo ??
+      ROTULO_FUNIL_EXTRA[e.id] ??
+      e.id,
     valor: e.valor,
     valorFormatado: formatarInteiro(e.valor),
     taxaFormatada:

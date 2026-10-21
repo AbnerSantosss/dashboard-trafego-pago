@@ -6,7 +6,19 @@ import { LOGO_TAMANHO_MAXIMO, type LogoTipo } from '@trafego/contratos';
 import { ErroApi } from '../erros.js';
 
 const ASSINATURA_PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-const PROIBIDOS_SVG = [/<script/i, /\son\w+\s*=/i, /javascript:/i, /<foreignObject/i];
+// O logo só aparece em <img> (onde o SVG não roda script), mas a lista vale se um dia for inline:
+// eventos colados em aspas ou barra, entidades que escondem "javascript:", animação que troca
+// href, ENTITY e referência externa (só #id e data:image passam).
+const PROIBIDOS_SVG = [
+  /<script/i,
+  /[\s/"']on[a-z]+\s*=/i,
+  /javascript:/i,
+  /<foreignObject/i,
+  /&#/,
+  /<!ENTITY/i,
+  /<(animate|set)\b[^>]*attributeName\s*=\s*["']?(xlink:)?href/i,
+  /href\s*=\s*(?!["']?\s*(#|data:image\/))/i,
+];
 
 const invalido = (mensagem: string) => ErroApi.de('logo_invalido', mensagem);
 
@@ -40,7 +52,9 @@ export function validarLogo(tipo: LogoTipo, base64: string): string {
     );
     if (!/^<svg[\s>]/i.test(semPrologo)) throw invalido('O arquivo não tem raiz <svg>.');
     if (PROIBIDOS_SVG.some((r) => r.test(texto))) {
-      throw invalido('O SVG contém script, eventos, javascript: ou foreignObject.');
+      throw invalido(
+        'O SVG contém script, eventos, javascript:, foreignObject, entidades ou link externo.',
+      );
     }
   }
   return `data:${tipo};base64,${bytes.toString('base64')}`;

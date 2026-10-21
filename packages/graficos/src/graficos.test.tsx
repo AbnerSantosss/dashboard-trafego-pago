@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderToString } from 'react-dom/server';
 import { StrictMode } from 'react';
 import { act, cleanup, render } from '@testing-library/react';
-import { Contador, Funil, Sparkline, TRAPEZIOS, calcularSparkline } from './index';
+import { Contador, Funil, Sparkline, TRAPEZIOS, TRAPEZIOS_6, calcularSparkline } from './index';
 import { CSS_MOVIMENTO, animarNumero, esperaDaEntradaCss, saidaQuad } from './movimento';
 import type { EtapaFunilProps } from './tipos';
 
@@ -78,6 +78,35 @@ describe('Funil', () => {
       const h = t[2][1] - t[1][1];
       expect(h).toBeGreaterThanOrEqual(54);
       expect(h).toBeLessThanOrEqual(58);
+    }
+  });
+
+  it('com a sexta etapa (Redepósito) usa seis trapézios no mesmo espaço', () => {
+    const seis = [
+      ...etapas,
+      {
+        ...etapas[4]!,
+        id: 'redeposito',
+        rotulo: 'Redepósito',
+        valor: 1200,
+        valorFormatado: '1.200',
+      },
+    ];
+    const { container } = render(<Funil etapas={seis} semAnimacao />);
+    const paths = container.querySelectorAll('[data-parte="trapezio"]');
+    expect(paths).toHaveLength(6);
+    paths.forEach((p, i) => {
+      const d = p.getAttribute('d')!;
+      for (const [x, y] of TRAPEZIOS_6[i]!) expect(d).toContain(`Q${x},${y}`);
+    });
+    expect(container.querySelectorAll('circle')).toHaveLength(5);
+    expect(container.querySelector('[data-etapa="redeposito"]')!.textContent).toContain('1.200');
+    // Mesmo topo e mesmo fim da geometria de cinco, cada etapa mais estreita que a anterior.
+    expect(TRAPEZIOS_6[0]![0]).toEqual(TRAPEZIOS[0]![0]);
+    expect(TRAPEZIOS_6[5]![2][1]).toBeCloseTo(TRAPEZIOS[4]![2][1], 0);
+    for (let i = 1; i < 6; i++) {
+      expect(TRAPEZIOS_6[i]![0][0]).toBeGreaterThan(TRAPEZIOS_6[i - 1]![3][0]);
+      expect(TRAPEZIOS_6[i]![0][1]).toBeGreaterThan(TRAPEZIOS_6[i - 1]![3][1]);
     }
   });
 
