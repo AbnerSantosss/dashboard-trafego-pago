@@ -199,12 +199,8 @@
           "name": "attribution_touches_tenant_id_tenants_id_fk",
           "tableFrom": "attribution_touches",
           "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -216,9 +212,7 @@
           "name": "attribution_touches_isolamento_tenant",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
         }
@@ -362,12 +356,8 @@
           "name": "custos_tenant_id_tenants_id_fk",
           "tableFrom": "custos",
           "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -375,12 +365,8 @@
           "name": "custos_criado_por_users_id_fk",
           "tableFrom": "custos",
           "tableTo": "users",
-          "columnsFrom": [
-            "criado_por"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["criado_por"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -388,14 +374,8 @@
           "name": "custos_meta_conta_fk",
           "tableFrom": "custos",
           "tableTo": "meta_contas",
-          "columnsFrom": [
-            "tenant_id",
-            "meta_conta_id"
-          ],
-          "columnsTo": [
-            "tenant_id",
-            "id"
-          ],
+          "columnsFrom": ["tenant_id", "meta_conta_id"],
+          "columnsTo": ["tenant_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -407,9 +387,7 @@
           "name": "custos_isolamento_tenant",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
         }
@@ -629,12 +607,8 @@
           "name": "events_tenant_id_tenants_id_fk",
           "tableFrom": "events",
           "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -642,14 +616,8 @@
           "name": "events_webhook_event_fk",
           "tableFrom": "events",
           "tableTo": "webhook_events",
-          "columnsFrom": [
-            "tenant_id",
-            "webhook_event_id"
-          ],
-          "columnsTo": [
-            "tenant_id",
-            "id"
-          ],
+          "columnsFrom": ["tenant_id", "webhook_event_id"],
+          "columnsTo": ["tenant_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -657,14 +625,8 @@
           "name": "events_source_fk",
           "tableFrom": "events",
           "tableTo": "sources",
-          "columnsFrom": [
-            "tenant_id",
-            "source_id"
-          ],
-          "columnsTo": [
-            "tenant_id",
-            "id"
-          ],
+          "columnsFrom": ["tenant_id", "source_id"],
+          "columnsTo": ["tenant_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -676,9 +638,7 @@
           "name": "events_isolamento_tenant",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
         }
@@ -792,12 +752,8 @@
           "name": "invites_tenant_id_tenants_id_fk",
           "tableFrom": "invites",
           "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -805,12 +761,8 @@
           "name": "invites_criado_por_users_id_fk",
           "tableFrom": "invites",
           "tableTo": "users",
-          "columnsFrom": [
-            "criado_por"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["criado_por"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -822,9 +774,7 @@
           "name": "invites_isolamento_tenant",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
         }
@@ -893,12 +843,8 @@
           "name": "memberships_tenant_id_tenants_id_fk",
           "tableFrom": "memberships",
           "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -906,12 +852,8 @@
           "name": "memberships_user_id_users_id_fk",
           "tableFrom": "memberships",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -921,10 +863,7 @@
         "memberships_tenant_user_unico": {
           "name": "memberships_tenant_user_unico",
           "nullsNotDistinct": false,
-          "columns": [
-            "tenant_id",
-            "user_id"
-          ]
+          "columns": ["tenant_id", "user_id"]
         }
       },
       "policies": {
@@ -932,9 +871,7 @@
           "name": "memberships_isolamento_tenant",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
         },
@@ -942,9 +879,7 @@
           "name": "memberships_leitura_proprio_usuario",
           "as": "PERMISSIVE",
           "for": "SELECT",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "user_id = nullif(current_setting('app.user_id', true), '')::uuid"
         }
       },
@@ -1040,12 +975,8 @@
           "name": "meta_contas_tenant_id_tenants_id_fk",
           "tableFrom": "meta_contas",
           "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1055,18 +986,12 @@
         "meta_contas_tenant_conta_unico": {
           "name": "meta_contas_tenant_conta_unico",
           "nullsNotDistinct": false,
-          "columns": [
-            "tenant_id",
-            "conta_id"
-          ]
+          "columns": ["tenant_id", "conta_id"]
         },
         "meta_contas_tenant_id_unico": {
           "name": "meta_contas_tenant_id_unico",
           "nullsNotDistinct": false,
-          "columns": [
-            "tenant_id",
-            "id"
-          ]
+          "columns": ["tenant_id", "id"]
         }
       },
       "policies": {
@@ -1074,9 +999,7 @@
           "name": "meta_contas_isolamento_tenant",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
         }
@@ -1236,12 +1159,8 @@
           "name": "metrics_daily_tenant_id_tenants_id_fk",
           "tableFrom": "metrics_daily",
           "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1253,9 +1172,7 @@
           "name": "metrics_daily_isolamento_tenant",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
         }
@@ -1354,12 +1271,8 @@
           "name": "presentation_tenant_id_tenants_id_fk",
           "tableFrom": "presentation",
           "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1369,9 +1282,7 @@
         "presentation_tenant_unico": {
           "name": "presentation_tenant_unico",
           "nullsNotDistinct": false,
-          "columns": [
-            "tenant_id"
-          ]
+          "columns": ["tenant_id"]
         }
       },
       "policies": {
@@ -1379,9 +1290,7 @@
           "name": "presentation_isolamento_tenant",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
         }
@@ -1481,12 +1390,8 @@
           "name": "rules_tenant_id_tenants_id_fk",
           "tableFrom": "rules",
           "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1494,12 +1399,8 @@
           "name": "rules_created_by_users_id_fk",
           "tableFrom": "rules",
           "tableTo": "users",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -1507,14 +1408,8 @@
           "name": "rules_source_fk",
           "tableFrom": "rules",
           "tableTo": "sources",
-          "columnsFrom": [
-            "tenant_id",
-            "source_id"
-          ],
-          "columnsTo": [
-            "tenant_id",
-            "id"
-          ],
+          "columnsFrom": ["tenant_id", "source_id"],
+          "columnsTo": ["tenant_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1524,11 +1419,7 @@
         "rules_fonte_versao_unico": {
           "name": "rules_fonte_versao_unico",
           "nullsNotDistinct": false,
-          "columns": [
-            "tenant_id",
-            "source_id",
-            "version"
-          ]
+          "columns": ["tenant_id", "source_id", "version"]
         }
       },
       "policies": {
@@ -1536,9 +1427,7 @@
           "name": "rules_isolamento_tenant",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
         }
@@ -1621,12 +1510,8 @@
           "name": "sources_tenant_id_tenants_id_fk",
           "tableFrom": "sources",
           "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1636,18 +1521,12 @@
         "sources_tenant_slug_unico": {
           "name": "sources_tenant_slug_unico",
           "nullsNotDistinct": false,
-          "columns": [
-            "tenant_id",
-            "slug"
-          ]
+          "columns": ["tenant_id", "slug"]
         },
         "sources_tenant_id_unico": {
           "name": "sources_tenant_id_unico",
           "nullsNotDistinct": false,
-          "columns": [
-            "tenant_id",
-            "id"
-          ]
+          "columns": ["tenant_id", "id"]
         }
       },
       "policies": {
@@ -1655,9 +1534,7 @@
           "name": "sources_isolamento_tenant",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
         }
@@ -1730,9 +1607,7 @@
         "tenants_slug_unico": {
           "name": "tenants_slug_unico",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         }
       },
       "policies": {},
@@ -1821,9 +1696,7 @@
         "users_email_unico": {
           "name": "users_email_unico",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -1968,12 +1841,8 @@
           "name": "webhook_events_tenant_id_tenants_id_fk",
           "tableFrom": "webhook_events",
           "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1981,14 +1850,8 @@
           "name": "webhook_events_source_fk",
           "tableFrom": "webhook_events",
           "tableTo": "sources",
-          "columnsFrom": [
-            "tenant_id",
-            "source_id"
-          ],
-          "columnsTo": [
-            "tenant_id",
-            "id"
-          ],
+          "columnsFrom": ["tenant_id", "source_id"],
+          "columnsTo": ["tenant_id", "id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1998,10 +1861,7 @@
         "webhook_events_tenant_id_unico": {
           "name": "webhook_events_tenant_id_unico",
           "nullsNotDistinct": false,
-          "columns": [
-            "tenant_id",
-            "id"
-          ]
+          "columns": ["tenant_id", "id"]
         }
       },
       "policies": {
@@ -2009,9 +1869,7 @@
           "name": "webhook_events_isolamento_tenant",
           "as": "PERMISSIVE",
           "for": "ALL",
-          "to": [
-            "public"
-          ],
+          "to": ["public"],
           "using": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid",
           "withCheck": "tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid"
         }
@@ -2024,32 +1882,17 @@
     "public.event_type": {
       "name": "event_type",
       "schema": "public",
-      "values": [
-        "gasto",
-        "clique",
-        "visita",
-        "cadastro",
-        "ftd",
-        "deposito"
-      ]
+      "values": ["gasto", "clique", "visita", "cadastro", "ftd", "deposito"]
     },
     "public.role": {
       "name": "role",
       "schema": "public",
-      "values": [
-        "admin",
-        "analista",
-        "leitor"
-      ]
+      "values": ["admin", "analista", "leitor"]
     },
     "public.webhook_status": {
       "name": "webhook_status",
       "schema": "public",
-      "values": [
-        "recebido",
-        "processado",
-        "erro"
-      ]
+      "values": ["recebido", "processado", "erro"]
     }
   },
   "schemas": {},
