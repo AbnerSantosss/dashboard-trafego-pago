@@ -1,8 +1,9 @@
 /**
  * Envio de e-mail por SMTP (convites e redefinição de senha).
  * Configuração só por variáveis de ambiente (SMTP_HOST, SMTP_PORT, SMTP_USUARIO, SMTP_SENHA,
- * EMAIL_REMETENTE). Sem SMTP configurado, nada é enviado: o resultado diz o que falta e quem chamou
- * decide o que fazer (o convite devolve o link para o admin copiar).
+ * EMAIL_REMETENTE e EMAIL_PREFIXO_ASSUNTO, que vai na frente de todo assunto, ex. `[PASIO]`).
+ * Sem SMTP configurado, nada é enviado: o resultado diz o que falta e quem chamou decide o que
+ * fazer (o convite devolve o link para o admin copiar).
  *
  * Toda falha volta com `motivo` em português, dizendo exatamente o que aconteceu (servidor que não
  * responde, senha recusada, destinatário recusado...), e vai para o log com o código do nodemailer.
@@ -120,6 +121,7 @@ export function criarEnviadorEmail(
     dnsTimeout: tempoLimiteMs,
   });
   const remetente = fonte.EMAIL_REMETENTE?.trim() || usuario;
+  const prefixo = fonte.EMAIL_PREFIXO_ASSUNTO?.trim();
   return {
     configurado: true,
     async enviar(m) {
@@ -127,7 +129,7 @@ export function criarEnviadorEmail(
         await transporte.sendMail({
           from: remetente,
           to: m.para,
-          subject: m.assunto,
+          subject: prefixo ? `${prefixo} ${m.assunto}` : m.assunto,
           text: m.texto,
           ...(m.html ? { html: m.html } : {}),
         });

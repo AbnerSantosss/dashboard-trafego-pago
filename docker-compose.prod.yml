@@ -69,6 +69,7 @@ services:
       SMTP_USUARIO: ${SMTP_USUARIO:-}
       SMTP_SENHA: ${SMTP_SENHA:-}
       EMAIL_REMETENTE: ${EMAIL_REMETENTE:-}
+      EMAIL_PREFIXO_ASSUNTO: ${EMAIL_PREFIXO_ASSUNTO:-}
       META_GRAPH_VERSAO: ${META_GRAPH_VERSAO:-}
     volumes:
       - segredos:/run/segredos:ro

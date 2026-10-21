@@ -70,7 +70,7 @@ A cada subida, a API roda o preparo `apps/api/src/db/producao.ts` antes do servi
 
 ## E-mail (SMTP)
 Convites e "esqueci a senha" saem por e-mail só quando a API acha `SMTP_HOST`, `SMTP_USUARIO` e `SMTP_SENHA` preenchidos (`apps/api/src/conta/email.ts`); faltando qualquer um, o SMTP conta como não configurado e nada é enviado, sem erro.
-- Variáveis da stack: `SMTP_HOST` (Gmail: `smtp.gmail.com`), `SMTP_PORT` (`465`, TLS direto), `SMTP_USUARIO` (o e-mail do admin, variável ADMIN_EMAIL / SMTP_USUARIO da stack), `SMTP_SENHA` e `EMAIL_REMETENTE` (nome exibido "Painel PASIO" e o mesmo e-mail). Os valores ficam **só** no Portainer.
+- Variáveis da stack: `SMTP_HOST` (Gmail: `smtp.gmail.com`), `SMTP_PORT` (`465`, TLS direto), `SMTP_USUARIO` (o e-mail do admin, variável ADMIN_EMAIL / SMTP_USUARIO da stack), `SMTP_SENHA`, `EMAIL_REMETENTE` (nome exibido e o mesmo e-mail, no formato `"[PASIO] Painel de Análise" <email>`, com as aspas, porque os colchetes exigem) e, opcional, `EMAIL_PREFIXO_ASSUNTO` (texto posto na frente de todo assunto, ex. `[PASIO]`; vazio deixa o assunto como está). Os valores ficam **só** no Portainer.
 - `SMTP_SENHA` é uma **senha de app do Gmail** (16 letras, gerada na conta Google com a verificação em duas etapas ligada), não a senha da conta. O usuário cola ele mesmo, no Portainer: Stacks → `trafego-pasio` → Environment variables → Save settings.
 - Mudar variável não troca nada sozinho: depois do Save settings, é preciso o "Pull and redeploy" para a API subir com os valores novos.
 - Estado em 2026-10-19: tudo salvo, menos `SMTP_SENHA` (em branco); redeploy ainda não feito.

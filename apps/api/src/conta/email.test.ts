@@ -41,7 +41,53 @@ afterEach(async () => {
   await Promise.all(servidores.splice(0).map((s) => new Promise((ok) => s.close(ok))));
 });
 
+/** Servidor SMTP falso que aceita tudo e guarda o conteúdo de cada DATA recebido. */
+async function smtpQueAceita(): Promise<{ porta: number; recebidas: string[] }> {
+  const recebidas: string[] = [];
+  const porta = await servidor((s) => {
+    s.write('220 smtp.teste ESMTP\r\n');
+    let emDados = false;
+    let dados = '';
+    let resto = '';
+    s.on('data', (d) => {
+      if (emDados) {
+        dados += d.toString();
+        if (dados.includes('\r\n.\r\n')) {
+          recebidas.push(dados);
+          emDados = false;
+          dados = '';
+          s.write('250 ok\r\n');
+        }
+        return;
+      }
+      resto += d.toString();
+      let fim;
+      while ((fim = resto.indexOf('\r\n')) >= 0) {
+        const linha = resto.slice(0, fim).toUpperCase();
+        resto = resto.slice(fim + 2);
+        if (linha.startsWith('EHLO')) s.write('250-smtp.teste\r\n250 AUTH PLAIN LOGIN\r\n');
+        else if (linha.startsWith('AUTH')) s.write('235 ok\r\n');
+        else if (linha === 'DATA') {
+          emDados = true;
+          s.write('354 manda\r\n');
+        } else if (linha === 'QUIT') s.end('221 tchau\r\n');
+        else s.write('250 ok\r\n');
+      }
+    });
+  });
+  return { porta, recebidas };
+}
+
 describe('criarEnviadorEmail', () => {
+  it('EMAIL_PREFIXO_ASSUNTO vai na frente do assunto; sem ele, o assunto fica igual', async () => {
+    const { porta, recebidas } = await smtpQueAceita();
+    const comPrefixo = criarEnviadorEmail({ ...fonte(porta), EMAIL_PREFIXO_ASSUNTO: ' [PASIO] ' });
+    expect(await comPrefixo.enviar(MSG)).toEqual({ enviado: true });
+    expect(await criarEnviadorEmail(fonte(porta)).enviar(MSG)).toEqual({ enviado: true });
+    expect(recebidas[0]).toMatch(/^Subject: \[PASIO\] Convite\r$/m);
+    expect(recebidas[1]).toMatch(/^Subject: Convite\r$/m);
+  });
+
   it('sem SMTP, diz exatamente quais variáveis faltam', async () => {
     const e = criarEnviadorEmail({ SMTP_HOST: 'smtp.exemplo.com' });
     expect(e.configurado).toBe(false);
