@@ -398,3 +398,9 @@ tags: [log, historico]
 - Pedido: CI do `22fd007` reprovado em `primeiro-deposito.test.ts` (jogador com dois depósitos no mesmo horário; depois de reprocessar, o banco devolvia os dois em qualquer ordem).
 - Feito: o histórico do teste desempata como a regra (`ftd` antes de `deposito`). O código de produção não mudou; o resultado já estava certo (um FTD e um redepósito).
 - Entregue: teste estável; o Deploy só publica imagens novas (sem webhook do Portainer), nada muda em produção.
+
+## [2026-10-21] operacao | Preset gtech v2 ativo em produção
+- Pedido: "faça vc" (aplicar o preset v2); depois "fiz".
+- Feito: o classificador do Claude Code bloqueou três vezes o console do `trafego-pasio-api-1` (`Sensitive Remote Exec`), mesmo com o pedido do usuário e depois de ele sair do modo auto. O agente deixou a página do console aberta e o usuário rodou o comando de [[operacao/runbooks]]. Saída: `preset "gtech" publicado como versão 2 ativa de pasio/gtech` e reprocessamento com 0 brutos e 0 erros.
+- Entregue: D46 completa em produção (invariante e preset v2). Próximo passo: segredo nos dois webhooks da GTech ([[operacao/retomada]]).
+

@@ -13,13 +13,13 @@ Tudo sobre a ligação entre a plataforma GTech e o painel: o que a GTech envia,
 |---|---|
 | Receptor com autenticação Basic | **em produção**: commit `5ef4829`, CI e Deploy verdes, "Pull and redeploy" às 14:40 com re-pull; `api` e `db` saudáveis, `/health` 200 |
 | Fonte `gtech` (nome GTech) | **criada** às 14:47 em Configurações → Webhooks: ativa, com segredo, em `https://api.kapanda.lat/webhooks/pasio/gtech` |
-| Regras da fonte | **preset `gtech` na versão 1 ativa**, aplicado pelo usuário no console do `trafego-pasio-api-1` em 2026-10-20 (reprocessou 0 brutos, porque nada tinha chegado). A v2 (D46) está no código em produção desde 2026-10-21; **falta o usuário rodar o comando** de [[operacao/runbooks]] |
+| Regras da fonte | **preset `gtech` na versão 2 ativa** desde 2026-10-21 (D46), aplicada pelo usuário no console do `trafego-pasio-api-1` (reprocessou 0 brutos, porque nada tinha chegado). A versão 1 é de 2026-10-20 |
 | Webhook "Criação de usuário" no backoffice | **pendente**: em 2026-10-21 o formulário foi aberto e preenchido de novo (Nome `kapanda`, URL, BASIC, Usuário `gtech`, Senha vazia) e ainda não foi salvo; falta rotacionar o segredo, colar na Senha e salvar |
 | Webhook "Pagamento de Depósito" no backoffice | **pendente**: em 2026-10-21 o formulário foi aberto e preenchido (title `kapanda`, URL, BASIC, Usuário `gtech`, Senha vazia) e não foi salvo; falta colar o segredo e salvar |
 | Teste ponta a ponta no cassino demo | **pendente** |
 | `user_id` igual na Tag e na GTech | **não confirmado** |
 | Redepósito no Funil de Aquisição | **implementado** em 2026-10-21 (commit `d5569d9`, D43): os depósitos pagos depois do FTD chegam como `deposito` e viram a sexta etapa do funil, que aparece sempre, com 0 até o primeiro ([[regras-de-tratamento/metricas-e-kpis]]) |
-| Redepósito calculado do nosso lado | **em produção** desde 2026-10-21 às 14:26 (D46, `b5fdd94`): a invariante "um FTD por jogador" já vale; o preset v2 falta aplicar. A GTech não tem evento de redepósito |
+| Redepósito calculado do nosso lado | **em produção** desde 2026-10-21 às 14:26 (D46, `b5fdd94`): a invariante "um FTD por jogador" e o preset v2 (versão 2 ativa) valem. A GTech não tem evento de redepósito |
 
 Próximos passos, em ordem, em [[operacao/retomada]].
 

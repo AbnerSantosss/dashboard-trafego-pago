@@ -32,7 +32,7 @@ Configurações → Webhooks → "Rotacionar segredo" (ou "Gerar segredo", quand
 - Caso real e pendências: [[ingestao-webhooks/gtech]]. Contrato: [[ingestao-webhooks/contrato-webhook]].
 
 ## Ativar um preset de regras numa fonte
-Presets ficam em `packages/rules/src/presets/` (hoje só `gtech`). Em produção, o agente não tem acesso ao console; quem roda é o usuário.
+Presets ficam em `packages/rules/src/presets/` (hoje só `gtech`). Em produção, o agente não tem acesso ao console (o classificador do Claude Code bloqueia, mesmo com o pedido do usuário); quem roda é o usuário.
 1. Portainer → Containers → `trafego-pasio-api-1` → Console → `/bin/sh` → Connect.
 2. Rodar:
    ```sh
@@ -41,7 +41,7 @@ Presets ficam em `packages/rules/src/presets/` (hoje só `gtech`). Em produção
 3. Saída esperada: `preset "gtech" publicado como versão N ativa de pasio/gtech` e quantos brutos foram reprocessados. Rodar de novo sem mudança no preset não cria versão nova.
 4. `--reprocessar` aplica a versão ativa aos brutos já recebidos, então a ordem entre salvar o webhook no emissor e ativar o preset não importa.
 
-Em 2026-10-20 este comando publicou a versão 1 de `pasio/gtech` e reprocessou 0 brutos. Em 2026-10-21 o preset mudou para a v2 (redepósito do nosso lado, D46): rodar o mesmo comando depois do redeploy cria a versão 2 e reprocessa os brutos com a regra nova.
+Em 2026-10-20 este comando publicou a versão 1 de `pasio/gtech` e reprocessou 0 brutos. Em 2026-10-21 o preset mudou para a v2 (redepósito do nosso lado, D46): rodar o mesmo comando depois do redeploy cria a versão 2 e reprocessa os brutos com a regra nova. O usuário rodou às 15:35: versão 2 ativa, 0 brutos reprocessados.
 
 ## Token do Meta Ads
 1. No Gerenciador de Negócios: Configurações do negócio → Usuários do sistema → criar ou escolher um usuário do sistema.
