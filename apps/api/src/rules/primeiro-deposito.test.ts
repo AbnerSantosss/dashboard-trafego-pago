@@ -5,7 +5,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import { mapeamentoGtech } from '@trafego/rules';
-import { asc, eq, inArray } from 'drizzle-orm';
+import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DEPOSIT_PAYMENT_PRIMEIRO } from '../../../../packages/rules/src/presets/gtech.fixtures.js';
 import { bancoDisponivel, URL_APP } from '../auth/banco-teste.js';
@@ -79,14 +79,17 @@ describe.skipIf(!disponivel)('garantirUmFtdPorLead', () => {
   const processar = async (payload: unknown) =>
     processarWebhookEvent(db, { tenantId, webhookEventId: await bruto(payload) });
 
-  /** Tipos dos depósitos do jogador, do mais antigo ao mais novo, com o valor. */
+  /**
+   * Tipos dos depósitos do jogador, do mais antigo ao mais novo, com o valor. Empate de horário:
+   * `ftd` antes de `deposito`, como na regra; sem isso a ordem depois de reprocessar é a do banco.
+   */
   const historico = (lead: number) =>
     comTenant(db, tenantId, (tx) =>
       tx
         .select({ type: events.type, value: events.value })
         .from(events)
         .where(eq(events.leadKey, String(lead)))
-        .orderBy(asc(events.occurredAt)),
+        .orderBy(asc(events.occurredAt), desc(sql`${events.type} = 'ftd'`)),
     ).then((l) => l.map((e) => `${e.type} ${e.value}`));
 
   const totais = async (lead: number) => {

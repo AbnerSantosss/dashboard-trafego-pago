@@ -393,3 +393,8 @@ tags: [log, historico]
   - preset `gtech` v2 **não aplicado**: o classificador de permissões do Claude Code barrou o console do contêiner. Fica com o usuário ([[operacao/runbooks]], "Ativar um preset de regras numa fonte").
 - Entregue: a invariante "um FTD por jogador" e o índice 0009 em produção. A versão 1 do preset segue ativa até o usuário rodar o comando ([[operacao/retomada]]).
 
+
+## [2026-10-21] fix | Teste instável do "um FTD por jogador"
+- Pedido: CI do `22fd007` reprovado em `primeiro-deposito.test.ts` (jogador com dois depósitos no mesmo horário; depois de reprocessar, o banco devolvia os dois em qualquer ordem).
+- Feito: o histórico do teste desempata como a regra (`ftd` antes de `deposito`). O código de produção não mudou; o resultado já estava certo (um FTD e um redepósito).
+- Entregue: teste estável; o Deploy só publica imagens novas (sem webhook do Portainer), nada muda em produção.
