@@ -12,7 +12,8 @@ Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou,
 Sessão `b14f19c8`, continuação.
 - **SMTP pronto em produção.** Teste no console do `trafego-pasio-api-1`: portas 465 e 587 abertas e `nodemailer.verify()` com login ok. `SMTP_PORT` continua 465.
 - Commit `19caf34` no ar (redeploy às 13:20): `EMAIL_PREFIXO_ASSUNTO` (texto na frente de todo assunto). Na stack: `EMAIL_REMETENTE` = `'"[PASIO] Painel de Análise" <email>'` (aspas simples por fora, senão o compose não lê o `stack.env`, ver [[operacao/producao]]) e `EMAIL_PREFIXO_ASSUNTO` = `[PASIO]`. Conferido no `docker inspect` da API.
-- Imagens antigas do projeto (4, sem uso) removidas depois do redeploy. Regra nova do usuário: **apagar sempre as antigas** depois de cada redeploy que der certo.
+- Imagens antigas do projeto (4, sem uso) removidas depois do redeploy.
+- 13:46: `64dab90` no ar, etapa Redepósito sempre visível no funil (zerada até o primeiro depósito da GTech, revisão da D43). Regra nova do usuário: **apagar sempre as antigas** depois de cada redeploy que der certo.
 
 ### Próximos passos, em ordem
 1. (usuário) Testar um e-mail real: "Esqueci minha senha" em `kapanda.lat/login` com o e-mail do admin. Deve chegar de "[PASIO] Painel de Análise" com assunto começando por `[PASIO]`. Se não chegar, ver o log de `trafego-pasio-api-1` ("falha ao enviar e-mail" traz o motivo).

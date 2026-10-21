@@ -371,5 +371,5 @@ tags: [log, historico]
 ## [2026-10-21] feature | Redepósito aparece sempre no funil (zerado até o primeiro depósito)
 - Pedido: "não está atualizado", "só tem até o FTD"; escolha "Mostrar sempre".
 - Feito: `contarRedepositos` (`apps/api/src/metricas/consulta.ts`) sempre devolve a contagem; teste novo de dia sem depósito com a etapa zerada; revisão anotada na D43 de [[decisoes-tecnicas/decisoes]].
-- Entregue: funil com 6 etapas nas empresas reais; a demo segue com 5.
+- Entregue: funil com 6 etapas nas empresas reais; a demo segue com 5. No ar às 13:46 (redeploy com re-pull do `64dab90`), imagens antigas do projeto removidas.
 
