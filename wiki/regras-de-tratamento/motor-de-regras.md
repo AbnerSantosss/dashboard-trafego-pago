@@ -1,7 +1,7 @@
 ---
 tipo: especificacao
-atualizado: 2026-10-20
-tags: [regras, jsonpath, canal, utm, versionamento, preset, gtech]
+atualizado: 2026-10-21
+tags: [regras, jsonpath, canal, utm, versionamento, preset, gtech, redeposito]
 ---
 
 # Motor de regras
@@ -43,19 +43,22 @@ Operadores suportados: `path` (JSONPath), `const`, `format` (iso, epoch_s, epoch
 O script (`publicarRegras`) valida, cria uma versão nova só se o conteúdo mudou, ativa e, com `--reprocessar`, aplica aos brutos já recebidos.
 
 ### Preset GTech (`mapeamentoGtech()`)
-Em produção desde 2026-10-20 como versão 1 ativa de `pasio/gtech`. Configuração do backoffice, fluxo e validação em [[ingestao-webhooks/gtech]]; passo a passo do comando em [[operacao/runbooks]].
+Em produção desde 2026-10-20 como versão 1 ativa de `pasio/gtech`; a v2 (redepósito do nosso lado, D46) entra com o deploy de 2026-10-21. Configuração do backoffice, fluxo e validação em [[ingestao-webhooks/gtech]]; passo a passo do comando em [[operacao/runbooks]].
 
 | Payload | Evento |
 |---|---|
 | `USER_CREATED` | `cadastro` |
-| `DEPOSIT_PAYMENT` pago com `approved_deposits == 1` | `ftd` (só ele; ver abaixo) |
-| `DEPOSIT_PAYMENT` pago com `approved_deposits > 1` | `deposito` |
+| `DEPOSIT_PAYMENT` pago com `approved_deposits` 0 ou 1 | `ftd` candidato |
+| `DEPOSIT_PAYMENT` pago sem `approved_deposits` (documentação antiga) | `ftd` candidato |
+| `DEPOSIT_PAYMENT` pago com `approved_deposits` ≥ 2 | `deposito` (redepósito) |
 | `DEPOSIT_CREATED` (pendente) | ignorado |
 | status não pago ou evento desconhecido | erro / dead-letter, de propósito |
 
 Campos: `lead_key` = `user_id`; `value` = `amount` (já em reais); `currency` `R$` → `BRL`; UTMs de `tracker.utm_*` em minúsculas; `affiliate_id` = `tracker.afp` (aciona o canal Afiliados). Aceita os sinônimos da documentação antiga e acentos em NFC ou NFD. Nenhum dado pessoal é lido.
 
 **O primeiro depósito gera só `ftd`**, não `ftd` + `deposito`: a agregação (`agregar.ts`) já soma o valor do FTD em Depósitos, e gerar os dois contaria o valor em dobro.
+
+**Um FTD por jogador (D46).** O preset só aponta candidatos; quem decide é `garantirUmFtdPorLead` (`apps/api/src/rules/primeiro-deposito.ts`), chamada em `processarLote` antes do insert para qualquer fonte. Ela olha os `ftd`/`deposito` novos e os já gravados do mesmo `lead_key`, mantém como FTD o mais antigo e transforma todo outro `ftd` em `deposito` (os gravados por UPDATE, com o dia reagregado). Um `deposito` nunca vira `ftd`. Trava consultiva por jogador contra webhooks simultâneos. Assim reenvio com outro corpo, pagamento fora de ordem e payload sem contador não criam FTD a mais.
 
 ## Classificador de canal
 Lista ordenada de regras da empresa; a primeira que casa vence; sem casamento → `Outros`.
@@ -76,7 +79,7 @@ Implementação: `canais: [{ canal, se: { utm_medium_in?, utm_source_in?, referr
 
 ## Armadilhas
 - Moeda em centavos vs. reais: sempre declarar `divide` explicitamente; o default não converte.
-- `lead_key` ausente impede deduplicação de cadastro/FTD do mesmo lead; o motor avisa, mas não bloqueia.
+- `lead_key` ausente impede deduplicação de cadastro/FTD do mesmo lead (sem ele, `garantirUmFtdPorLead` não tem como agrupar); o motor avisa, mas não bloqueia.
 - Regras que casam mais de um tipo para o mesmo payload geram vários eventos; isso é intencional (ex.: visita + cadastro).
 
-Relacionado: [[regras-de-tratamento/metricas-e-kpis]], [[arquitetura/modelo-de-dados]], [[ingestao-webhooks/gtech]], [[decisoes-tecnicas/decisoes]] (D42).
+Relacionado: [[regras-de-tratamento/metricas-e-kpis]], [[arquitetura/modelo-de-dados]], [[ingestao-webhooks/gtech]], [[decisoes-tecnicas/decisoes]] (D42, D46).

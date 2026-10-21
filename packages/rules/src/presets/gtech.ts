@@ -3,12 +3,19 @@
  * Vale o formato observado nos webhooks reais; a documentação pública antiga é aceita como
  * sinônimo (chave `evento`, `DEPÓSITO_CRIADO`, `PAGAMENTO_DEPÓSITO`, status `PAGO`).
  *
- * | Webhook                                        | Evento canônico        |
- * |------------------------------------------------|------------------------|
- * | `USER_CREATED`                                 | `cadastro`             |
- * | `DEPOSIT_PAYMENT` pago, `approved_deposits` 1  | `ftd`                  |
- * | `DEPOSIT_PAYMENT` pago, outro/sem contador     | `deposito`             |
- * | `DEPOSIT_CREATED` (pendente)                   | nenhum (`ignorar`)     |
+ * | Webhook                                             | Evento canônico          |
+ * |-----------------------------------------------------|--------------------------|
+ * | `USER_CREATED`                                      | `cadastro`               |
+ * | `DEPOSIT_PAYMENT` pago, `approved_deposits` 0 ou 1  | `ftd` (candidato)        |
+ * | `DEPOSIT_PAYMENT` pago, sem `approved_deposits`     | `ftd` (candidato)        |
+ * | `DEPOSIT_PAYMENT` pago, `approved_deposits` ≥ 2     | `deposito` (redepósito)  |
+ * | `DEPOSIT_CREATED` (pendente)                        | nenhum (`ignorar`)       |
+ *
+ * O redepósito é calculado do nosso lado: a GTech não tem evento de redepósito, só o contador
+ * `approved_deposits` (depósitos aprovados do jogador, contando o atual). Contador ≥ 2 é redepósito
+ * com certeza. Contador 0/1 ou ausente (documentação antiga) é só candidato a FTD: quem decide é
+ * `garantirUmFtdPorLead` (`apps/api/src/rules/primeiro-deposito.ts`), que deixa um FTD por jogador
+ * (o depósito mais antigo dele) e transforma os outros em `deposito`, inclusive fora de ordem.
  *
  * O primeiro depósito gera só `ftd`, não `ftd` + `deposito`: a agregação já soma o valor dos FTDs
  * em "Depósitos" (`agregarEventos` e `apps/api/src/rules/agregar.ts`); os dois juntos contariam o
@@ -35,8 +42,11 @@ export const EVENTOS_GTECH = {
   depositoCriado: variantes('DEPOSIT_CREATED', 'DEPÓSITO_CRIADO'),
   depositoPago: variantes('DEPOSIT_PAYMENT', 'PAGAMENTO_DEPÓSITO'),
   statusPago: ['PAID', 'PAGO'],
-  /** `approved_deposits` do primeiro depósito pago (número ou texto). */
-  primeiroDeposito: [1, '1'],
+  /**
+   * `approved_deposits` que ainda pode ser o primeiro depósito (número ou texto). O pagamento conta
+   * o atual (1 no primeiro); o 0 entra por garantia, caso algum pagamento chegue sem contar.
+   */
+  primeiroDeposito: [0, 1, '0', '1'],
 };
 
 /** Tipo do webhook: `event` (formato atual) ou `evento` (documentação antiga). */
@@ -78,8 +88,17 @@ export const REGRAS_GTECH: Regra[] = [
     fields: CAMPOS_PAGAMENTO,
   },
   {
-    // Redepósito, ou payload sem o contador (documentação antiga): depósito comum.
-    match: [...PAGO, { path: '$.approved_deposits', not_in: EVENTOS_GTECH.primeiroDeposito }],
+    // Sem o contador (documentação antiga): candidato a FTD; o histórico do jogador decide.
+    match: [...PAGO, { path: '$.approved_deposits', exists: false }],
+    type: 'ftd',
+    fields: CAMPOS_PAGAMENTO,
+  },
+  {
+    // Redepósito: o jogador já tinha outro depósito aprovado.
+    match: [
+      ...PAGO,
+      { path: '$.approved_deposits', exists: true, not_in: EVENTOS_GTECH.primeiroDeposito },
+    ],
     type: 'deposito',
     fields: CAMPOS_PAGAMENTO,
   },

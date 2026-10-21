@@ -1,6 +1,6 @@
 ---
 tipo: arquitetura
-atualizado: 2026-10-15
+atualizado: 2026-10-21
 tags: [modelo-de-dados, postgresql, rls, tenant]
 ---
 
@@ -24,7 +24,7 @@ Toda tabela tem `tenant_id` e política RLS. Nenhuma consulta roda sem `SET app.
 Esquema em `apps/api/src/db/schema.ts` (Drizzle), migrações em `apps/api/drizzle/` (`pnpm --filter @trafego/api db:generate` / `db:migrate`). O que a implementação acrescentou à tabela acima:
 
 - Todas as tabelas têm `created_at`/`updated_at`. `sources.nome`; `webhook_events.erro`, `tentativas`, `processed_at`; `events.webhook_event_id` e `source_id`; `rules.created_by`; `presentation.subtitulo` e `channels jsonb`. `metrics_daily.investimento` é anulável (afiliados sem gasto); `campaign`/`page` são `NOT NULL DEFAULT ''` para a chave do dia funcionar. `channel` é texto livre (não enum), para novos canais não exigirem migração.
-- Chaves compostas `(tenant_id, source_id)` e `(tenant_id, webhook_event_id)`: um registro nunca aponta para linha de outra empresa. `rules` única por `(tenant_id, source_id, version)` e índice parcial que garante **uma regra ativa por fonte**. `users.email` único; `presentation` única por empresa; índice `webhook_events (tenant_id, status, received_at)` para a fila de processamento.
+- Chaves compostas `(tenant_id, source_id)` e `(tenant_id, webhook_event_id)`: um registro nunca aponta para linha de outra empresa. `rules` única por `(tenant_id, source_id, version)` e índice parcial que garante **uma regra ativa por fonte**. `users.email` único; `presentation` única por empresa; índice `webhook_events (tenant_id, status, received_at)` para a fila de processamento. Índice `events (tenant_id, lead_key)` (migração 0009, 2026-10-21) para a busca dos depósitos de cada jogador que decide o FTD (D46).
 - **RLS**: `tenants` e `users` são globais (sem RLS). As demais têm `ENABLE` + `FORCE ROW LEVEL SECURITY` com política `tenant_id = nullif(current_setting('app.tenant_id', true), '')::uuid` (USING e WITH CHECK); `memberships` tem política extra de leitura por `app.user_id`, para listar as empresas do usuário antes de fixar a ativa. Sem a variável de sessão, nenhuma linha aparece.
 - **Papel `app_user`** (sem BYPASSRLS; a app sempre conecta com ele, `DATABASE_URL`). Criado em dois caminhos: `docker/initdb/01-papeis.sql` no Postgres local do compose (LOGIN, senha só local) e migração `0001` (cria se não existir, NOLOGIN, GRANTs e privilégios padrão); em produção a senha é definida fora do repositório. Migrações rodam como dono (`DATABASE_ADMIN_URL`).
 - Helpers em `src/db/client.ts`: `comTenant(db, tenantId, userId?, fn)` abre transação e faz `set_config(..., true)` (vale só na transação); `comUsuario(db, userId, fn)`. Testes: `rls.test.ts` (isolamento entre empresas) e `schema.test.ts`; pulam com aviso se o Postgres local (porta 5460) não responder.

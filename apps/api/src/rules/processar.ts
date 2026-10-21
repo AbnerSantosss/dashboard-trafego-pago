@@ -29,6 +29,7 @@ import {
 } from '../db/client.js';
 import { enriquecerComToques } from '../atribuicao/toques.js';
 import { agregarIncremental } from './agregar.js';
+import { garantirUmFtdPorLead } from './primeiro-deposito.js';
 
 export interface ResultadoProcessamento {
   status: 'processado' | 'erro';
@@ -175,6 +176,9 @@ export async function processarLote(
       resultados.set(we.id, { status: 'erro', eventos: 0, motivo: e.message });
     }
   }
+
+  // Um FTD por jogador: o depósito mais antigo dele; os outros viram redepósito (`deposito`).
+  await garantirUmFtdPorLead(tx, tenantId, linhas, fuso, dias);
 
   // Cruza com os toques da tag do GTM: eventos sem utm/campanha herdam a atribuição do lead.
   await enriquecerComToques(

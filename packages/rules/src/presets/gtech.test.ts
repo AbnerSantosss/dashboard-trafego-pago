@@ -62,9 +62,11 @@ describe('preset GTech', () => {
       channel: 'Outros',
       lead_key: '90001',
     });
-    // Contador como texto também conta como primeiro depósito.
-    const texto = aplicar({ ...DEPOSIT_PAYMENT_PRIMEIRO, approved_deposits: '1' }).eventos;
-    expect(texto.map((e) => e.type)).toEqual(['ftd']);
+    // Contador como texto, ou 0, também é candidato a primeiro depósito.
+    for (const approved_deposits of ['1', 0, '0']) {
+      const { eventos: e } = aplicar({ ...DEPOSIT_PAYMENT_PRIMEIRO, approved_deposits });
+      expect(e.map((x) => x.type)).toEqual(['ftd']);
+    }
   });
 
   it('redepósito (approved_deposits 2) → só deposito; afiliado vira canal Afiliados', () => {
@@ -89,11 +91,18 @@ describe('preset GTech', () => {
     }
   });
 
-  it('formato antigo da doc: PAGAMENTO_DEPÓSITO/PAGO sem contador → deposito', () => {
+  it('contador ≥ 2, em número ou texto, é sempre redepósito', () => {
+    for (const approved_deposits of [3, '2', '10']) {
+      const { eventos } = aplicar({ ...DEPOSIT_PAYMENT_PRIMEIRO, approved_deposits });
+      expect(eventos.map((e) => e.type)).toEqual(['deposito']);
+    }
+  });
+
+  it('formato antigo da doc: PAGAMENTO_DEPÓSITO/PAGO sem contador → candidato a ftd', () => {
     const { eventos } = aplicar(DOC_PAGAMENTO_DEPOSITO);
     expect(eventos).toHaveLength(1);
     expect(eventos[0]).toMatchObject({
-      type: 'deposito',
+      type: 'ftd',
       occurred_at: new Date('2024-03-27T13:30:31.204Z'),
       value: 0.1,
       currency: 'BRL',
@@ -110,7 +119,7 @@ describe('preset GTech', () => {
       'PAGAMENTO_DEPOSITO',
     ]) {
       const { eventos } = aplicar({ ...semEvent, evento: nome, amount: '0.10' });
-      expect(eventos.map((e) => [e.type, e.value])).toEqual([['deposito', 0.1]]);
+      expect(eventos.map((e) => [e.type, e.value])).toEqual([['ftd', 0.1]]);
     }
     const criado = { ...DOC_DEPOSITO_CRIADO, evento: 'DEPÓSITO_CRIADO'.normalize('NFD') };
     expect(aplicar(criado).eventos).toEqual([]);

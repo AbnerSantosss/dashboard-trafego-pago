@@ -291,7 +291,8 @@ describe.skipIf(!disponivel)('processarWebhookEvent', () => {
           .from(metricsDaily)
           .where(and(eq(metricsDaily.channel, 'Meta'))),
       );
-      expect(m.reduce((s, l) => s + l.ftds, 0)).toBe(n + 1);
+      // O u9 já tinha um FTD (teste da fonte sem regra): um FTD por jogador, então n e não n + 1.
+      expect(m.reduce((s, l) => s + l.ftds, 0)).toBe(n);
     },
     180_000,
   );

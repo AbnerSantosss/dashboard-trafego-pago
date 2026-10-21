@@ -373,3 +373,13 @@ tags: [log, historico]
 - Feito: `contarRedepositos` (`apps/api/src/metricas/consulta.ts`) sempre devolve a contagem; teste novo de dia sem depósito com a etapa zerada; revisão anotada na D43 de [[decisoes-tecnicas/decisoes]].
 - Entregue: funil com 6 etapas nas empresas reais; a demo segue com 5. No ar às 13:46 (redeploy com re-pull do `64dab90`), imagens antigas do projeto removidas.
 
+## [2026-10-21] feature | Redepósito calculado do nosso lado (um FTD por jogador)
+- Pedido: "redepósito calculado do nosso lado"; entender no backoffice da GTech e na documentação de onde vêm os depósitos, planejar e implementar; "quero funcionando, faça o que um desenvolvedor senior faria".
+- Investigação: no backoffice da GTech só existe "Pagamento de Depósito" (sem evento de redepósito); nos webhooks reais o `approved_deposits` do pagamento conta o depósito atual (1 = primeiro) e o `DEPOSIT_CREATED` traz 0.
+- Feito:
+  - preset `gtech` v2 (`packages/rules/src/presets/gtech.ts`): contador ≥ 2 é `deposito`; 0, 1 ou ausente é candidato a `ftd`;
+  - `garantirUmFtdPorLead` (`apps/api/src/rules/primeiro-deposito.ts`), chamada em `processarLote`: o depósito mais antigo de cada jogador é o FTD, os outros viram `deposito` (os gravados por UPDATE, com o dia reagregado), com trava consultiva por jogador;
+  - índice `events_tenant_lead_idx` (migração 0009);
+  - testes: preset (11), `primeiro-deposito.test.ts` (fora de ordem, contador repetido, contador 2 antes do 1, três webhooks concorrentes, reprocessar a fonte) e o teste lento ajustado para um FTD por jogador. Suíte inteira verde (api 258 + 1 pulado, web 105, gráficos 22, rules 33, fixtures 42, webhook-sim 4), lint e typecheck;
+  - wiki: D46 em [[decisoes-tecnicas/decisoes]] (D42 marcada como revista), [[regras-de-tratamento/motor-de-regras]], [[regras-de-tratamento/metricas-e-kpis]], [[ingestao-webhooks/gtech]], [[arquitetura/modelo-de-dados]], [[operacao/runbooks]] e itens 10 e 14 de [[operacao/problemas-atuais]].
+- Entregue: código e wiki; deploy, preset v2 em produção e limpeza das imagens no registro seguinte.

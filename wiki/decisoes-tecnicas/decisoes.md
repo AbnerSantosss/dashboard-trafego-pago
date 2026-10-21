@@ -1,6 +1,6 @@
 ---
 tipo: decisao
-atualizado: 2026-10-20
+atualizado: 2026-10-21
 tags: [adr, decisoes]
 ---
 
@@ -355,7 +355,7 @@ Formato: contexto, decisão, motivo, consequências. Correção vale mais que ac
 - Decisão:
   - **Dois modos na mesma rota**: com `X-Timestamp` ou `X-Signature`, HMAC como antes; sem eles, `Authorization: Basic` com a **senha = segredo da fonte** e usuário livre (convenção: slug da fonte). Comparação em tempo constante; mesma resposta 401 `assinatura_invalida` para senha errada, Basic malformado e fonte sem segredo; sem janela de tempo; idempotência por `X-Event-Id` ou hash do corpo; `authorization` nunca gravado.
   - **Motor**: operadores `coalesce`, `map`, `not_in`, `match` em lista e o bloco `ignorar` ([[regras-de-tratamento/motor-de-regras]]).
-  - **Preset `gtech`** em `packages/rules/src/presets/`: `USER_CREATED` → cadastro; `DEPOSIT_PAYMENT` pago → `ftd` se `approved_deposits == 1`, senão `deposito`; `DEPOSIT_CREATED` ignorado; `R$` → BRL; `lead_key` = `user_id`; UTMs de `tracker`; `affiliate_id` = `tracker.afp`.
+  - **Preset `gtech`** em `packages/rules/src/presets/`: `USER_CREATED` → cadastro; `DEPOSIT_PAYMENT` pago → `ftd` se `approved_deposits == 1`, senão `deposito` (**revisto na D46**: a decisão final é do nosso lado, um FTD por jogador); `DEPOSIT_CREATED` ignorado; `R$` → BRL; `lead_key` = `user_id`; UTMs de `tracker`; `affiliate_id` = `tracker.afp`.
   - **Primeiro depósito gera só `ftd`**, porque `agregar.ts` já soma o FTD em Depósitos; gerar os dois dobraria o valor.
   - **Script `aplicar-preset.ts`** publica o preset numa fonte (versão nova só se o conteúdo mudou) e opcionalmente reprocessa os brutos.
   - Configurações → Webhooks e Instalação explicam o modo Basic (tabela Fonte | URL | Tipo de credencial | Usuário | Senha e exemplo `curl -u`).
@@ -422,3 +422,22 @@ Formato: contexto, decisão, motivo, consequências. Correção vale mais que ac
   - **ainda não há códigos de recuperação**: quem perder o celular depende do runbook "Desligar a verificação em duas etapas de um usuário" em [[operacao/runbooks]];
   - o link de "Esqueci minha senha" troca a senha, mas a sessão só abre com o código.
 - Verificação: `totp.test.ts` com os vetores do RFC 6238 e o fluxo completo em `conta.test.ts` (ativar, login com desafio, código repetido, desafio adulterado, desativar).
+
+## D46: redepósito calculado do nosso lado, um FTD por jogador (2026-10-21)
+- Contexto: o usuário pediu o redepósito "calculado do nosso lado". No backoffice da GTech não existe evento de redepósito, só "Pagamento de Depósito" (`DEPOSIT_PAYMENT`). Nos webhooks reais o pagamento traz `approved_deposits`, que conta o depósito atual (1 = primeiro); o `DEPOSIT_CREATED` traz 0. A D42 confiava só nesse contador: um reenvio com outro corpo, um pagamento fora de ordem ou um payload sem o contador (documentação antiga) virava FTD a mais ou redepósito a menos.
+- Decisão:
+  - **preset `gtech` v2**: pagamento pago com `approved_deposits` ≥ 2 é `deposito` com certeza; com 0, 1 ou sem o contador é só **candidato a FTD** (`EVENTOS_GTECH.primeiroDeposito = [0, 1, '0', '1']`, regra `exists:false` para o ausente);
+  - **invariante "um FTD por jogador"** em `apps/api/src/rules/primeiro-deposito.ts` (`garantirUmFtdPorLead`), chamada em `processarLote` antes do insert: junta os `ftd`/`deposito` novos do lote com os já gravados do mesmo `lead_key`, ordena por `occurred_at` (empate: `ftd` antes, gravado antes de novo), mantém o mais antigo e rebaixa todo outro `ftd` para `deposito`. Os gravados mudam por UPDATE e o dia deles volta para a agregação;
+  - **um `deposito` nunca vira `ftd`**: se a regra disse que não é o primeiro, fica assim;
+  - **concorrência**: `pg_advisory_xact_lock(hashtextextended('tenant:lead', 0))` por jogador, sempre em ordem alfabética, então dois webhooks do mesmo jogador ao mesmo tempo não viram dois FTDs;
+  - índice `events_tenant_lead_idx` (`tenant_id`, `lead_key`), migração 0009.
+- Alternativas descartadas:
+  - **só o contador da GTech** (D42): quebra com reenvio, ordem trocada e payload sem o campo;
+  - **tabela de primeiro depósito por jogador**: mais um estado para manter em dia; os eventos já são a fonte da verdade e o índice deixa a consulta barata;
+  - **contar redepósito na consulta** (depósitos − 1 por jogador): mudaria `agregar.ts`, a consulta do funil e a lista de eventos; o rebaixamento na gravação deixa todo o resto igual;
+  - **promover o depósito seguinte quando o FTD some**: só acontece se um bruto for apagado; reprocessar a fonte resolve.
+- Consequências:
+  - jogador antigo cujos depósitos anteriores nunca chegaram ao painel vira FTD no primeiro depósito visto (se a GTech mandar `approved_deposits` ≥ 2, ele já entra como redepósito);
+  - pagamento repetido com `deposit_id` igual e corpo diferente ainda conta como redepósito: a idempotência é pelo hash do corpo, não pelo `deposit_id` (em aberto, [[operacao/problemas-atuais]]);
+  - o preset em produção precisa ir para a v2 com `aplicar-preset.ts --reprocessar` ([[operacao/runbooks]]).
+- Verificação: `gtech.test.ts` (contador 0/1/'1', ≥ 2, ausente) e `primeiro-deposito.test.ts` com o Postgres local: fora de ordem (14:00 de 50 e depois 13:00 de 20 dão FTD 20 e redepósito 50, com a agregação refeita), contador 1 repetido, contador 2 antes do 1, três webhooks concorrentes e `reprocessarFonte`. Sem a trava, o teste concorrente falha. Suíte inteira, lint e typecheck verdes.

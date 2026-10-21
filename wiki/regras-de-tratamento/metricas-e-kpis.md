@@ -24,6 +24,8 @@ Base contatada → Cliques → Visitas ao site → Cadastro → FTD. Taxa de cad
 
 **Redepósito (implementado em 2026-10-21, D43)**: sexta etapa abaixo de FTD, com a quantidade de eventos `deposito` no período (mesmos filtros de canal e campanha) e taxa = redepósitos / FTD, que pode passar de 100%. `IndicadoresAgregados.redepositos` é `null` quando a empresa nunca teve um `deposito`; nesse caso, e no funil da demo (`__funil__`), a etapa não aparece e o funil segue com 5 trapézios. Clicar na etapa abre a lista dos eventos `deposito`. Detalhes em [[decisoes-tecnicas/decisoes]], D43.
 
+**Quem é FTD e quem é redepósito (D46)**: um FTD por jogador (`lead_key`), o depósito mais antigo dele; todo outro depósito pago é `deposito`. A decisão é tomada do nosso lado na gravação (`garantirUmFtdPorLead`), não só pelo contador da plataforma, então reenvio, ordem trocada ou payload sem contador não criam FTD a mais. Quando um FTD gravado vira `deposito`, o dia dele é reagregado (sai de FTDs e FTDs Valor; Depósitos não muda).
+
 ## Tabela por canal
 Investimento, Cliques, Visitas, Cadastros, FTDs (Qtd. e Valor), Depósitos, CPA, ROAS, mais linha Total. Canal sem gasto exibe `–` em CPA e ROAS.
 

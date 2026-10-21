@@ -1,0 +1,1 @@
+CREATE INDEX "events_tenant_lead_idx" ON "events" USING btree ("tenant_id","lead_key");

@@ -1,7 +1,7 @@
 ---
 tipo: operacao
 atualizado: 2026-10-21
-tags: [producao, problemas, disco, tunel, diagnostico, portainer, deploy, webhooks, meta-ads, kapanda, ghcr, smtp, gtech, lgpd]
+tags: [producao, problemas, disco, tunel, diagnostico, portainer, deploy, webhooks, meta-ads, kapanda, ghcr, smtp, gtech, lgpd, redeposito, concorrencia]
 ---
 
 # Problemas atuais
@@ -131,7 +131,8 @@ Nenhum dos dois foi tocado. Eles disputam CPU e memória com o build (item 2).
 ## 10. Lacunas do preset da GTech
 - `is_demo` não é filtrado: cadastros de demonstração contariam no painel. Resolve acrescentando a condição ao `ignorar` do preset, se a PASIO quiser.
 - `utm_term`, `utm_content`, `fbp` e `fbc` não têm campo canônico e ficam fora.
-- A GTech não manda `X-Event-Id`: a idempotência é pelo hash do corpo. Um reenvio com corpo diferente contaria duas vezes; a melhoria é usar `event` + `deposit_id` como chave.
+- A GTech não manda `X-Event-Id`: a idempotência é pelo hash do corpo. Um reenvio com corpo diferente contaria duas vezes; a melhoria é usar `event` + `deposit_id` como chave. Desde a D46 (2026-10-21) o reenvio não cria um segundo FTD (vira redepósito), mas ainda soma o valor de novo em Depósitos.
+- Jogador que já depositava antes da integração vira FTD no primeiro depósito que o painel recebe, a menos que a GTech mande `approved_deposits` ≥ 2 (D46).
 - `amount` como texto `"1.000"` seria lido como mil. Conferir no primeiro depósito real.
 - As regras de canal padrão não reconhecem Google nem TikTok por UTM, e um toque só com `fbp` não conta como Meta.
 - `user_id` igual na Tag do site e na GTech ainda não foi confirmado; sem isso, o cruzamento só funciona pelo `tracker` da GTech.
@@ -164,5 +165,14 @@ Nenhum dos dois foi tocado. Eles disputam CPU e memória com o build (item 2).
 **Como diagnosticar de novo**: se o redeploy "termina" e os contêineres não mudam de horário, abrir o console do navegador (F12) na página da stack e procurar `Failed to pull`.
 
 **Para não voltar**: remover as `ghcr` antigas (Unused) depois de cada redeploy que deu certo, e pensar em imagens menores (o `web` leva `node_modules` inteiro, inclusive os mapas do runtime de desenvolvimento do Next).
+
+## 14. Agregação do mesmo dia em paralelo pode dar 23505 (2026-10-21)
+**Sintoma**: dois lotes do mesmo dia agregados ao mesmo tempo podem falhar com `23505 metrics_daily_chave_unico` (os dois tentam inserir a mesma linha de `metrics_daily`).
+
+**Causa**: a agregação apaga e regrava as linhas do dia sem trava entre transações. Apareceu no teste concorrente de `primeiro-deposito.test.ts` antes da trava por jogador (D46); com a trava, webhooks do mesmo jogador não colidem mais, mas jogadores diferentes no mesmo dia ainda poderiam.
+
+**Por que não dói hoje**: em produção o worker processa um job por vez (pg-boss com `batchSize: 1`, um contêiner de API) e a retentativa do pg-boss refaz o job que falhar. Não perde dado.
+
+**O que resolve, se houver mais réplicas ou concorrência**: trava consultiva por (empresa, dia) na agregação, ou `insert ... on conflict do update`.
 
 Relacionado: [[operacao/producao]], [[operacao/retomada]], [[operacao/deploy-kapanda]], [[arquitetura/mapa-do-sistema]], [[ingestao-webhooks/gtech]].

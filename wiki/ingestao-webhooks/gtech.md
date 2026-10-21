@@ -6,7 +6,7 @@ tags: [gtech, webhook, basic, preset, cassino, integracao, lgpd, producao]
 
 # GTech (plataforma de cassino)
 
-Tudo sobre a ligação entre a plataforma GTech e o painel: o que a GTech envia, como o backoffice é configurado, como os dados viram números e o que ainda falta. O contrato genérico do receptor está em [[ingestao-webhooks/contrato-webhook]], o preset de regras em [[regras-de-tratamento/motor-de-regras]] e a decisão em [[decisoes-tecnicas/decisoes]] (D42). Trabalho feito na sessão de 2026-10-20 ([[log]]).
+Tudo sobre a ligação entre a plataforma GTech e o painel: o que a GTech envia, como o backoffice é configurado, como os dados viram números e o que ainda falta. O contrato genérico do receptor está em [[ingestao-webhooks/contrato-webhook]], o preset de regras em [[regras-de-tratamento/motor-de-regras]] e as decisões em [[decisoes-tecnicas/decisoes]] (D42; redepósito do nosso lado na D46). Trabalho feito na sessão de 2026-10-20 ([[log]]).
 
 ## Estado (2026-10-21, madrugada)
 | Peça | Situação |
@@ -15,10 +15,11 @@ Tudo sobre a ligação entre a plataforma GTech e o painel: o que a GTech envia,
 | Fonte `gtech` (nome GTech) | **criada** às 14:47 em Configurações → Webhooks: ativa, com segredo, em `https://api.kapanda.lat/webhooks/pasio/gtech` |
 | Regras da fonte | **preset `gtech` na versão 1 ativa**, aplicado pelo usuário no console do `trafego-pasio-api-1` (reprocessou 0 brutos, porque nada tinha chegado) |
 | Webhook "Criação de usuário" no backoffice | **pendente**: em 2026-10-21 o formulário foi aberto e preenchido de novo (Nome `kapanda`, URL, BASIC, Usuário `gtech`, Senha vazia) e ainda não foi salvo; falta rotacionar o segredo, colar na Senha e salvar |
-| Webhook "Pagamento de Depósito" no backoffice | **pendente**: ainda não criado (seção vazia em 2026-10-21) |
+| Webhook "Pagamento de Depósito" no backoffice | **pendente**: em 2026-10-21 o formulário foi aberto e preenchido (title `kapanda`, URL, BASIC, Usuário `gtech`, Senha vazia) e não foi salvo; falta colar o segredo e salvar |
 | Teste ponta a ponta no cassino demo | **pendente** |
 | `user_id` igual na Tag e na GTech | **não confirmado** |
-| Redepósito no Funil de Aquisição | **implementado** em 2026-10-21 (commit `d5569d9`, D43): os depósitos pagos depois do FTD chegam como `deposito` e viram a sexta etapa do funil assim que o primeiro chegar ([[regras-de-tratamento/metricas-e-kpis]]) |
+| Redepósito no Funil de Aquisição | **implementado** em 2026-10-21 (commit `d5569d9`, D43): os depósitos pagos depois do FTD chegam como `deposito` e viram a sexta etapa do funil, que aparece sempre, com 0 até o primeiro ([[regras-de-tratamento/metricas-e-kpis]]) |
+| Redepósito calculado do nosso lado | **implementado** em 2026-10-21 (D46): preset v2 mais a invariante "um FTD por jogador"; a GTech não tem evento de redepósito |
 
 Próximos passos, em ordem, em [[operacao/retomada]].
 
@@ -35,7 +36,7 @@ São **dois webhooks**, com os mesmos valores:
 | Seção na GTech | Vira no painel |
 |---|---|
 | Criação de usuário | `cadastro` |
-| Pagamento de Depósito | `ftd` (primeiro depósito) ou `deposito` |
+| Pagamento de Depósito | `ftd` (primeiro depósito do jogador) ou `deposito` (redepósito), decidido do nosso lado |
 
 | Campo | Valor |
 |---|---|
@@ -58,8 +59,8 @@ Detalhes e tabela completa em [[regras-de-tratamento/motor-de-regras]], seção 
 | Payload da GTech | Evento canônico |
 |---|---|
 | `USER_CREATED` | `cadastro` |
-| `DEPOSIT_PAYMENT` / `PAGAMENTO_DEPÓSITO`, status `PAID`/`PAGO`, `approved_deposits == 1` | `ftd` |
-| o mesmo com `approved_deposits > 1` | `deposito` |
+| `DEPOSIT_PAYMENT` / `PAGAMENTO_DEPÓSITO`, status `PAID`/`PAGO`, `approved_deposits` 0, 1 ou ausente | `ftd` candidato |
+| o mesmo com `approved_deposits` ≥ 2 | `deposito` |
 | `DEPOSIT_CREATED` (status `PENDENT`) | ignorado, sem erro |
 | status não pago ou evento desconhecido | erro / dead-letter, de propósito |
 
@@ -67,6 +68,8 @@ Detalhes e tabela completa em [[regras-de-tratamento/motor-de-regras]], seção 
 - `value` = `amount`, já em reais (sem dividir). `currency` `"R$"` vira `BRL`.
 - `lead_key` = `user_id`. UTMs vêm de `tracker.utm_*` (em minúsculas); `affiliate_id` = `tracker.afp`, o que aciona o canal Afiliados.
 - **O primeiro depósito gera só `ftd`**: a agregação já soma o valor do FTD em Depósitos; gerar `ftd` e `deposito` contaria em dobro.
+- **De onde vem o redepósito**: a GTech não tem evento de redepósito. No backoffice só existe "Pagamento de Depósito", e o `approved_deposits` do pagamento conta o depósito atual (1 = primeiro; no `DEPOSIT_CREATED` vem 0). O painel calcula o resto: o depósito mais antigo de cada `user_id` é o FTD e todos os outros são redepósito, mesmo com reenvio, ordem trocada ou payload sem o contador (D46, `garantirUmFtdPorLead`).
+- Jogador que já depositava antes da integração vira FTD no primeiro depósito que o painel recebe, a menos que a GTech mande `approved_deposits` ≥ 2.
 - Nenhum dado pessoal é lido pelo preset.
 
 Código: `packages/rules/src/presets/gtech.ts` (`mapeamentoGtech()`), fixtures fictícias em `gtech.fixtures.ts`, testes em `gtech.test.ts` e o ponta a ponta em `apps/api/src/e2e/gtech.test.ts`.

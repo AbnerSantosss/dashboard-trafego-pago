@@ -214,6 +214,8 @@ export const events = pgTable(
     index('events_tenant_occurred_idx').on(t.tenantId, t.occurredAt),
     index('events_tenant_channel_idx').on(t.tenantId, t.channel),
     index('events_webhook_event_idx').on(t.webhookEventId),
+    // Histórico de depósitos do jogador (um FTD por lead, `rules/primeiro-deposito.ts`).
+    index('events_tenant_lead_idx').on(t.tenantId, t.leadKey),
     foreignKey({
       name: 'events_webhook_event_fk',
       columns: [t.tenantId, t.webhookEventId],
