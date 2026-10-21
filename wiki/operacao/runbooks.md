@@ -1,7 +1,7 @@
 ---
 tipo: operacao
-atualizado: 2026-10-20
-tags: [runbook, onboarding, segredo, reprocessamento, dead-letter, basic, preset, gtech]
+atualizado: 2026-10-21
+tags: [runbook, onboarding, segredo, reprocessamento, dead-letter, basic, preset, gtech, duas-etapas, totp, bloqueio]
 ---
 
 # Runbooks
@@ -65,6 +65,17 @@ pnpm db:migrate && pnpm db:seed   # empresa demo com os dados da imagem
 pnpm dev                  # web em :3000, api em :3001
 ```
 Variáveis em `.env.example` (sem valores). Nenhum segredo no repositório ([[decisoes-tecnicas/decisoes]] D8).
+
+Variante usada em 2026-10-21 com o túnel fora: banco do compose em `127.0.0.1:5460`, `pnpm db:migrate` com `DATABASE_URL` e `DATABASE_ADMIN_URL` de `.env.example`, API com `API_PORT=3011` e `WEB_URL=http://localhost:3000`, web com `next dev -p 3000` e `API_URL=http://localhost:3011`, e um `AUTH_SECRET` local fora do repositório. Se a API cair com `ECONNREFUSED` na 5460, o Docker Desktop reiniciou e o banco ficou parado ([[operacao/problemas-atuais]], item 11).
+
+## Desligar a verificação em duas etapas de um usuário (perdeu o celular)
+Ainda não há códigos de recuperação (D45). Quem ligou a verificação em duas etapas e perdeu o app autenticador não consegue entrar, nem pelo "Esqueci minha senha": o link troca a senha, mas a sessão só abre com o código.
+1. Confirmar por outro canal que o pedido vem mesmo da pessoa dona da conta.
+2. Portainer → Containers → `trafego-pasio-db-1` → Console → `psql -U postgres -d trafego`.
+3. `UPDATE users SET totp_segredo_enc = NULL, totp_ativo_em = NULL, totp_ultimo_passo = NULL WHERE lower(email) = lower('<e-mail da pessoa>');` (tem de responder `UPDATE 1`).
+4. A pessoa entra só com e-mail e senha e, se quiser, liga de novo em Configurações → Perfil, com um app novo. O segredo antigo fica inútil: o QR novo gera outro.
+
+Outros bloqueios do login, que passam sozinhos: 10 senhas erradas em 15 min travam a conta por 15 min; 5 códigos errados em 1 hora travam o código daquela conta por 1 hora. Os dois ficam na memória da API, então reiniciar `trafego-pasio-api-1` também libera.
 
 ## Produção (Portainer + túnel Cloudflare)
 Arquivos: `Dockerfile` (alvos `api` e `web`), `docker-compose.prod.yml` (segredos, db, api, web) e `deploy/producao.env.example` (lista de variáveis). Decisão em [[decisoes-tecnicas/decisoes]] D39. O que já está no ar (endereços, contêineres, senha do admin, backup e armadilhas) fica em [[operacao/producao]]; esta seção é a instalação do zero.

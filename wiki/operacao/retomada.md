@@ -1,14 +1,54 @@
 ---
 tipo: retomada
-atualizado: 2026-10-20
-tags: [retomada, estado-atual, proximos-passos, ci, operacao, deploy, ghcr, smtp, gtech, webhooks, basic, preset]
+atualizado: 2026-10-21
+tags: [retomada, redeposito, funil, tunel, estado-atual, proximos-passos, ci, operacao, deploy, ghcr, smtp, gtech, webhooks, basic, preset]
 ---
 
 # Retomada: comece por aqui
 
 Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou, o que está pendente e em que ordem. Atualize ao fim de cada sessão de trabalho relevante.
 
-## Onde paramos (2026-10-20, por volta das 19:30)
+## Onde paramos (2026-10-21, por volta das 12:10)
+Sessão `b14f19c8`, continuação.
+- **Commit `d5569d9` na `main`, push feito**: etapa Redepósito no funil (D43), pacote de segurança (D44) e verificação em duas etapas opcional no Perfil (D45). CI run 39619390201 verde (check e visual) e Deploy run 39619390107 verde (imagens `api` e `web` no GHCR; o job de redeploy só avisou, sem `PORTAINER_WEBHOOK_URL`).
+- **Redeploy em produção NÃO aconteceu.** O "Pull and redeploy" com re-pull falhou três vezes (11:50, 11:57 e 12:00) com `no space left on device` ao extrair as camadas da imagem: **o disco do servidor está cheio**. Os contêineres seguem os de 2026-10-20 14:40 e a produção está na versão antiga (`/auth/duas-etapas` 404, `/docs` 200, sem HSTS). A mensagem só aparece no console do navegador; a lista de Notifications do Portainer não mostrou nada.
+- **Espaço a liberar** (Portainer → Images, todas marcadas Unused e todas deste projeto): `sha256:15aaf5a4…` (1,4 GB, web antiga do GHCR de 19/10), `sha256:10eaa1f6…` (1,2 GB, api antiga do GHCR de 19/10), `trafego-pasio-api:latest` (1,2 GB) e `trafego-pasio-web:latest` (1,4 GB), dos builds locais antes do D41. Cerca de 5,2 GB. Não apagar a `ghcr.io/.../web:latest` de 2026-10-21 11:45 (é a nova, já baixada). A remoção pelo agente foi barrada pelo classificador de permissões; fica com o usuário.
+- Depois de liberar: Pull and redeploy com re-pull e validar (ver passo 2 abaixo).
+
+### Próximos passos, em ordem
+1. (usuário) Portainer → Images → marcar as 4 imagens acima → Remove.
+2. (agente ou usuário) Stack `trafego-pasio` → Pull and redeploy → ligar "Re-pull image and redeploy" → Update. Validar: `https://api.kapanda.lat/health` com `strict-transport-security`, `/docs` 404, `POST /auth/duas-etapas` com desafio inválido → 401 `token_invalido`, `https://kapanda.lat/login/codigo` 200, CSP no web e horário novo dos contêineres. As migrações 0007 e 0008 aplicam sozinhas na subida.
+3. (usuário, opcional) Ver o espaço livre do disco da VPS; outras imagens grandes no servidor não são deste projeto (n8n 2,5 GB, hermes-agent 4,5 GB, evolution-api 1,8 GB).
+4. Teste de SMTP no console do `trafego-pasio-api-1` e convite real ([[operacao/producao]], "E-mail (SMTP)").
+5. Seguem os passos da GTech da lista abaixo (segredo nos dois webhooks, jogador de teste, senha do backoffice).
+
+## Antes (2026-10-21, madrugada)
+Sessão `b14f19c8`. Nada foi commitado nem deployado; nenhum arquivo de código foi alterado.
+- **Túnel fora e de volta.** No começo da sessão `kapanda.lat` deu Erro 1033 da Cloudflare e todos os hosts do túnel `servidor-abner` responderam 530 (kapanda.lat, api.kapanda.lat, pasio.proxserverabner.site, portainer.proxserverabner.site). Era a internet do servidor; quando voltou, `kapanda.lat/login` e `api.kapanda.lat/health` responderam 200 sem nenhuma ação na stack. Registro em [[operacao/problemas-atuais]], item 12.
+- **Projeto rodado local** enquanto o túnel estava fora (passo a passo em [[operacao/runbooks]], "Ambiente local"). Causa do item 11 de [[operacao/problemas-atuais]] encontrada: o Docker Desktop reinicia sozinho e o contêiner do banco tem `restart=no`. O local foi parado quando a produção voltou.
+- **GTech: webhooks ainda não salvos.** O modal "Criação de usuário" do backoffice (latam.gtech.uy/admin → Personalizar → Webhook) foi aberto e preenchido de novo: Nome `kapanda`, Ativo, URL `https://api.kapanda.lat/webhooks/pasio/gtech`, BASIC, Usuário `gtech`, Senha vazia (o autofill do Chrome pôs o login de admin outra vez e foi corrigido). Na última conferência não havia card `kapanda` na seção, só o `login` que aponta para webhook.site (não mexer). "Pagamento de Depósito" está vazia. A rotação do segredo da fonte em Configurações → Webhooks não foi confirmada pelo usuário.
+- **Pedido novo: etapa "Redepósito" no Funil de Aquisição** (só no funil, abaixo de FTD). Análise feita, implementação **não começou**. Proposta abaixo.
+
+### Proposta do Redepósito (a confirmar no código, vira D43 quando implementada)
+- **O dado já existe.** O preset `gtech` grava o primeiro depósito pago como `ftd` e os seguintes como `deposito` (`packages/rules/src/presets/gtech.ts`). `metrics_daily` não guarda a contagem de redepósitos, só o valor somado em `depositos`.
+- **Métrica**: quantidade de eventos `deposito` no período, contada em `events` (dia no fuso da empresa, mesmos filtros de canal e campanha, sem canais `__`). É a mesma lista que a gaveta mostra ao clicar na etapa. Taxa = redepósitos / FTDs, e pode passar de 100%.
+- **Quando aparece**: só se a empresa tiver ao menos um evento `deposito`, e nunca quando o funil vem do canal reservado da demo (D11). Assim a fixture e o demo seguem com 5 etapas e o diff visual do CI não muda.
+- **Passos**:
+  1. Contratos: `'redeposito'` em `EtapaFunilId` (`packages/contratos/src/metricas.ts`) e em `ETAPAS_LISTA` (`leads.ts`).
+  2. API: contagem em `apps/api/src/metricas/consulta.ts`, etapa nova em `calculo.ts` (hoje `idsFunil` fixo com 5) e `filtroEtapa('redeposito')` → `type = 'deposito'` em `apps/api/src/leads/rotas.ts`.
+  3. Gráfico: `packages/graficos/src/funil.tsx` só desenha 5 (`visiveis = etapas.slice(0, TRAPEZIOS.length)`). Criar geometria de 6 trapézios no mesmo card (y 332 a 635, bordas nas mesmas retas: esquerda ≈ 206,3 + 0,406·(y − 332), direita ≈ 532,4 − 0,403·(y − 332); altura ≈ 46,3 px e vão de 5 px), textos menores, 6ª cor (verde, ex. `#00C96A` / borda `#1ADB84`) e `TAXA_Y` próprio. A geometria de 5 fica intacta.
+  4. Web: rótulo "Redepósito" (hoje vem de `referencia.funil.etapas` em `apps/web/lib/conteudo.ts`, com fallback para o id), `COLETIVO.redeposito = 'redepósitos'` em `FichaLead.tsx` e o filtro de etapas da tela de leads.
+  5. Testes (api, graficos, web), `pnpm lint`, typecheck, testes e diff visual; wiki ([[regras-de-tratamento/metricas-e-kpis]], D43). Commit, push e deploy só com o aval do usuário.
+
+### Próximos passos, em ordem
+1. (usuário) Configurações → Webhooks → GTech → **Rotacionar segredo** → Copiar.
+2. (usuário) Colar na Senha do modal "Criação de usuário" da GTech, conferir Usuário `gtech` e Salvar.
+3. (agente preenche, usuário cola a Senha) Webhook "Pagamento de Depósito" igual.
+4. Validar com jogador de teste (`?utm_source=teste&utm_campaign=teste`), como no passo 4 da lista de 2026-10-20 abaixo.
+5. (agente) Implementar o Redepósito no funil conforme a proposta.
+6. Seguem valendo os passos 5 a 10 da lista de 2026-10-20 (Tag `user_id`, LGPD e `is_demo`, senha de admin da GTech, SMTP, imagens antigas, Meta Ads).
+
+## Antes (2026-10-20, por volta das 19:30)
 Integração com a GTech, a plataforma de cassino da PASIO. Tudo sobre ela em [[ingestao-webhooks/gtech]].
 - **Commit `5ef4829` na `main`** (autenticação Basic no receptor, operadores novos e preset `gtech` no motor de regras, ajuda Basic em Configurações → Webhooks, D42). CI e Deploy verdes.
 - **Redeploy às 14:40** (Pull and redeploy com re-pull), com a autorização do usuário. `api` e `db` saudáveis, `/health` 200.

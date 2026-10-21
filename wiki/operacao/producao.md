@@ -1,7 +1,7 @@
 ---
 tipo: referencia
-atualizado: 2026-10-20
-tags: [producao, deploy, portainer, cloudflare, tunel, docker, segredos, backup, kapanda, gtm, ghcr, github-actions, smtp, gtech, webhooks]
+atualizado: 2026-10-21
+tags: [producao, seguranca, duas-etapas, deploy, portainer, cloudflare, tunel, docker, segredos, backup, kapanda, gtm, ghcr, github-actions, smtp, gtech, webhooks]
 ---
 
 # Produção
@@ -107,6 +107,16 @@ docker run --rm -v trafego-pasio_pgdata:/v -v "$PWD":/b alpine tar czf /b/pgdata
 docker run --rm -v trafego-pasio_segredos:/v -v "$PWD":/b alpine tar czf /b/segredos.tgz -C /v .
 ```
 Restaurar: parar a stack, extrair os dois arquivos nos volumes vazios com o mesmo comando ao contrário (`tar xzf`) e subir de novo. Um `pg_dump` sozinho também serve para os dados, desde que o volume `segredos` vá junto.
+
+## Segurança no ar (D44 e D45, commit `d5569d9`)
+> **Ainda não está no ar** em 2026-10-21 12:10: o redeploy falhou por disco cheio ([[operacao/problemas-atuais]], item 13). Vale a partir do primeiro redeploy que der certo.
+
+- **Cabeçalhos**: a API responde com `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, CSP `default-src 'none'` e, só em produção, HSTS de 1 ano sem `includeSubDomains`. O web manda a própria CSP (`next.config.ts`). Se o Cloudflare Web Analytics for ligado, a CSP do web precisa liberar `static.cloudflareinsights.com`.
+- **`/docs` (Swagger) não existe em produção**: responde 404. A referência da API continua em `apps/api/docs/openapi.json`.
+- **"Sair"** encerra as sessões da conta em todos os dispositivos (`users.sessoes_desde`).
+- **Bloqueios em memória**: 10 senhas erradas em 15 min travam a conta por 15 min; 5 códigos de duas etapas errados travam o código por 1 hora. Reiniciar a API libera os dois.
+- **Duas etapas opcional** no Perfil. Quem perder o celular: runbook "Desligar a verificação em duas etapas de um usuário" em [[operacao/runbooks]].
+- **Convite para conta sem senha** responde 409: a pessoa usa "Esqueci minha senha" antes de aceitar.
 
 ## Armadilhas
 - **Apagar o volume `segredos` com o banco já criado** gera senhas novas que o postgres não conhece: a API fica sem acesso ao banco e os dados cifrados ficam ilegíveis. Antes de remover ou recriar a stack, faça o backup e confira em Volumes que os dois continuam lá.

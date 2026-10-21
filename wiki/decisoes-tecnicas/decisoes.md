@@ -370,3 +370,54 @@ Formato: contexto, decisão, motivo, consequências. Correção vale mais que ac
   - não mapeados: `is_demo` (não filtrado), `utm_term`, `utm_content`, `fbp`, `fbc` (sem campo canônico).
 - Verificação: testes de unidade e de rota do modo Basic, preset com fixtures fictícias, `aplicar-preset.test.ts` e o ponta a ponta `apps/api/src/e2e/gtech.test.ts` (4 POSTs Basic → worker → visão geral com 1 cadastro, 1 FTD de 20 e Depósitos 70,5; reenvio 200; senha errada 401). Lint, typecheck, build e todas as suítes verdes antes do push.
 - Em produção (2026-10-20): redeploy às 14:40, fonte `gtech` criada às 14:47 e preset na versão 1 ativa. Os dois webhooks no backoffice da GTech dependem do usuário colar o segredo. Estado e passos em [[ingestao-webhooks/gtech]].
+
+## D43: etapa Redepósito no Funil de Aquisição (2026-10-21)
+- Contexto: com a GTech mandando `DEPOSIT_PAYMENT`, o painel já separava o primeiro depósito (`ftd`) dos seguintes (`deposito`, D42), mas o funil parava no FTD. Pedido do usuário: "precisamos adicionar no painel o redeposito", "só no Funil de Aquisição".
+- Decisão:
+  - sexta etapa **Redepósito** abaixo de FTD, com a **quantidade** de eventos `deposito` no período e os mesmos filtros do resto da visão geral; taxa = redepósitos / FTD, que pode passar de 100%;
+  - `EtapaFunilId` ganhou `redeposito` e `IndicadoresAgregados.redepositos` é `null` quando a empresa nunca teve um `deposito`; com `null`, ou quando o funil vem do canal reservado `__funil__` (demo, D11), a etapa não aparece e o funil continua com 5 trapézios;
+  - `packages/graficos/src/funil.tsx` desenha 6 trapézios só quando recebe a sexta etapa.
+- Alternativas descartadas: somar o valor dos redepósitos no funil (o valor já está no card Depósitos); mostrar a etapa zerada em toda empresa (polui quem não manda depósito).
+- Consequências: a demo e o CI visual ficam iguais (diff 5,19%, limite 5,5%); a etapa aparece na PASIO assim que o primeiro `deposito` chegar da GTech.
+
+## D44: pacote de segurança a partir da base "Segurança Sass" (2026-10-21)
+- Contexto: antes do deploy do Redepósito, o usuário pediu para aplicar o que faz sentido da base `Especialistas\Segurança Sass`. A lista foi filtrada pelo que vale para este painel (poucos usuários, API atrás do túnel da Cloudflare, repositório público).
+- Entrou na API:
+  - cabeçalhos de segurança em toda resposta (`nosniff`, `frame-ancestors 'none'`, `Referrer-Policy`, `Permissions-Policy`) e **HSTS** só em produção, sem `includeSubDomains` (o domínio tem outros hosts no túnel);
+  - **`/docs` (Swagger) só fora de produção**;
+  - CORS sem `credentials` (o web chama a API pelo servidor, não pelo navegador);
+  - **"Sair" que encerra as sessões**: coluna `users.sessoes_desde` (migração 0007) e `POST /auth/sair`; token emitido antes dessa data é recusado. Trocar a senha também derruba os tokens antigos (`exigirVersaoSenha`);
+  - **bloqueio por conta**: 10 senhas erradas em 15 min travam o login daquela conta por 15 min (`conta/tentativas.ts`, em memória), além do limite por IP que já existia;
+  - convite para uma conta que ainda não tem senha responde 409 (antes deixava aceitar sem senha);
+  - documento e contato do lead mascarados no payload exibido;
+  - filtro do SVG do logo mais estrito (eventos colados em aspas, entidades, `<animate>` que troca `href`, referência externa);
+  - `.max` em todos os textos de entrada do zod;
+  - `nodemailer` 7 → 10.0.16 (6 vulnerabilidades altas no `pnpm audit`) e `postcss` do Next fixado em 8.5.28 por `overrides`.
+- Entrou no web: cabeçalhos e **CSP** em `next.config.ts` (`script-src 'self' 'unsafe-inline'`, sem nonce), "Sair" chamando `POST /auth/sair`, CSV de leads com proteção contra injeção de fórmula (`campoCsv`).
+- Entrou no CI: `pnpm audit --prod --audit-level high` depois do install.
+- Descartado, com o motivo:
+  - bloqueio persistente no banco: em memória basta para uma API com uma réplica; reinício zera, aceito;
+  - chave pública na `/t` (rastreamento): o endpoint só grava clique e já tem limite por IP;
+  - 404 em vez de 401 nos slugs de empresa: os slugs não são segredo;
+  - corrida na remoção do último admin: improvável com poucos admins; fica para quando houver muitos;
+  - tirar `detalhes` do 403: só diz qual papel falta, sem dado sensível;
+  - pinagem das actions por SHA, Dependabot e deploy esperando o CI: sugeridos ao usuário, não feitos agora;
+  - encurtar a validade de 7 dias do convite; esconder o link no log em desenvolvimento; proteção de `__proto__` (o zod já descarta chaves desconhecidas); CSP com nonce (futuro, exige render dinâmico); HSTS com `includeSubDomains` (outros hosts do domínio).
+- Consequências:
+  - "Sair" desloga em todos os dispositivos daquela conta;
+  - a CSP pode bloquear o Cloudflare Web Analytics se ele for ligado (liberar `static.cloudflareinsights.com`);
+  - o admin que ainda não tem senha precisa usar "Esqueci minha senha" antes de aceitar um convite.
+
+## D45: verificação em duas etapas opcional (TOTP), ligada no Perfil (2026-10-21)
+- Contexto: o usuário quer entrar "com login e senha mesmo" e que a verificação em duas etapas seja "opcional ativar", "no painel do próprio usuário".
+- Decisão:
+  - **TOTP (RFC 6238)**: HMAC-SHA1, 6 dígitos, passo de 30 s, janela de ±1 passo, implementado em `apps/api/src/conta/totp.ts` sem dependência nova. Funciona com Google Authenticator, Microsoft Authenticator e 1Password;
+  - colunas `users.totp_segredo_enc` (cifrado com a mesma chave dos segredos de webhook), `totp_ativo_em` e `totp_ultimo_passo` (migração 0008); o mesmo código não vale duas vezes (gravação atômica do passo);
+  - ativação no **Perfil**: `POST /me/duas-etapas/iniciar` (pede a senha atual, devolve segredo e QR), `/ativar` (confirma com um código do app), `/desativar` (senha e código);
+  - **login**: com a etapa ligada, e-mail e senha devolvem um desafio de 5 min em vez da sessão; o web guarda o desafio num cookie httpOnly e leva a `/login/codigo`; `POST /auth/duas-etapas` troca desafio e código pela sessão. O desafio não serve como token de sessão. Redefinir a senha e aceitar convite também passam pelo código;
+  - bloqueio de 5 códigos errados por hora por usuário, separado do bloqueio da senha.
+- Alternativas descartadas: 2FA obrigatório (o usuário não quer); código por e-mail (o SMTP ainda não está validado em produção e o e-mail é o mesmo canal da redefinição); biblioteca `otplib` (o algoritmo cabe em 100 linhas testadas com os vetores do RFC).
+- Consequências:
+  - **ainda não há códigos de recuperação**: quem perder o celular depende do runbook "Desligar a verificação em duas etapas de um usuário" em [[operacao/runbooks]];
+  - o link de "Esqueci minha senha" troca a senha, mas a sessão só abre com o código.
+- Verificação: `totp.test.ts` com os vetores do RFC 6238 e o fluxo completo em `conta.test.ts` (ativar, login com desafio, código repetido, desafio adulterado, desativar).

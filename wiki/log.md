@@ -326,3 +326,24 @@ tags: [log, historico]
   - atualizadas e ligadas a ela: [[ingestao-webhooks/contrato-webhook]], [[regras-de-tratamento/motor-de-regras]], [[decisoes-tecnicas/decisoes]] (D42 em produção), [[operacao/runbooks]] (plataforma só com Basic e ativar preset), [[administracao-multiempresa/configuracao-por-empresa]] (ajuda Basic em Webhooks), [[operacao/producao]] (fontes de webhook e redeploys), [[arquitetura/mapa-do-sistema]], [[operacao/problemas-atuais]] (item 1 parcial e itens novos 9 a 11), [[operacao/retomada]] (onde paramos e próximos passos) e [[index]];
   - sem segredos, sem a senha do backoffice e sem dados pessoais reais: só nomes de campo e exemplos fictícios.
 - Entregue: a sessão de 2026-10-20 registrada na wiki, com todas as páginas tocadas apontando para [[ingestao-webhooks/gtech]].
+
+## [2026-10-21] operacao | Túnel caiu e voltou, projeto rodado local, GTech em andamento e Redepósito proposto
+- Pedidos: "o que ficou faltando?"; "me guie passo a passo" no Chrome; "rode o projeto local"; "a internet voltou... vamos fazer valendo"; "precisamos adicionar no painel o redeposito" ("só no Funil de Aquisição"); "salve tudo na wiki".
+- Feito:
+  - pendências listadas a partir de [[operacao/retomada]];
+  - túnel `servidor-abner` fora (Erro 1033 e 530 em todos os hosts) e de volta sem ação na stack: item 12 novo em [[operacao/problemas-atuais]];
+  - projeto rodado local (banco do compose na 5460, API na 3011, web na 3000) e depois parado; causa do item 11 achada (Docker Desktop reinicia e o banco tem `restart=no`); variante registrada em [[operacao/runbooks]];
+  - backoffice da GTech: modal "Criação de usuário" preenchido de novo (Nome `kapanda`, URL, BASIC, Usuário `gtech`, Senha vazia; autofill corrigido), ainda não salvo; "Pagamento de Depósito" vazia. A aba de Configurações → Webhooks do painel ficou aberta para o usuário rotacionar o segredo. Nenhum segredo passou pelo agente;
+  - Redepósito no Funil de Aquisição: análise do código e proposta (contagem de eventos `deposito`, taxa sobre FTD, 6 trapézios só quando houver redepósito, demo e CI visual intactos), em [[operacao/retomada]], [[regras-de-tratamento/metricas-e-kpis]] e [[ingestao-webhooks/gtech]]. Implementação não começou;
+  - sem commit, push nem deploy.
+- Entregue: estado da sessão registrado na wiki; próximos passos em [[operacao/retomada]].
+
+## [2026-10-21] update | Redepósito, pacote de segurança e duas etapas opcional (commit d5569d9); redeploy barrado por disco cheio
+- Pedidos: "precisamos adicionar no painel o redeposito" ("só no Funil de Aquisição"); "antes disso precisamos fazer questão de segurança, veja em Especialistas\Segurança Sass o que podemos aplicar e que realmente faz sentido. ajuste e faça o deploy"; "só quero que entre com login e senha mesmo", "o auth deixe como opcional ativar", "no painel do próprio usuário".
+- Feito:
+  - etapa Redepósito no funil (D43), só quando a empresa tem `deposito`; demo e CI visual iguais;
+  - pacote de segurança (D44): cabeçalhos e HSTS, `/docs` fora de produção, "Sair" que encerra sessões (migração 0007), bloqueio por conta, convite sem senha recusado, máscara de documento e contato, filtro de SVG mais estrito, `.max` no zod, CSP no web, CSV contra injeção de fórmula, `nodemailer` 10 e `postcss` 8.5.28 (audit sem vulnerabilidades) e `pnpm audit --prod --audit-level high` no CI; itens descartados com o motivo em D44;
+  - verificação em duas etapas opcional (D45): TOTP no Perfil (migração 0008), login com desafio e `/login/codigo`; runbook para desligar de quem perdeu o celular em [[operacao/runbooks]];
+  - testes verdes (api 252 + 1 pulado, web 105, gráficos 22, rules 32, fixtures 42, webhook-sim 4), lint, typecheck e formato; commit `d5569d9` e push; CI run 39619390201 e Deploy run 39619390107 verdes;
+  - Pull and redeploy tentado três vezes: falha `no space left on device` no servidor (item 13 novo em [[operacao/problemas-atuais]]). A remoção das imagens antigas pelo agente foi barrada pelo classificador de permissões; fica com o usuário.
+- Entregue: código no `main` e imagens no GHCR; produção ainda na versão anterior até liberar espaço e redeployar ([[operacao/retomada]]).

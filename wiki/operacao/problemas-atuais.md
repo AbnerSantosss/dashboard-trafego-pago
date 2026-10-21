@@ -1,14 +1,22 @@
 ---
 tipo: operacao
-atualizado: 2026-10-20
-tags: [producao, problemas, diagnostico, portainer, deploy, webhooks, meta-ads, kapanda, ghcr, smtp, gtech, lgpd]
+atualizado: 2026-10-21
+tags: [producao, problemas, disco, tunel, diagnostico, portainer, deploy, webhooks, meta-ads, kapanda, ghcr, smtp, gtech, lgpd]
 ---
 
 # Problemas atuais
 
 Tudo o que não funciona ou funciona pela metade em produção, com a causa e o que resolve. A arquitetura que esses itens citam está em [[arquitetura/mapa-do-sistema]]. Atualize esta página quando um item for resolvido: marque como resolvido com a data e o que foi feito, sem apagar.
 
-## Situação geral (2026-10-20, por volta das 19:30)
+## Situação geral (2026-10-21, por volta das 12:10)
+- Commit `d5569d9` (Redepósito, segurança, duas etapas) com CI e Deploy verdes, mas **fora do ar**: o redeploy falha por disco cheio no servidor (item 13). Produção segue no `5ef4829`.
+
+## Situação geral anterior (2026-10-21, madrugada)
+- Mesmo commit no ar (`5ef4829`). O túnel caiu e voltou sozinho (item 12).
+- Item 1 continua parcial: os webhooks da GTech ainda não foram salvos ([[ingestao-webhooks/gtech]]).
+- Item 11 com a causa achada (Docker Desktop reinicia e o banco tem `restart=no`).
+
+## Situação geral anterior (2026-10-20, por volta das 19:30)
 - **No ar com o commit `5ef4829`** (autenticação Basic e preset da GTech, D42): CI e Deploy verdes, "Pull and redeploy" às 14:40 com re-pull, `api` e `db` saudáveis, `/health` 200.
 - **Item 1 parcialmente resolvido**: a fonte `gtech` existe em produção com o preset na versão 1. Falta o usuário colar o segredo nos dois webhooks do backoffice da GTech e validar com um jogador de teste ([[ingestao-webhooks/gtech]]).
 - Itens novos: 9 (dados pessoais no bruto da GTech), 10 (`is_demo` não filtrado e outras lacunas do preset) e 11 (banco local que para sozinho).
@@ -123,8 +131,28 @@ Nenhum dos dois foi tocado. Eles disputam CPU e memória com o build (item 2).
 ## 11. Ambiente local: o banco para sozinho
 **Sintoma**: o contêiner local `101-eventospasio-db-1` (compose de desenvolvimento, porta 5460) para sozinho cerca de 1 minuto depois de subir.
 
-**Causa**: não investigada. Não afeta produção.
+**Causa** (achada em 2026-10-21): o Docker Desktop reinicia sozinho de tempos em tempos. Os outros contêineres voltam (todos aparecem "Up 19 seconds"), mas o do banco tem `restart=no` e fica parado. A API local cai junto, com `ECONNREFUSED` na 5460 ("falha ao iniciar a fila pg-boss"). Não afeta produção.
 
-**Contorno**: subir de novo com `docker compose up -d` antes de rodar testes com banco. Nos testes de 2026-10-20 o ponta a ponta da GTech passou assim.
+**Contorno**: subir de novo com `docker compose up -d` (e reiniciar a API) antes de rodar testes com banco. Uma correção seria `restart: unless-stopped` no compose de desenvolvimento; não foi feita.
+
+## 12. Túnel fora: Erro 1033 e 530 em todos os hosts (2026-10-21)
+**Sintoma**: `kapanda.lat` mostrou o Erro 1033 da Cloudflare e todos os hosts do túnel `servidor-abner` responderam 530 (kapanda.lat, api.kapanda.lat, pasio.proxserverabner.site, portainer.proxserverabner.site).
+
+**Causa**: a internet do servidor caiu e o `cloudflared` ficou sem conexão. Não era a stack.
+
+**O que resolveu**: nada na stack. Quando a internet voltou, `kapanda.lat/login` e `api.kapanda.lat/health` responderam 200. Enquanto durou, envios de webhook teriam falhado, porque o receptor fica atrás do mesmo túnel.
+
+**Como diagnosticar de novo**: 530 ou 1033 em todos os hosts ao mesmo tempo = túnel ou internet do servidor, não a aplicação. Se só `api` ou só `web` falhar, olhar os contêineres no Portainer.
+
+## 13. Redeploy falha: disco do servidor cheio (2026-10-21)
+**Sintoma**: "Pull and redeploy" com re-pull mostra "In progress" e volta ao normal sem recriar os contêineres; a produção continua na versão antiga. Nenhuma notificação aparece em Notifications. O erro só aparece no console do navegador: `Failed to pull images of the stack: compose pull operation failed: failed to extract layer ... no space left on device`.
+
+**Causa**: o disco da VPS encheu. Cada imagem deste projeto tem de 1,2 a 1,4 GB e as versões antigas continuavam no servidor (item 3), junto com imagens grandes de outros projetos.
+
+**O que resolve**: Portainer → Images → remover as imagens **Unused** deste projeto: as `trafego-pasio-api:latest` e `trafego-pasio-web:latest` dos builds locais e as `ghcr` antigas sem tag (cerca de 5,2 GB em 2026-10-21). Depois, Pull and redeploy com re-pull. Nunca `docker system prune --volumes`.
+
+**Como diagnosticar de novo**: se o redeploy "termina" e os contêineres não mudam de horário, abrir o console do navegador (F12) na página da stack e procurar `Failed to pull`.
+
+**Para não voltar**: remover as `ghcr` antigas (Unused) depois de cada redeploy que deu certo, e pensar em imagens menores (o `web` leva `node_modules` inteiro, inclusive os mapas do runtime de desenvolvimento do Next).
 
 Relacionado: [[operacao/producao]], [[operacao/retomada]], [[operacao/deploy-kapanda]], [[arquitetura/mapa-do-sistema]], [[ingestao-webhooks/gtech]].

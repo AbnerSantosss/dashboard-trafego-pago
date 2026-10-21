@@ -1,6 +1,6 @@
 ---
 tipo: referencia
-atualizado: 2026-10-20
+atualizado: 2026-10-21
 tags: [gtech, webhook, basic, preset, cassino, integracao, lgpd, producao]
 ---
 
@@ -8,16 +8,17 @@ tags: [gtech, webhook, basic, preset, cassino, integracao, lgpd, producao]
 
 Tudo sobre a ligação entre a plataforma GTech e o painel: o que a GTech envia, como o backoffice é configurado, como os dados viram números e o que ainda falta. O contrato genérico do receptor está em [[ingestao-webhooks/contrato-webhook]], o preset de regras em [[regras-de-tratamento/motor-de-regras]] e a decisão em [[decisoes-tecnicas/decisoes]] (D42). Trabalho feito na sessão de 2026-10-20 ([[log]]).
 
-## Estado (2026-10-20, 19:30)
+## Estado (2026-10-21, madrugada)
 | Peça | Situação |
 |---|---|
 | Receptor com autenticação Basic | **em produção**: commit `5ef4829`, CI e Deploy verdes, "Pull and redeploy" às 14:40 com re-pull; `api` e `db` saudáveis, `/health` 200 |
 | Fonte `gtech` (nome GTech) | **criada** às 14:47 em Configurações → Webhooks: ativa, com segredo, em `https://api.kapanda.lat/webhooks/pasio/gtech` |
 | Regras da fonte | **preset `gtech` na versão 1 ativa**, aplicado pelo usuário no console do `trafego-pasio-api-1` (reprocessou 0 brutos, porque nada tinha chegado) |
-| Webhook "Criação de usuário" no backoffice | **pendente**: formulário aberto e preenchido, falta o usuário colar o segredo no campo Senha e salvar |
-| Webhook "Pagamento de Depósito" no backoffice | **pendente**: ainda não criado |
+| Webhook "Criação de usuário" no backoffice | **pendente**: em 2026-10-21 o formulário foi aberto e preenchido de novo (Nome `kapanda`, URL, BASIC, Usuário `gtech`, Senha vazia) e ainda não foi salvo; falta rotacionar o segredo, colar na Senha e salvar |
+| Webhook "Pagamento de Depósito" no backoffice | **pendente**: ainda não criado (seção vazia em 2026-10-21) |
 | Teste ponta a ponta no cassino demo | **pendente** |
 | `user_id` igual na Tag e na GTech | **não confirmado** |
+| Redepósito no Funil de Aquisição | **implementado** em 2026-10-21 (commit `d5569d9`, D43): os depósitos pagos depois do FTD chegam como `deposito` e viram a sexta etapa do funil assim que o primeiro chegar ([[regras-de-tratamento/metricas-e-kpis]]) |
 
 Próximos passos, em ordem, em [[operacao/retomada]].
 
