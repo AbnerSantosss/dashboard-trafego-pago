@@ -347,3 +347,12 @@ tags: [log, historico]
   - testes verdes (api 252 + 1 pulado, web 105, gráficos 22, rules 32, fixtures 42, webhook-sim 4), lint, typecheck e formato; commit `d5569d9` e push; CI run 39619390201 e Deploy run 39619390107 verdes;
   - Pull and redeploy tentado três vezes: falha `no space left on device` no servidor (item 13 novo em [[operacao/problemas-atuais]]). A remoção das imagens antigas pelo agente foi barrada pelo classificador de permissões; fica com o usuário.
 - Entregue: código no `main` e imagens no GHCR; produção ainda na versão anterior até liberar espaço e redeployar ([[operacao/retomada]]).
+
+## [2026-10-21] deploy | Commit d5569d9 no ar depois de liberar o disco
+- Pedido: "pronto rxcluir as imagens" (o usuário removeu as imagens antigas para liberar espaço).
+- Feito:
+  - Pull and redeploy com re-pull da stack `trafego-pasio`; contêineres recriados às 12:50 e migrações 0007 e 0008 aplicadas na subida;
+  - conferido em produção: HSTS, `nosniff`, `X-Frame-Options`, `Referrer-Policy`, `/docs` 404, `POST /auth/duas-etapas` → 401 `token_invalido`, `/login/codigo` 200 e CSP no web;
+  - item 13 de [[operacao/problemas-atuais]] marcado como resolvido; aviso de "ainda não está no ar" tirado de [[operacao/producao]];
+  - teste de SMTP não feito: o `exec` pela API do Portainer responde 403; fica para o console do contêiner.
+- Entregue: Redepósito (D43), pacote de segurança (D44) e duas etapas opcional (D45) em produção; próximos passos em [[operacao/retomada]].

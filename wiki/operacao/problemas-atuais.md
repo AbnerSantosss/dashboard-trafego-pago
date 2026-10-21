@@ -8,7 +8,10 @@ tags: [producao, problemas, disco, tunel, diagnostico, portainer, deploy, webhoo
 
 Tudo o que não funciona ou funciona pela metade em produção, com a causa e o que resolve. A arquitetura que esses itens citam está em [[arquitetura/mapa-do-sistema]]. Atualize esta página quando um item for resolvido: marque como resolvido com a data e o que foi feito, sem apagar.
 
-## Situação geral (2026-10-21, por volta das 12:10)
+## Situação geral (2026-10-21, por volta das 12:55)
+- Commit `d5569d9` (Redepósito, segurança, duas etapas) **no ar** desde 12:50, depois que o usuário liberou espaço no disco (item 13 resolvido). Seguem abertos SMTP (item 5), GTech e Meta Ads.
+
+## Situação geral anterior (2026-10-21, por volta das 12:10)
 - Commit `d5569d9` (Redepósito, segurança, duas etapas) com CI e Deploy verdes, mas **fora do ar**: o redeploy falha por disco cheio no servidor (item 13). Produção segue no `5ef4829`.
 
 ## Situação geral anterior (2026-10-21, madrugada)
@@ -145,6 +148,8 @@ Nenhum dos dois foi tocado. Eles disputam CPU e memória com o build (item 2).
 **Como diagnosticar de novo**: 530 ou 1033 em todos os hosts ao mesmo tempo = túnel ou internet do servidor, não a aplicação. Se só `api` ou só `web` falhar, olhar os contêineres no Portainer.
 
 ## 13. Redeploy falha: disco do servidor cheio (2026-10-21)
+> **Resolvido em 2026-10-21, 12:50**: o usuário removeu as imagens antigas deste projeto no Portainer e o Pull and redeploy com re-pull subiu o `d5569d9` na primeira tentativa (cerca de 80 s até a API nova responder).
+
 **Sintoma**: "Pull and redeploy" com re-pull mostra "In progress" e volta ao normal sem recriar os contêineres; a produção continua na versão antiga. Nenhuma notificação aparece em Notifications. O erro só aparece no console do navegador: `Failed to pull images of the stack: compose pull operation failed: failed to extract layer ... no space left on device`.
 
 **Causa**: o disco da VPS encheu. Cada imagem deste projeto tem de 1,2 a 1,4 GB e as versões antigas continuavam no servidor (item 3), junto com imagens grandes de outros projetos.

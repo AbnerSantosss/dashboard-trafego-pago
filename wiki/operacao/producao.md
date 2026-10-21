@@ -109,7 +109,7 @@ docker run --rm -v trafego-pasio_segredos:/v -v "$PWD":/b alpine tar czf /b/segr
 Restaurar: parar a stack, extrair os dois arquivos nos volumes vazios com o mesmo comando ao contrário (`tar xzf`) e subir de novo. Um `pg_dump` sozinho também serve para os dados, desde que o volume `segredos` vá junto.
 
 ## Segurança no ar (D44 e D45, commit `d5569d9`)
-> **Ainda não está no ar** em 2026-10-21 12:10: o redeploy falhou por disco cheio ([[operacao/problemas-atuais]], item 13). Vale a partir do primeiro redeploy que der certo.
+> **No ar desde 2026-10-21, 12:50** (o primeiro redeploy falhou por disco cheio, [[operacao/problemas-atuais]], item 13). Conferido: HSTS e demais cabeçalhos, `/docs` 404, `/auth/duas-etapas` e `/login/codigo` respondendo, CSP no web.
 
 - **Cabeçalhos**: a API responde com `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, CSP `default-src 'none'` e, só em produção, HSTS de 1 ano sem `includeSubDomains`. O web manda a própria CSP (`next.config.ts`). Se o Cloudflare Web Analytics for ligado, a CSP do web precisa liberar `static.cloudflareinsights.com`.
 - **`/docs` (Swagger) não existe em produção**: responde 404. A referência da API continua em `apps/api/docs/openapi.json`.

@@ -8,7 +8,19 @@ tags: [retomada, redeposito, funil, tunel, estado-atual, proximos-passos, ci, op
 
 Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou, o que está pendente e em que ordem. Atualize ao fim de cada sessão de trabalho relevante.
 
-## Onde paramos (2026-10-21, por volta das 12:10)
+## Onde paramos (2026-10-21, por volta das 12:55)
+Sessão `b14f19c8`, continuação.
+- **Commit `d5569d9` no ar.** O usuário removeu as imagens antigas e o "Pull and redeploy" com re-pull deu certo às 12:50 (contêineres `trafego-pasio-*` recriados às 15:50 UTC, `preparo: migrações aplicadas`, então 0007 e 0008 estão no banco). Item 13 de [[operacao/problemas-atuais]] resolvido.
+- Conferido em produção: `api.kapanda.lat/health` com `strict-transport-security: max-age=31536000`, `nosniff`, `X-Frame-Options: DENY` e `Referrer-Policy: no-referrer`; `/docs` 404; `POST /auth/duas-etapas` com desafio inválido → 401 `token_invalido`; `kapanda.lat/login` e `/login/codigo` 200, com a CSP do `next.config.ts`.
+- Teste de SMTP ainda não feito: o `exec` pela API do Portainer responde 403 (falta o token CSRF da interface). Rodar pelo console do contêiner.
+
+### Próximos passos, em ordem
+1. (usuário) Console do `trafego-pasio-api-1` no Portainer → rodar o teste de portas 465/587 de [[operacao/producao]], "E-mail (SMTP)"; depois, um convite real. Trocar `SMTP_PORT` para 587 só com confirmação.
+2. (usuário, opcional) Ligar a verificação em duas etapas no próprio Perfil e testar o login com código.
+3. Seguem os passos da GTech da lista abaixo (segredo nos dois webhooks, jogador de teste, senha do backoffice).
+4. Depois de cada redeploy que der certo, remover as imagens `ghcr` antigas (Unused) para o disco não encher de novo.
+
+## Antes (2026-10-21, por volta das 12:10)
 Sessão `b14f19c8`, continuação.
 - **Commit `d5569d9` na `main`, push feito**: etapa Redepósito no funil (D43), pacote de segurança (D44) e verificação em duas etapas opcional no Perfil (D45). CI run 39619390201 verde (check e visual) e Deploy run 39619390107 verde (imagens `api` e `web` no GHCR; o job de redeploy só avisou, sem `PORTAINER_WEBHOOK_URL`).
 - **Redeploy em produção NÃO aconteceu.** O "Pull and redeploy" com re-pull falhou três vezes (11:50, 11:57 e 12:00) com `no space left on device` ao extrair as camadas da imagem: **o disco do servidor está cheio**. Os contêineres seguem os de 2026-10-20 14:40 e a produção está na versão antiga (`/auth/duas-etapas` 404, `/docs` 200, sem HSTS). A mensagem só aparece no console do navegador; a lista de Notifications do Portainer não mostrou nada.
