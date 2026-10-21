@@ -8,7 +8,10 @@ tags: [producao, problemas, disco, tunel, diagnostico, portainer, deploy, webhoo
 
 Tudo o que não funciona ou funciona pela metade em produção, com a causa e o que resolve. A arquitetura que esses itens citam está em [[arquitetura/mapa-do-sistema]]. Atualize esta página quando um item for resolvido: marque como resolvido com a data e o que foi feito, sem apagar.
 
-## Situação geral (2026-10-21, por volta das 13:25)
+## Situação geral (2026-10-21, por volta das 14:30)
+- Redepósito calculado do nosso lado (D46) no ar desde 14:26 (`b5fdd94`), com a invariante "um FTD por jogador" e o índice da migração 0009. Falta o usuário aplicar o preset `gtech` v2; a versão 1 segue ativa (item 10). Seguem abertos GTech (segredo nos webhooks), Meta Ads e o item 14 (concorrência na agregação).
+
+## Situação geral anterior (2026-10-21, por volta das 13:25)
 - SMTP configurado e validado em produção (item 5 resolvido, falta só o usuário ver um e-mail chegar). Seguem abertos GTech e Meta Ads.
 
 ## Situação geral anterior (2026-10-21, por volta das 12:55)

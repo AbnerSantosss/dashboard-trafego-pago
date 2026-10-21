@@ -383,3 +383,13 @@ tags: [log, historico]
   - testes: preset (11), `primeiro-deposito.test.ts` (fora de ordem, contador repetido, contador 2 antes do 1, três webhooks concorrentes, reprocessar a fonte) e o teste lento ajustado para um FTD por jogador. Suíte inteira verde (api 258 + 1 pulado, web 105, gráficos 22, rules 33, fixtures 42, webhook-sim 4), lint e typecheck;
   - wiki: D46 em [[decisoes-tecnicas/decisoes]] (D42 marcada como revista), [[regras-de-tratamento/motor-de-regras]], [[regras-de-tratamento/metricas-e-kpis]], [[ingestao-webhooks/gtech]], [[arquitetura/modelo-de-dados]], [[operacao/runbooks]] e itens 10 e 14 de [[operacao/problemas-atuais]].
 - Entregue: código e wiki; deploy, preset v2 em produção e limpeza das imagens no registro seguinte.
+
+## [2026-10-21] deploy | b5fdd94 no ar (redepósito do nosso lado)
+- Pedido: "pode comitar e fazer o deploy"; "continue primeiro entenda planeje e execute".
+- Feito:
+  - o CI do `1d074f6` reprovou só no `pnpm format` (os JSON da migração 0009 saíram do `drizzle-kit` sem prettier); o commit `b5fdd94` formatou e o CI 39643015448 e o Deploy 39643015720 passaram;
+  - Pull and redeploy com re-pull às 14:26: `api` (b19464dec2ee) healthy, `web` (d0b0285a9b50) no ar, `preparo: migrações aplicadas` (0009 no banco), `api.kapanda.lat/health` 200 e `kapanda.lat/login` 200;
+  - 2 imagens antigas do projeto removidas (5fadbf05e1cf e 6f061f961d21, cerca de 2,6 GB). Conferido antes: nenhum contêiner, mesmo `WorkingDir` e `Cmd` e 7 de 8 camadas iguais às novas;
+  - preset `gtech` v2 **não aplicado**: o classificador de permissões do Claude Code barrou o console do contêiner. Fica com o usuário ([[operacao/runbooks]], "Ativar um preset de regras numa fonte").
+- Entregue: a invariante "um FTD por jogador" e o índice 0009 em produção. A versão 1 do preset segue ativa até o usuário rodar o comando ([[operacao/retomada]]).
+

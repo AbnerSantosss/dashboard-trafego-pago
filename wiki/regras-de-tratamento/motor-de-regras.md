@@ -43,7 +43,7 @@ Operadores suportados: `path` (JSONPath), `const`, `format` (iso, epoch_s, epoch
 O script (`publicarRegras`) valida, cria uma versão nova só se o conteúdo mudou, ativa e, com `--reprocessar`, aplica aos brutos já recebidos.
 
 ### Preset GTech (`mapeamentoGtech()`)
-Em produção desde 2026-10-20 como versão 1 ativa de `pasio/gtech`; a v2 (redepósito do nosso lado, D46) entra com o deploy de 2026-10-21. Configuração do backoffice, fluxo e validação em [[ingestao-webhooks/gtech]]; passo a passo do comando em [[operacao/runbooks]].
+Em produção desde 2026-10-20 como versão 1 ativa de `pasio/gtech`; o código da v2 (redepósito do nosso lado, D46) e a invariante "um FTD por jogador" estão no ar desde 2026-10-21 às 14:26, mas a versão 2 só vale depois que o usuário rodar o comando (pendente). Configuração do backoffice, fluxo e validação em [[ingestao-webhooks/gtech]]; passo a passo do comando em [[operacao/runbooks]].
 
 | Payload | Evento |
 |---|---|

@@ -8,7 +8,21 @@ tags: [retomada, redeposito, funil, tunel, estado-atual, proximos-passos, ci, op
 
 Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou, o que está pendente e em que ordem. Atualize ao fim de cada sessão de trabalho relevante.
 
-## Onde paramos (2026-10-21, por volta das 13:25)
+## Onde paramos (2026-10-21, por volta das 14:30)
+Sessão `b14f19c8`, continuação.
+- **Redepósito calculado do nosso lado (D46) no ar.** Commits `1d074f6` (código e wiki) e `b5fdd94` (formato dos JSON da migração 0009, que reprovaram o CI). Redeploy com re-pull às 14:26: `api` healthy, `web` no ar, migração 0009 aplicada, `/health` 200.
+- A invariante "um FTD por jogador" já vale em produção, porque está no código. Reenvio, chegada fora de ordem e webhooks simultâneos do mesmo jogador não viram dois FTDs.
+- **Preset `gtech` v2 ainda não aplicado** (a versão 1 segue ativa): o classificador de permissões do Claude Code barrou o console do contêiner. Até lá, um pagamento sem `approved_deposits` ou com 0 conta como redepósito em vez de FTD. Os webhooks reais trazem o contador, então o efeito é pequeno.
+- 2 imagens antigas do projeto removidas (cerca de 2,6 GB).
+
+### Próximos passos, em ordem
+1. (usuário) Aplicar o preset v2: Portainer → Containers → `trafego-pasio-api-1` → Console → `/bin/sh` → comando de [[operacao/runbooks]], "Ativar um preset de regras numa fonte". Saída esperada: versão 2 ativa de `pasio/gtech` e o total de brutos reprocessados. O comando é idempotente.
+2. (usuário) GTech: kapanda.lat → Configurações → Webhooks → GTech → Rotacionar segredo → Copiar. O segredo aparece uma vez e serve para os dois webhooks. Colar na Senha de "Pagamento de depósito" e de "Criação de usuário" no backoffice e salvar ([[ingestao-webhooks/gtech]]). Não usar "Pagamento de saque".
+3. (usuário) Validar com um jogador de teste (`?utm_source=teste&utm_campaign=teste`): cadastro, primeiro depósito (FTD) e um segundo (Redepósito) no funil; conferir o `user_id` da Tag.
+4. (usuário) Testar "Esqueci minha senha" em `kapanda.lat/login`. Trocar a senha de admin do backoffice da GTech.
+5. Sugestão: `"db:generate": "drizzle-kit generate && prettier --write drizzle"`, para o CI não reprovar de novo no formato.
+
+## Antes (2026-10-21, por volta das 13:25)
 Sessão `b14f19c8`, continuação.
 - **SMTP pronto em produção.** Teste no console do `trafego-pasio-api-1`: portas 465 e 587 abertas e `nodemailer.verify()` com login ok. `SMTP_PORT` continua 465.
 - Commit `19caf34` no ar (redeploy às 13:20): `EMAIL_PREFIXO_ASSUNTO` (texto na frente de todo assunto). Na stack: `EMAIL_REMETENTE` = `'"[PASIO] Painel de Análise" <email>'` (aspas simples por fora, senão o compose não lê o `stack.env`, ver [[operacao/producao]]) e `EMAIL_PREFIXO_ASSUNTO` = `[PASIO]`. Conferido no `docker inspect` da API.
