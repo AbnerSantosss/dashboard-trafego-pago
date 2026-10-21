@@ -8,7 +8,18 @@ tags: [retomada, redeposito, funil, tunel, estado-atual, proximos-passos, ci, op
 
 Página para quem abre o projeto depois de uma pausa. Diz onde o trabalho parou, o que está pendente e em que ordem. Atualize ao fim de cada sessão de trabalho relevante.
 
-## Onde paramos (2026-10-21, por volta das 12:55)
+## Onde paramos (2026-10-21, por volta das 13:25)
+Sessão `b14f19c8`, continuação.
+- **SMTP pronto em produção.** Teste no console do `trafego-pasio-api-1`: portas 465 e 587 abertas e `nodemailer.verify()` com login ok. `SMTP_PORT` continua 465.
+- Commit `19caf34` no ar (redeploy às 13:20): `EMAIL_PREFIXO_ASSUNTO` (texto na frente de todo assunto). Na stack: `EMAIL_REMETENTE` = `'"[PASIO] Painel de Análise" <email>'` (aspas simples por fora, senão o compose não lê o `stack.env`, ver [[operacao/producao]]) e `EMAIL_PREFIXO_ASSUNTO` = `[PASIO]`. Conferido no `docker inspect` da API.
+- Imagens antigas do projeto (4, sem uso) removidas depois do redeploy. Regra nova do usuário: **apagar sempre as antigas** depois de cada redeploy que der certo.
+
+### Próximos passos, em ordem
+1. (usuário) Testar um e-mail real: "Esqueci minha senha" em `kapanda.lat/login` com o e-mail do admin. Deve chegar de "[PASIO] Painel de Análise" com assunto começando por `[PASIO]`. Se não chegar, ver o log de `trafego-pasio-api-1` ("falha ao enviar e-mail" traz o motivo).
+2. (usuário, opcional) Ligar a verificação em duas etapas no próprio Perfil e testar o login com código.
+3. Seguem os passos da GTech (segredo nos dois webhooks, jogador de teste, senha do backoffice).
+
+## Antes (2026-10-21, por volta das 12:55)
 Sessão `b14f19c8`, continuação.
 - **Commit `d5569d9` no ar.** O usuário removeu as imagens antigas e o "Pull and redeploy" com re-pull deu certo às 12:50 (contêineres `trafego-pasio-*` recriados às 15:50 UTC, `preparo: migrações aplicadas`, então 0007 e 0008 estão no banco). Item 13 de [[operacao/problemas-atuais]] resolvido.
 - Conferido em produção: `api.kapanda.lat/health` com `strict-transport-security: max-age=31536000`, `nosniff`, `X-Frame-Options: DENY` e `Referrer-Policy: no-referrer`; `/docs` 404; `POST /auth/duas-etapas` com desafio inválido → 401 `token_invalido`; `kapanda.lat/login` e `/login/codigo` 200, com a CSP do `next.config.ts`.

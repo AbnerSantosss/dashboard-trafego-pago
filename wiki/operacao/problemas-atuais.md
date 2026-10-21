@@ -8,7 +8,10 @@ tags: [producao, problemas, disco, tunel, diagnostico, portainer, deploy, webhoo
 
 Tudo o que não funciona ou funciona pela metade em produção, com a causa e o que resolve. A arquitetura que esses itens citam está em [[arquitetura/mapa-do-sistema]]. Atualize esta página quando um item for resolvido: marque como resolvido com a data e o que foi feito, sem apagar.
 
-## Situação geral (2026-10-21, por volta das 12:55)
+## Situação geral (2026-10-21, por volta das 13:25)
+- SMTP configurado e validado em produção (item 5 resolvido, falta só o usuário ver um e-mail chegar). Seguem abertos GTech e Meta Ads.
+
+## Situação geral anterior (2026-10-21, por volta das 12:55)
 - Commit `d5569d9` (Redepósito, segurança, duas etapas) **no ar** desde 12:50, depois que o usuário liberou espaço no disco (item 13 resolvido). Seguem abertos SMTP (item 5), GTech e Meta Ads.
 
 ## Situação geral anterior (2026-10-21, por volta das 12:10)
@@ -93,6 +96,8 @@ Em nenhuma das falhas o site caiu: o compose só troca os contêineres depois qu
 **O que resolve**: se a senha salva não for a que o usuário escolheu (`Mudar@123` foi a pedida), trocar em Configurações → Perfil, ou pegar no gerenciador de senhas do Chrome a que ele guardou para `kapanda.lat`.
 
 ## 5. Sem SMTP: convites e recuperação de senha não chegam por e-mail
+> **Resolvido em 2026-10-21, 13:20.** As seis variáveis de e-mail estão na stack, o teste no console da API deu `465 ok`, `587 ok` e login ok, e o redeploy do `19caf34` subiu com remetente "[PASIO] Painel de Análise" e prefixo `[PASIO]` no assunto. No caminho, o primeiro redeploy falhou por causa das aspas no `EMAIL_REMETENTE` (detalhe em [[operacao/producao]], seção "E-mail (SMTP)"). Falta só o usuário confirmar a chegada de um e-mail real.
+
 > **Em andamento (2026-10-19).** No Portainer, nas variáveis da stack `trafego-pasio`, foram salvas (Save settings, sem redeploy) `SMTP_HOST` (Gmail), `SMTP_PORT=465`, `SMTP_USUARIO` (o e-mail do admin, variável ADMIN_EMAIL / SMTP_USUARIO da stack) e `EMAIL_REMETENTE` ("Painel PASIO" com o mesmo e-mail). `SMTP_SENHA` ficou em branco: é uma senha de app do Gmail (16 letras), que o usuário cola ele mesmo. Enquanto ela estiver vazia, a API considera o SMTP não configurado e não envia nada (`apps/api/src/conta/email.ts` exige `SMTP_HOST`, `SMTP_USUARIO` e `SMTP_SENHA`). **Falta**: a senha, o redeploy e testar "esqueci a senha". O texto abaixo fica como histórico.
 
 **Causa**: as variáveis `SMTP_*` e `EMAIL_REMETENTE` da stack estão vazias. Em produção a API não escreve no log os links pedidos pela tela.

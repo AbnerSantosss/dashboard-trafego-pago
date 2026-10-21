@@ -33,7 +33,7 @@ Detalhes, validação e pendências em [[ingestao-webhooks/gtech]]. Ativar prese
 Criada no Portainer pelo Git (Stacks → Add stack → Repository):
 - repositório `github.com/AbnerSantosss/dashboard-trafego-pago`, referência `refs/heads/main`, compose `docker-compose.prod.yml`;
 - variáveis da stack, só três: `WEB_URL` (`https://kapanda.lat`), `WEBHOOK_URL_PUBLICA` (`https://api.kapanda.lat`) e `ADMIN_EMAIL`. O valor do e-mail fica **só** no Portainer: o repositório é público, então ele não entra no código, na wiki nem no log;
-- SMTP, salvas em 2026-10-19 (seção "E-mail (SMTP)"): `SMTP_HOST`, `SMTP_PORT`, `SMTP_USUARIO` e `EMAIL_REMETENTE`; `SMTP_SENHA` ainda em branco;
+- SMTP (seção "E-mail (SMTP)"): `SMTP_HOST`, `SMTP_PORT`, `SMTP_USUARIO`, `SMTP_SENHA`, `EMAIL_REMETENTE` e `EMAIL_PREFIXO_ASSUNTO`, todas preenchidas desde 2026-10-21;
 - opcionais, ainda vazias: `ADMIN_NOME`, `LOG_LEVEL`, `META_GRAPH_VERSAO`, `WEB_PORTA`, `API_PORTA` e `IMAGEM_TAG` (versão das imagens, padrão `latest`, D41). A lista comentada está em `deploy/producao.env.example`.
 
 | Contêiner | Imagem | Papel | Porta |
@@ -70,10 +70,11 @@ A cada subida, a API roda o preparo `apps/api/src/db/producao.ts` antes do servi
 
 ## E-mail (SMTP)
 Convites e "esqueci a senha" saem por e-mail só quando a API acha `SMTP_HOST`, `SMTP_USUARIO` e `SMTP_SENHA` preenchidos (`apps/api/src/conta/email.ts`); faltando qualquer um, o SMTP conta como não configurado e nada é enviado, sem erro.
-- Variáveis da stack: `SMTP_HOST` (Gmail: `smtp.gmail.com`), `SMTP_PORT` (`465`, TLS direto), `SMTP_USUARIO` (o e-mail do admin, variável ADMIN_EMAIL / SMTP_USUARIO da stack), `SMTP_SENHA`, `EMAIL_REMETENTE` (nome exibido e o mesmo e-mail, no formato `"[PASIO] Painel de Análise" <email>`, com as aspas, porque os colchetes exigem) e, opcional, `EMAIL_PREFIXO_ASSUNTO` (texto posto na frente de todo assunto, ex. `[PASIO]`; vazio deixa o assunto como está). Os valores ficam **só** no Portainer.
+- Variáveis da stack: `SMTP_HOST` (Gmail: `smtp.gmail.com`), `SMTP_PORT` (`465`, TLS direto), `SMTP_USUARIO` (o e-mail do admin, variável ADMIN_EMAIL / SMTP_USUARIO da stack), `SMTP_SENHA`, `EMAIL_REMETENTE` (nome exibido e o mesmo e-mail, no formato `"[PASIO] Painel de Análise" <email>`, com as aspas duplas, porque os colchetes exigem; **no Portainer, o valor inteiro vai entre aspas simples**: `'"[PASIO] Painel de Análise" <email>'`) e, opcional, `EMAIL_PREFIXO_ASSUNTO` (texto posto na frente de todo assunto, ex. `[PASIO]`; vazio deixa o assunto como está). Os valores ficam **só** no Portainer.
 - `SMTP_SENHA` é uma **senha de app do Gmail** (16 letras, gerada na conta Google com a verificação em duas etapas ligada), não a senha da conta. O usuário cola ele mesmo, no Portainer: Stacks → `trafego-pasio` → Environment variables → Save settings.
 - Mudar variável não troca nada sozinho: depois do Save settings, é preciso o "Pull and redeploy" para a API subir com os valores novos.
-- Estado em 2026-10-19: tudo salvo, menos `SMTP_SENHA` (em branco); redeploy ainda não feito.
+- Por quê: o Portainer grava as variáveis em `/data/compose/135/stack.env`, e o leitor de `.env` do compose trata `"` no começo do valor como valor entre aspas e o resto como outro nome. Em 2026-10-21 o redeploy falhou assim: `failed to read /data/compose/135/stack.env: line 7: unexpected character "<" in variable name`. Entre aspas simples o valor é lido ao pé da letra (conferido com `docker compose config`).
+- Estado em 2026-10-21: as seis variáveis salvas; teste no console do `trafego-pasio-api-1` com `465 ok`, `587 ok` e `nodemailer.verify()` → login ok. `SMTP_PORT` continua 465.
 - Teste: na tela de login, "esqueci a senha" com o e-mail do admin; o link tem de chegar na caixa de entrada.
 
 ## Atualizar (desde 2026-10-19, D41)
@@ -83,6 +84,7 @@ O servidor não compila mais. O caminho é: **push na `main` → GitHub Actions 
 3. O job `redeploy` só dispara o Portainer se existir o secret `PORTAINER_WEBHOOK_URL`. Hoje não existe, então ele termina verde com um aviso, e o passo seguinte é manual.
 4. Portainer → Stacks → `trafego-pasio` → **Pull and redeploy**. Com `pull_policy: always`, a stack baixa a imagem da tag e recria `api` e `web` em segundos ("Re-pull image" ligado ou não, tanto faz).
 5. O preparo aplica as migrações novas sozinho na subida da API. Conferir em Containers que `api` e `web` têm horário novo e imagem `ghcr.io/...`, depois `https://api.kapanda.lat/health` e o login.
+6. **Sempre** depois de um redeploy que deu certo (pedido do usuário em 2026-10-21): Images → filtrar as Unused → remover as imagens antigas deste projeto (as `<none>` que eram `.../api` e `.../web`; o comando da API roda `src/db/producao.ts`, o do web `next start`). Nunca as em uso nem as de outros projetos. A API do Portainer recusa o DELETE sem token CSRF, então é pela interface.
 
 **Redeploys feitos por este caminho**: 2026-10-19 às 20:38 (`e00a616`, primeiro com o GHCR, cerca de 3 minutos pelo download inicial) e 2026-10-20 às 14:40 (`5ef4829`, autenticação Basic e preset da GTech, com "Re-pull image"; `api` e `db` saudáveis e `/health` 200).
 

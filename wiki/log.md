@@ -356,3 +356,15 @@ tags: [log, historico]
   - item 13 de [[operacao/problemas-atuais]] marcado como resolvido; aviso de "ainda não está no ar" tirado de [[operacao/producao]];
   - teste de SMTP não feito: o `exec` pela API do Portainer responde 403; fica para o console do contêiner.
 - Entregue: Redepósito (D43), pacote de segurança (D44) e duas etapas opcional (D45) em produção; próximos passos em [[operacao/retomada]].
+
+## [2026-10-21] deploy | SMTP validado, remetente "[PASIO] Painel de Análise" e prefixo no assunto
+- Pedido: "pode comitar e fazer o deploy"; nome do remetente e prefixo no assunto ("Os dois"); depois "apague sempre as antigas".
+- Feito:
+  - commit `19caf34`: `EMAIL_PREFIXO_ASSUNTO` em `apps/api/src/conta/email.ts`, com teste num SMTP falso, no compose e nos `.env.example`;
+  - teste no console do `trafego-pasio-api-1`: portas 465 e 587 abertas, `nodemailer.verify()` com login ok;
+  - na stack, `EMAIL_REMETENTE` trocado e `EMAIL_PREFIXO_ASSUNTO` criado; o primeiro Pull and redeploy deu 500 (`stack.env: line 7: unexpected character "<"`), corrigido com aspas simples em volta do valor (conferido antes com `docker compose config`);
+  - redeploy às 13:20 com re-pull: `api` e `web` novos, variáveis certas no `docker inspect`, `/health` 200;
+  - 4 imagens antigas do projeto removidas (cerca de 2,6 GB liberados no total do Docker);
+  - item 5 de [[operacao/problemas-atuais]] resolvido; [[operacao/producao]] e [[operacao/retomada]] atualizados.
+- Entregue: e-mail de convite e de redefinição pronto em produção; falta o usuário confirmar a chegada de um e-mail real.
+
